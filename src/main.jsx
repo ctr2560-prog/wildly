@@ -4,16 +4,20 @@ import "../landing.css";
 import "../styles.css";
 import "../staff.css";
 
+const basePath = import.meta.env.BASE_URL;
+const routePath = (path = "") => `${basePath}#${path}`;
+const assetPath = (path) => `${basePath}${path}`;
+
 const assets = {
-  wildlyLogo: "/assets/wildly-logo-transparent.png",
-  trackaLogo: "/assets/taronga-tracka-logo-colour.png",
-  heroKoala: "/assets/hero-koala.jpg",
-  koala: "/assets/koala.jpg",
-  river: "/assets/river.png",
-  rhino: "/assets/rhino.jpg",
-  giraffe: "/assets/giraffe.jpg",
-  binturong: "/assets/binturong.jpg",
-  gorilla: "/assets/gorilla.jpg",
+  wildlyLogo: assetPath("assets/wildly-logo-transparent.png"),
+  trackaLogo: assetPath("assets/taronga-tracka-logo-colour.png"),
+  heroKoala: assetPath("assets/hero-koala.jpg"),
+  koala: assetPath("assets/koala.jpg"),
+  river: assetPath("assets/river.png"),
+  rhino: assetPath("assets/rhino.jpg"),
+  giraffe: assetPath("assets/giraffe.jpg"),
+  binturong: assetPath("assets/binturong.jpg"),
+  gorilla: assetPath("assets/gorilla.jpg"),
 };
 
 const subjects = [
@@ -76,11 +80,11 @@ function LandingPage() {
   return (
     <>
       <header className="site-header">
-        <a className="site-logo" href="/" aria-label="Wildly by Taronga home"><img src={assets.wildlyLogo} alt="Wildly by Taronga" /></a>
+        <a className="site-logo" href={routePath()} aria-label="Wildly by Taronga home"><img src={assets.wildlyLogo} alt="Wildly by Taronga" /></a>
         <nav className="site-nav" aria-label="Main navigation">
           <a href="#about">About</a><a href="#subjects">Subjects</a><a href="#paths">Learning Paths</a><a href="#tracka">Tracka</a><a href="#schools">Schools</a>
         </nav>
-        <div className="header-actions"><a className="login-link" href="/teacher">Log in</a><a className="start-link" href="/teacher">Get started</a></div>
+        <div className="header-actions"><a className="login-link" href={routePath("teacher")}>Log in</a><a className="start-link" href={routePath("teacher")}>Get started</a></div>
       </header>
       <main>
         <section className="hero-section" id="about">
@@ -89,12 +93,12 @@ function LandingPage() {
             <h1>Learning through nature</h1>
             <p className="hero-subtitle">Inspire curiosity. Create change.</p>
             <p>Curriculum-aligned lessons, real-world experiences and conservation connections - for every learner, everywhere.</p>
-            <div className="hero-actions"><a className="primary-action" href="/teacher">Get started free</a><a className="secondary-action" href="#subjects">Explore subjects</a></div>
+            <div className="hero-actions"><a className="primary-action" href={routePath("teacher")}>Get started free</a><a className="secondary-action" href="#subjects">Explore subjects</a></div>
             <p className="alignment-note"><span aria-hidden="true"></span>Aligned to the Australian Curriculum</p>
           </div>
           <div className="device-stage" aria-label="Wildly teacher dashboard preview">
-            <div className="laptop"><div className="laptop-screen"><iframe className="teacher-preview" src="/teacher" title="Wildly teacher dashboard preview" tabIndex="-1"></iframe></div><div className="laptop-base"></div></div>
-            <div className="phone"><img src={assets.heroKoala} alt="" /><h3>Adaptations of Australian Animals</h3><p>Ready to assign</p><a href="/teacher">View resource</a></div>
+            <div className="laptop"><div className="laptop-screen"><iframe className="teacher-preview" src={routePath("teacher")} title="Wildly teacher dashboard preview" tabIndex="-1"></iframe></div><div className="laptop-base"></div></div>
+            <div className="phone"><img src={assets.heroKoala} alt="" /><h3>Adaptations of Australian Animals</h3><p>Ready to assign</p><a href={routePath("teacher")}>View resource</a></div>
           </div>
         </section>
         <section className="feature-row">
@@ -105,9 +109,9 @@ function LandingPage() {
           ].map(([icon, title, copy]) => <article key={title}><Icon type={icon} className="" /><h2>{title}</h2><p>{copy}</p></article>)}
         </section>
         <section className="subjects-section" id="subjects">
-          <div className="section-heading"><h2>Explore by subject</h2><a href="/teacher">View all subjects</a></div>
+          <div className="section-heading"><h2>Explore by subject</h2><a href={routePath("teacher")}>View all subjects</a></div>
           <div className="subject-strip">
-            {subjects.map(([label, cls, copy]) => <a className={cls} href="/teacher" key={label}><Icon type={subjectIconType(label)} className="" /><strong>{label}</strong><span>{copy}</span></a>)}
+            {subjects.map(([label, cls, copy]) => <a className={cls} href={routePath("teacher")} key={label}><Icon type={subjectIconType(label)} className="" /><strong>{label}</strong><span>{copy}</span></a>)}
           </div>
         </section>
         <section className="journey-section" id="paths">
@@ -119,8 +123,8 @@ function LandingPage() {
           <article><Icon type="target" className="" /><span>Aligned to the Australian Curriculum</span></article>
           <article><Icon type="bookmark" className="" /><span>Secure, reliable teacher resources</span></article>
         </section>
-        <section className="cta-section"><img src={assets.heroKoala} alt="Koala with joey" /><div><h2>Bring learning to life through nature</h2><p>Join thousands of educators using Wildly to inspire the next generation to care for nature - together.</p><div className="hero-actions"><a className="primary-action" href="/teacher">Get started free</a><a className="secondary-action" href="/teacher">Book a demo</a></div></div></section>
-        <footer className="site-footer"><a className="staff-login" href="/staff">Taronga staff login</a></footer>
+        <section className="cta-section"><img src={assets.heroKoala} alt="Koala with joey" /><div><h2>Bring learning to life through nature</h2><p>Join thousands of educators using Wildly to inspire the next generation to care for nature - together.</p><div className="hero-actions"><a className="primary-action" href={routePath("teacher")}>Get started free</a><a className="secondary-action" href={routePath("teacher")}>Book a demo</a></div></div></section>
+        <footer className="site-footer"><a className="staff-login" href={routePath("staff")}>Taronga staff login</a></footer>
       </main>
     </>
   );
@@ -142,7 +146,7 @@ function TeacherDashboard({ config }) {
   return (
     <div className="app-shell">
       <aside className="sidebar" aria-label="Teacher navigation">
-        <a className="brand" href="/" aria-label="Wildly by Taronga dashboard"><img className="brand-logo" src={assets.wildlyLogo} alt="Wildly by Taronga - Learning through nature" /></a>
+        <a className="brand" href={routePath()} aria-label="Wildly by Taronga dashboard"><img className="brand-logo" src={assets.wildlyLogo} alt="Wildly by Taronga - Learning through nature" /></a>
         <nav className="main-nav">
           {["Dashboard", "My Classes", "Students", "Reports", "Saved", "Calendar"].map((item, i) => <a className={`nav-item ${i === 0 ? "active" : ""}`} href="#" key={item}><Icon type={["grid", "users", "cap", "report", "bookmark", "calendar"][i]} />{item}</a>)}
         </nav>
@@ -190,7 +194,7 @@ function StaffConsole() {
   return (
     <div className="staff-shell">
       <aside className="staff-sidebar">
-        <a className="staff-logo" href="/" aria-label="Wildly home"><img src={assets.wildlyLogo} alt="Wildly by Taronga" /></a>
+        <a className="staff-logo" href={routePath()} aria-label="Wildly home"><img src={assets.wildlyLogo} alt="Wildly by Taronga" /></a>
         <nav className="staff-nav" aria-label="Staff navigation">
           {[
             ["overview", "grid", "Overview"],
@@ -203,7 +207,7 @@ function StaffConsole() {
         <article className="tracka-mini"><img src={assets.trackaLogo} alt="Taronga Tracka" /><p>Tracka data connector ready for staff review.</p></article>
       </aside>
       <main className="staff-workspace">
-        <header className="staff-topbar"><div><span>Taronga Staff Console</span><h1>Wildly learning operations</h1></div><div className="staff-actions"><a href="/teacher">Teacher view</a><button>Publish updates</button></div></header>
+        <header className="staff-topbar"><div><span>Taronga Staff Console</span><h1>Wildly learning operations</h1></div><div className="staff-actions"><a href={routePath("teacher")}>Teacher view</a><button>Publish updates</button></div></header>
         {panel === "overview" && <section className="staff-panel active"><div className="overview-grid">{[["Active users", "4,286", "Teachers, students and Taronga staff this term"], ["Assigned resources", "18,940", "Lessons, learning paths and missions launched"], ["Tracka-linked sessions", "72%", "Activities connected to excursion or citizen science data"], ["Curriculum coverage", "146", "Mapped outcomes across NSW and Australian Curriculum"]].map(([label, value, copy]) => <article key={label}><span>{label}</span><strong>{value}</strong><p>{copy}</p></article>)}</div><div className="overview-snapshot"><article><h2>Current priorities</h2><p>Science and HSIE pathways are seeing the strongest uptake this month, with data interpretation flagged as the highest-value support area.</p></article><article><h2>Next recommended action</h2><p>Review Stage 3 animal adaptations lessons and prepare a Tracka mission bundle for upcoming school visits.</p></article></div></section>}
         {panel === "users" && <UsersPanel />}
         {panel === "analytics" && <AnalyticsPanel />}
@@ -227,13 +231,16 @@ function ContentPanel() {
 }
 
 function DashboardEditor({ config, updateConfig, reset, previewKey }) {
-  return <section className="staff-section staff-panel active"><div className="section-heading"><div><h2>Edit teacher dashboard</h2><p>Live-edit teacher-facing dashboard text, imagery and visibility flags before publishing.</p></div><div className="heading-actions"><button type="button" onClick={reset}>Reset preview</button><button type="button">Publish changes</button></div></div><article className="dashboard-editor live-dashboard-editor"><div className="editor-copy"><span className="content-type">Teacher Dashboard Editor</span><h3>Update teacher-facing dashboard content</h3><p>Changes below update the embedded teacher dashboard preview immediately. Publishing can later write these values to Firestore.</p></div><form className="editor-form"><label>Hero headline<input type="text" value={config.heroTitle} onChange={(event) => updateConfig({ heroTitle: event.target.value })} /></label><label>Hero subheading<input type="text" value={config.heroSubtitle} onChange={(event) => updateConfig({ heroSubtitle: event.target.value })} /></label><label>Hero image<select value={config.heroImageUrl} onChange={(event) => updateConfig({ heroImageUrl: event.target.value })}><option value={assets.heroKoala}>Koala with joey</option><option value={assets.giraffe}>Giraffe at Taronga</option><option value={assets.binturong}>Binturong encounter</option><option value={assets.gorilla}>Gorilla habitat</option></select></label><label>Featured resource title<select value={config.featuredResourceTitle} onChange={(event) => updateConfig({ featuredResourceTitle: event.target.value })}><option>Sustainable Futures</option><option>Adaptations of Australian Animals</option><option>Voices for Country</option></select></label></form><div className="flag-grid" aria-label="Teacher dashboard content flags"><label><input type="checkbox" checked={config.showContinueLearning} onChange={(event) => updateConfig({ showContinueLearning: event.target.checked })} /> Show Continue Learning</label><label><input type="checkbox" checked={config.showUpcomingPanel} onChange={(event) => updateConfig({ showUpcomingPanel: event.target.checked })} /> Show Upcoming panel</label><label><input type="checkbox" checked={config.showTrackaCard} onChange={(event) => updateConfig({ showTrackaCard: event.target.checked })} /> Feature Taronga Tracka card</label><label><input type="checkbox" /> Show beta student insights</label><label><input type="checkbox" defaultChecked /> Display new resource badges</label><label><input type="checkbox" /> Lock subject cards during review</label></div><div className="teacher-live-preview"><div className="preview-toolbar"><span>Live teacher dashboard preview</span><a href="/teacher" target="_blank" rel="noreferrer">Open full view</a></div><div className="preview-frame" key={previewKey}><TeacherDashboard config={config} /></div></div></article></section>;
+  return <section className="staff-section staff-panel active"><div className="section-heading"><div><h2>Edit teacher dashboard</h2><p>Live-edit teacher-facing dashboard text, imagery and visibility flags before publishing.</p></div><div className="heading-actions"><button type="button" onClick={reset}>Reset preview</button><button type="button">Publish changes</button></div></div><article className="dashboard-editor live-dashboard-editor"><div className="editor-copy"><span className="content-type">Teacher Dashboard Editor</span><h3>Update teacher-facing dashboard content</h3><p>Changes below update the embedded teacher dashboard preview immediately. Publishing can later write these values to Firestore.</p></div><form className="editor-form"><label>Hero headline<input type="text" value={config.heroTitle} onChange={(event) => updateConfig({ heroTitle: event.target.value })} /></label><label>Hero subheading<input type="text" value={config.heroSubtitle} onChange={(event) => updateConfig({ heroSubtitle: event.target.value })} /></label><label>Hero image<select value={config.heroImageUrl} onChange={(event) => updateConfig({ heroImageUrl: event.target.value })}><option value={assets.heroKoala}>Koala with joey</option><option value={assets.giraffe}>Giraffe at Taronga</option><option value={assets.binturong}>Binturong encounter</option><option value={assets.gorilla}>Gorilla habitat</option></select></label><label>Featured resource title<select value={config.featuredResourceTitle} onChange={(event) => updateConfig({ featuredResourceTitle: event.target.value })}><option>Sustainable Futures</option><option>Adaptations of Australian Animals</option><option>Voices for Country</option></select></label></form><div className="flag-grid" aria-label="Teacher dashboard content flags"><label><input type="checkbox" checked={config.showContinueLearning} onChange={(event) => updateConfig({ showContinueLearning: event.target.checked })} /> Show Continue Learning</label><label><input type="checkbox" checked={config.showUpcomingPanel} onChange={(event) => updateConfig({ showUpcomingPanel: event.target.checked })} /> Show Upcoming panel</label><label><input type="checkbox" checked={config.showTrackaCard} onChange={(event) => updateConfig({ showTrackaCard: event.target.checked })} /> Feature Taronga Tracka card</label><label><input type="checkbox" /> Show beta student insights</label><label><input type="checkbox" defaultChecked /> Display new resource badges</label><label><input type="checkbox" /> Lock subject cards during review</label></div><div className="teacher-live-preview"><div className="preview-toolbar"><span>Live teacher dashboard preview</span><a href={routePath("teacher")} target="_blank" rel="noreferrer">Open full view</a></div><div className="preview-frame" key={previewKey}><TeacherDashboard config={config} /></div></div></article></section>;
 }
 
 function App() {
-  const path = window.location.pathname.replace(/\/$/, "") || "/";
+  const hashPath = window.location.hash.replace(/^#\/?/, "");
+  const path = hashPath || window.location.pathname.replace(basePath, "").replace(/^\//, "").replace(/\/$/, "");
   if (path === "/teacher" || path === "/teacher.html") return <TeacherDashboard config={defaultDashboardConfig} />;
   if (path === "/staff" || path === "/staff.html") return <StaffConsole />;
+  if (path === "teacher" || path === "teacher.html") return <TeacherDashboard config={defaultDashboardConfig} />;
+  if (path === "staff" || path === "staff.html") return <StaffConsole />;
   return <LandingPage />;
 }
 
