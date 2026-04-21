@@ -1,0 +1,310 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Wildly Staff Console</title>
+    <link rel="stylesheet" href="./staff.css" />
+  </head>
+  <body>
+    <div class="staff-shell">
+      <aside class="staff-sidebar">
+        <a class="staff-logo" href="./index.html" aria-label="Wildly home">
+          <img src="./assets/wildly-logo-transparent.png" alt="Wildly by Taronga" />
+        </a>
+        <nav class="staff-nav" aria-label="Staff navigation">
+          <button class="active" type="button" data-panel="overview">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="7" height="7" rx="1.5"></rect><rect x="14" y="4" width="7" height="7" rx="1.5"></rect><rect x="3" y="15" width="7" height="5" rx="1.5"></rect><rect x="14" y="15" width="7" height="5" rx="1.5"></rect></svg>
+            Overview
+          </button>
+          <button type="button" data-panel="users">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="8" cy="8" r="3"></circle><circle cx="17" cy="9" r="2.5"></circle><path d="M3.5 19c.7-3.4 2.3-5 4.5-5s3.8 1.6 4.5 5"></path><path d="M13.5 18.8c.5-2.5 1.8-3.8 3.7-3.8 1.6 0 2.8 1 3.3 3.8"></path></svg>
+            Users
+          </button>
+          <button type="button" data-panel="analytics">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19V5"></path><path d="M4 19h16"></path><path d="M8 16v-5"></path><path d="M12 16V8"></path><path d="M16 16v-7"></path><path d="M20 16v-3"></path></svg>
+            Analytics
+          </button>
+          <button type="button" data-panel="content">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h10l4 4v12H5V4Z"></path><path d="M15 4v5h4"></path><path d="M8 13h8"></path><path d="M8 16h6"></path></svg>
+            Content
+          </button>
+          <button type="button" data-panel="dashboard">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5" width="16" height="12" rx="2"></rect><path d="M8 21h8"></path><path d="M12 17v4"></path><path d="M8 9h4"></path><path d="M8 13h8"></path></svg>
+            Edit Dashboard
+          </button>
+        </nav>
+        <article class="tracka-mini">
+          <img src="./assets/taronga-tracka-logo-colour.png" alt="Taronga Tracka" />
+          <p>Tracka data connector ready for staff review.</p>
+        </article>
+      </aside>
+
+      <main class="staff-workspace">
+        <header class="staff-topbar">
+          <div>
+            <span>Taronga Staff Console</span>
+            <h1>Wildly learning operations</h1>
+          </div>
+          <div class="staff-actions">
+            <a href="./teacher.html">Teacher view</a>
+            <button>Publish updates</button>
+          </div>
+        </header>
+
+        <section class="staff-panel active" id="overview" data-panel-content="overview">
+          <div class="overview-grid">
+            <article>
+              <span>Active users</span>
+              <strong>4,286</strong>
+              <p>Teachers, students and Taronga staff this term</p>
+            </article>
+            <article>
+              <span>Assigned resources</span>
+              <strong>18,940</strong>
+              <p>Lessons, learning paths and missions launched</p>
+            </article>
+            <article>
+              <span>Tracka-linked sessions</span>
+              <strong>72%</strong>
+              <p>Activities connected to excursion or citizen science data</p>
+            </article>
+            <article>
+              <span>Curriculum coverage</span>
+              <strong>146</strong>
+              <p>Mapped outcomes across NSW and Australian Curriculum</p>
+            </article>
+          </div>
+          <div class="overview-snapshot">
+            <article>
+              <h2>Current priorities</h2>
+              <p>Science and HSIE pathways are seeing the strongest uptake this month, with data interpretation flagged as the highest-value support area.</p>
+            </article>
+            <article>
+              <h2>Next recommended action</h2>
+              <p>Review Stage 3 animal adaptations lessons and prepare a Tracka mission bundle for upcoming school visits.</p>
+            </article>
+          </div>
+        </section>
+
+        <section class="staff-section staff-panel" id="users" data-panel-content="users" hidden>
+          <div class="section-heading">
+            <div>
+              <h2>Users</h2>
+              <p>Analyse all teachers, students, schools and Taronga staff involved in Wildly.</p>
+            </div>
+            <button>Add user</button>
+          </div>
+          <div class="user-layout">
+            <article class="user-breakdown">
+              <h3>User mix</h3>
+              <div class="donut" aria-label="User mix chart"></div>
+              <ul>
+                <li><span class="teacher"></span>Teachers <strong>682</strong></li>
+                <li><span class="student"></span>Students <strong>3,421</strong></li>
+                <li><span class="staff"></span>Taronga staff <strong>74</strong></li>
+                <li><span class="school"></span>School admins <strong>109</strong></li>
+              </ul>
+            </article>
+            <article class="user-table-card">
+              <div class="table-toolbar">
+                <label>
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m16 16 4 4"></path></svg>
+                  <input type="search" placeholder="Search users, schools or roles" />
+                </label>
+                <select aria-label="Filter users">
+                  <option>All roles</option>
+                  <option>Teachers</option>
+                  <option>Students</option>
+                  <option>Taronga staff</option>
+                </select>
+              </div>
+              <table>
+                <thead>
+                  <tr>
+                    <th>User</th>
+                    <th>Role</th>
+                    <th>Organisation</th>
+                    <th>Status</th>
+                    <th>Last active</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>James Thompson</td>
+                    <td>Teacher</td>
+                    <td>Riverbank Public School</td>
+                    <td><span class="status active">Active</span></td>
+                    <td>Today</td>
+                  </tr>
+                  <tr>
+                    <td>Ava Wilson</td>
+                    <td>Student</td>
+                    <td>Riverbank Public School</td>
+                    <td><span class="status active">Active</span></td>
+                    <td>Today</td>
+                  </tr>
+                  <tr>
+                    <td>Maya Chen</td>
+                    <td>Taronga staff</td>
+                    <td>Taronga Education</td>
+                    <td><span class="status review">Review</span></td>
+                    <td>Yesterday</td>
+                  </tr>
+                  <tr>
+                    <td>Samir Patel</td>
+                    <td>School admin</td>
+                    <td>Western Sydney Learning Hub</td>
+                    <td><span class="status active">Active</span></td>
+                    <td>2 days ago</td>
+                  </tr>
+                </tbody>
+              </table>
+            </article>
+          </div>
+        </section>
+
+        <section class="staff-section staff-panel" id="analytics" data-panel-content="analytics" hidden>
+          <div class="section-heading">
+            <div>
+              <h2>Analytics</h2>
+              <p>View engagement, learning progress, curriculum gaps and Tracka-connected outcomes.</p>
+            </div>
+            <button>Export report</button>
+          </div>
+          <div class="analytics-grid">
+            <article class="wide-card">
+              <h3>Learning engagement by week</h3>
+              <div class="bar-chart">
+                <span style="height: 42%"></span>
+                <span style="height: 58%"></span>
+                <span style="height: 51%"></span>
+                <span style="height: 76%"></span>
+                <span style="height: 68%"></span>
+                <span style="height: 88%"></span>
+                <span style="height: 81%"></span>
+              </div>
+            </article>
+            <article>
+              <h3>Knowledge gaps</h3>
+              <p class="metric">Adaptation vs behaviour</p>
+              <div class="meter"><span style="width: 64%"></span></div>
+              <p class="metric">Data interpretation</p>
+              <div class="meter"><span style="width: 48%"></span></div>
+              <p class="metric">Persuasive writing</p>
+              <div class="meter"><span style="width: 37%"></span></div>
+            </article>
+            <article>
+              <h3>Results snapshot</h3>
+              <ul class="result-list">
+                <li>Below expected <strong>18%</strong></li>
+                <li>At expected <strong>57%</strong></li>
+                <li>Above expected <strong>25%</strong></li>
+              </ul>
+            </article>
+          </div>
+        </section>
+
+        <section class="staff-section staff-panel" id="dashboard" data-panel-content="dashboard" hidden>
+          <div class="section-heading">
+            <div>
+              <h2>Edit teacher dashboard</h2>
+              <p>Live-edit teacher-facing dashboard text, imagery and visibility flags before publishing.</p>
+            </div>
+            <div class="heading-actions">
+              <button type="button" id="resetDashboardPreview">Reset preview</button>
+              <button type="button">Publish changes</button>
+            </div>
+          </div>
+          <article class="dashboard-editor live-dashboard-editor" id="dashboardEditor">
+            <div class="editor-copy">
+              <span class="content-type">Teacher Dashboard Editor</span>
+              <h3>Update teacher-facing dashboard content</h3>
+              <p>Changes below update the embedded teacher dashboard preview immediately. Publishing can later write these values to a dashboard config or CMS.</p>
+            </div>
+            <form class="editor-form" id="dashboardEditorForm">
+              <label>
+                Hero headline
+                <input id="heroHeadlineInput" type="text" value="Learning through nature" />
+              </label>
+              <label>
+                Hero subheading
+                <input id="heroSubheadingInput" type="text" value="Inspire curiosity. Create change." />
+              </label>
+              <label>
+                Hero image
+                <select id="heroImageInput">
+                  <option value="./assets/hero-koala.jpg">Koala with joey</option>
+                  <option value="./assets/giraffe.jpg">Giraffe at Taronga</option>
+                  <option value="./assets/binturong.jpg">Binturong encounter</option>
+                  <option value="./assets/gorilla.jpg">Gorilla habitat</option>
+                </select>
+              </label>
+              <label>
+                Featured resource title
+                <select id="featuredResourceInput">
+                  <option>Sustainable Futures</option>
+                  <option>Adaptations of Australian Animals</option>
+                  <option>Voices for Country</option>
+                </select>
+              </label>
+            </form>
+            <div class="flag-grid" aria-label="Teacher dashboard content flags">
+              <label><input id="showContinueInput" type="checkbox" checked /> Show Continue Learning</label>
+              <label><input id="showUpcomingInput" type="checkbox" checked /> Show Upcoming panel</label>
+              <label><input id="showTrackaInput" type="checkbox" checked /> Feature Taronga Tracka card</label>
+              <label><input type="checkbox" /> Show beta student insights</label>
+              <label><input type="checkbox" checked /> Display new resource badges</label>
+              <label><input type="checkbox" /> Lock subject cards during review</label>
+            </div>
+            <div class="teacher-live-preview">
+              <div class="preview-toolbar">
+                <span>Live teacher dashboard preview</span>
+                <a href="./teacher.html" target="_blank" rel="noreferrer">Open full view</a>
+              </div>
+              <div class="preview-frame">
+                <iframe id="teacherDashboardFrame" src="./teacher.html" title="Live teacher dashboard editor preview"></iframe>
+              </div>
+            </div>
+          </article>
+        </section>
+
+        <section class="staff-section staff-panel" id="content" data-panel-content="content" hidden>
+          <div class="section-heading">
+            <div>
+              <h2>Content</h2>
+              <p>Add, review and publish learning paths, lessons and resource-library items.</p>
+            </div>
+            <button type="button">Add content</button>
+          </div>
+          <div class="content-grid">
+            <article>
+              <span class="content-type">Learning Path</span>
+              <h3>Sustainable Futures</h3>
+              <p>8 lessons across Science, HSIE and Technology & STEM.</p>
+              <button>Edit path</button>
+            </article>
+            <article>
+              <span class="content-type">Lesson</span>
+              <h3>Adaptations of Australian Animals</h3>
+              <p>Stage 2 science lesson with teacher guide and student prompts.</p>
+              <button>Edit lesson</button>
+            </article>
+            <article>
+              <span class="content-type">Resource</span>
+              <h3>Koala Encounter Media Pack</h3>
+              <p>Images, video prompts and vocabulary support for early years.</p>
+              <button>Edit resource</button>
+            </article>
+            <article class="create-card">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14"></path><path d="M5 12h14"></path></svg>
+              <h3>Create new content</h3>
+              <p>Start a learning path, lesson, media activity or Tracka mission.</p>
+            </article>
+          </div>
+        </section>
+      </main>
+    </div>
+    <script src="./staff.js"></script>
+  </body>
+</html>
