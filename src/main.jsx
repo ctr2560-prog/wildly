@@ -49,6 +49,7 @@ function Icon({ type, className = "nav-svg" }) {
     report: <><path d="M5 20V5.5A1.5 1.5 0 0 1 6.5 4h9L19 7.5V20H5Z" /><path d="M15 4v4h4" /><path d="M8 16v-3" /><path d="M12 16v-6" /><path d="M16 16v-4" /></>,
     bookmark: <path d="M7 4h10v16l-5-3-5 3V4Z" />,
     book: <><path d="M5 5.5A2.5 2.5 0 0 1 7.5 3H20v16H7.5A2.5 2.5 0 0 0 5 21.5v-16Z" /><path d="M5 5.5A2.5 2.5 0 0 1 7.5 8H20" /><path d="M8 12h8" /><path d="M8 15h6" /></>,
+    blocks: <><rect x="4" y="11" width="7" height="7" rx="1.4" /><rect x="13" y="11" width="7" height="7" rx="1.4" /><path d="M8.5 11V6.5A2.5 2.5 0 0 1 11 4h2a2.5 2.5 0 0 1 2.5 2.5V11" /><path d="M6.5 15h2" /><path d="M15.5 15h2" /><path d="M10 7h4" /></>,
     calendar: <><rect x="4" y="5.5" width="16" height="14.5" rx="2" /><path d="M8 3.5v4" /><path d="M16 3.5v4" /><path d="M4 10h16" /><path d="M8 14h2" /><path d="M13 14h2" /></>,
     leaf: <><path d="M20 4C10 4 5 9 5 19c10 0 15-5 15-15Z" /><path d="M5 19c3.8-4.6 7.5-7.5 12-9" /></>,
     speech: <><path d="M5 6.5h9a4 4 0 0 1 4 4v6H9l-4 3v-13Z" /><path d="M8 10h7" /><path d="M8 13h5" /></>,
@@ -97,7 +98,10 @@ function LandingPage() {
             <p className="hero-subtitle">Inspire curiosity. Create change.</p>
             <p>Curriculum-aligned lessons, real-world experiences and conservation connections - for every learner, everywhere.</p>
             <div className="hero-actions"><a className="primary-action" href={routePath("teacher")}>Get started free</a><a className="secondary-action" href="#subjects">Explore subjects</a></div>
-            <p className="alignment-note"><Icon type="book" className="alignment-icon" />Aligned to NSW and Australian curriculums (Stage 1-6), aligned to early learning framework</p>
+            <div className="alignment-list" aria-label="Curriculum alignment">
+              <p className="alignment-note"><Icon type="book" className="alignment-icon" />Aligned to NSW and Australian curriculums (Early Stage 1 - Stage 6)</p>
+              <p className="alignment-note"><Icon type="blocks" className="alignment-icon" />Aligned to the Early Years Learning Framework (Pre-School)</p>
+            </div>
           </div>
           <div className="device-stage" aria-label="Wildly teacher dashboard preview">
             <div className="laptop"><div className="laptop-screen"><iframe className="teacher-preview" src={routePath("teacher")} title="Wildly teacher dashboard preview" tabIndex="-1"></iframe></div><div className="laptop-base"></div></div>
@@ -123,7 +127,8 @@ function LandingPage() {
         </section>
         <section className="trust-row" id="tracka">
           <article><img src={assets.trackaLogo} alt="Taronga Tracka" /><span>Proudly connected with Taronga Tracka</span></article>
-          <article><Icon type="book" className="" /><span>Aligned to NSW and Australian curriculums (Stage 1-6), aligned to early learning framework</span></article>
+          <article><Icon type="book" className="" /><span>Aligned to NSW and Australian curriculums (Early Stage 1 - Stage 6)</span></article>
+          <article><Icon type="blocks" className="" /><span>Aligned to the Early Years Learning Framework (Pre-School)</span></article>
           <article><Icon type="bookmark" className="" /><span>Secure, reliable teacher resources</span></article>
         </section>
         <section className="cta-section"><img src={assets.heroKoala} alt="Koala with joey" /><div><h2>Bring learning to life through nature</h2><p>Join thousands of educators using Wildly to inspire the next generation to care for nature - together.</p><div className="hero-actions"><a className="primary-action" href={routePath("teacher")}>Get started free</a><a className="secondary-action" href={routePath("teacher")}>Book a demo</a></div></div></section>
