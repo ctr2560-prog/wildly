@@ -1,5 +1,7 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { createRoot } from "react-dom/client";
+import { doc, onSnapshot, serverTimestamp, setDoc } from "firebase/firestore";
+import { db } from "./firebase";
 import "../landing.css";
 import "../styles.css";
 import "../staff.css";
@@ -182,13 +184,74 @@ const defaultDashboardConfig = {
   showTrackaCard: true,
 };
 
+const dashboardConfigRef = doc(db, "dashboardConfig", "main");
+
+function withDefaultDashboardConfig(config = {}) {
+  return { ...defaultDashboardConfig, ...config };
+}
+
+function useDashboardConfig() {
+  const [config, setConfig] = useState(defaultDashboardConfig);
+  const [status, setStatus] = useState("loading");
+
+  useEffect(() => {
+    return onSnapshot(
+      dashboardConfigRef,
+      (snapshot) => {
+        setConfig(withDefaultDashboardConfig(snapshot.exists() ? snapshot.data() : {}));
+        setStatus(snapshot.exists() ? "live" : "missing");
+      },
+      (error) => {
+        console.error("Unable to load dashboardConfig/main", error);
+        setStatus("error");
+      },
+    );
+  }, []);
+
+  return { config, status };
+}
+
+function TeacherPage() {
+  const { config, status } = useDashboardConfig();
+  return (
+    <>
+      <FirestoreStatus status={status} />
+      <TeacherDashboard config={config} />
+    </>
+  );
+}
+
 function StaffConsole() {
   const [panel, setPanel] = useState("overview");
+  const { config: savedConfig, status } = useDashboardConfig();
   const [config, setConfig] = useState(defaultDashboardConfig);
   const [previewKey, setPreviewKey] = useState(0);
+  const [saveState, setSaveState] = useState("idle");
+
+  useEffect(() => {
+    setConfig(savedConfig);
+  }, [savedConfig]);
 
   function updateConfig(patch) {
     setConfig((current) => ({ ...current, ...patch }));
+  }
+
+  async function publishDashboardConfig() {
+    setSaveState("saving");
+    try {
+      await setDoc(
+        dashboardConfigRef,
+        {
+          ...config,
+          updatedAt: serverTimestamp(),
+        },
+        { merge: true },
+      );
+      setSaveState("saved");
+    } catch (error) {
+      console.error("Unable to save dashboardConfig/main", error);
+      setSaveState("error");
+    }
   }
 
   return (
@@ -212,7 +275,7 @@ function StaffConsole() {
         {panel === "users" && <UsersPanel />}
         {panel === "analytics" && <AnalyticsPanel />}
         {panel === "content" && <ContentPanel />}
-        {panel === "dashboard" && <DashboardEditor config={config} updateConfig={updateConfig} reset={() => { setConfig(defaultDashboardConfig); setPreviewKey((key) => key + 1); }} previewKey={previewKey} />}
+        {panel === "dashboard" && <DashboardEditor config={config} updateConfig={updateConfig} reset={() => { setConfig(defaultDashboardConfig); setPreviewKey((key) => key + 1); }} previewKey={previewKey} publish={publishDashboardConfig} status={status} saveState={saveState} />}
       </main>
     </div>
   );
@@ -230,8 +293,24 @@ function ContentPanel() {
   return <section className="staff-section staff-panel active"><div className="section-heading"><div><h2>Content</h2><p>Add, review and publish learning paths, lessons and resource-library items.</p></div><button type="button">Add content</button></div><div className="content-grid">{[["Learning Path", "Sustainable Futures", "8 lessons across Science, HSIE and Technology & STEM.", "Edit path"], ["Lesson", "Adaptations of Australian Animals", "Stage 2 science lesson with teacher guide and student prompts.", "Edit lesson"], ["Resource", "Koala Encounter Media Pack", "Images, video prompts and vocabulary support for early years.", "Edit resource"]].map(([type, title, copy, action]) => <article key={title}><span className="content-type">{type}</span><h3>{title}</h3><p>{copy}</p><button>{action}</button></article>)}<article className="create-card"><Icon type="plus" className="" /><h3>Create new content</h3><p>Start a learning path, lesson, media activity or Tracka mission.</p></article></div></section>;
 }
 
-function DashboardEditor({ config, updateConfig, reset, previewKey }) {
-  return <section className="staff-section staff-panel active"><div className="section-heading"><div><h2>Edit teacher dashboard</h2><p>Live-edit teacher-facing dashboard text, imagery and visibility flags before publishing.</p></div><div className="heading-actions"><button type="button" onClick={reset}>Reset preview</button><button type="button">Publish changes</button></div></div><article className="dashboard-editor live-dashboard-editor"><div className="editor-copy"><span className="content-type">Teacher Dashboard Editor</span><h3>Update teacher-facing dashboard content</h3><p>Changes below update the embedded teacher dashboard preview immediately. Publishing can later write these values to Firestore.</p></div><form className="editor-form"><label>Hero headline<input type="text" value={config.heroTitle} onChange={(event) => updateConfig({ heroTitle: event.target.value })} /></label><label>Hero subheading<input type="text" value={config.heroSubtitle} onChange={(event) => updateConfig({ heroSubtitle: event.target.value })} /></label><label>Hero image<select value={config.heroImageUrl} onChange={(event) => updateConfig({ heroImageUrl: event.target.value })}><option value={assets.heroKoala}>Koala with joey</option><option value={assets.giraffe}>Giraffe at Taronga</option><option value={assets.binturong}>Binturong encounter</option><option value={assets.gorilla}>Gorilla habitat</option></select></label><label>Featured resource title<select value={config.featuredResourceTitle} onChange={(event) => updateConfig({ featuredResourceTitle: event.target.value })}><option>Sustainable Futures</option><option>Adaptations of Australian Animals</option><option>Voices for Country</option></select></label></form><div className="flag-grid" aria-label="Teacher dashboard content flags"><label><input type="checkbox" checked={config.showContinueLearning} onChange={(event) => updateConfig({ showContinueLearning: event.target.checked })} /> Show Continue Learning</label><label><input type="checkbox" checked={config.showUpcomingPanel} onChange={(event) => updateConfig({ showUpcomingPanel: event.target.checked })} /> Show Upcoming panel</label><label><input type="checkbox" checked={config.showTrackaCard} onChange={(event) => updateConfig({ showTrackaCard: event.target.checked })} /> Feature Taronga Tracka card</label><label><input type="checkbox" /> Show beta student insights</label><label><input type="checkbox" defaultChecked /> Display new resource badges</label><label><input type="checkbox" /> Lock subject cards during review</label></div><div className="teacher-live-preview"><div className="preview-toolbar"><span>Live teacher dashboard preview</span><a href={routePath("teacher")} target="_blank" rel="noreferrer">Open full view</a></div><div className="preview-frame" key={previewKey}><TeacherDashboard config={config} /></div></div></article></section>;
+function DashboardEditor({ config, updateConfig, reset, previewKey, publish, status, saveState }) {
+  const saveText = saveState === "saving" ? "Publishing..." : "Publish changes";
+  return <section className="staff-section staff-panel active"><div className="section-heading"><div><h2>Edit teacher dashboard</h2><p>Live-edit teacher-facing dashboard text, imagery and visibility flags before publishing.</p></div><div className="heading-actions"><button type="button" onClick={reset}>Reset preview</button><button type="button" onClick={publish} disabled={saveState === "saving"}>{saveText}</button></div></div><article className="dashboard-editor live-dashboard-editor"><div className="editor-copy"><span className="content-type">Teacher Dashboard Editor</span><h3>Update teacher-facing dashboard content</h3><p>Changes below update the preview immediately. Publishing writes the values to Firestore at dashboardConfig/main.</p><FirestoreStatus status={status} saveState={saveState} /></div><form className="editor-form"><label>Hero headline<input type="text" value={config.heroTitle} onChange={(event) => updateConfig({ heroTitle: event.target.value })} /></label><label>Hero subheading<input type="text" value={config.heroSubtitle} onChange={(event) => updateConfig({ heroSubtitle: event.target.value })} /></label><label>Hero image<select value={config.heroImageUrl} onChange={(event) => updateConfig({ heroImageUrl: event.target.value })}><option value={assets.heroKoala}>Koala with joey</option><option value={assets.giraffe}>Giraffe at Taronga</option><option value={assets.binturong}>Binturong encounter</option><option value={assets.gorilla}>Gorilla habitat</option></select></label><label>Featured resource title<select value={config.featuredResourceTitle} onChange={(event) => updateConfig({ featuredResourceTitle: event.target.value })}><option>Sustainable Futures</option><option>Adaptations of Australian Animals</option><option>Voices for Country</option></select></label></form><div className="flag-grid" aria-label="Teacher dashboard content flags"><label><input type="checkbox" checked={config.showContinueLearning} onChange={(event) => updateConfig({ showContinueLearning: event.target.checked })} /> Show Continue Learning</label><label><input type="checkbox" checked={config.showUpcomingPanel} onChange={(event) => updateConfig({ showUpcomingPanel: event.target.checked })} /> Show Upcoming panel</label><label><input type="checkbox" checked={config.showTrackaCard} onChange={(event) => updateConfig({ showTrackaCard: event.target.checked })} /> Feature Taronga Tracka card</label><label><input type="checkbox" /> Show beta student insights</label><label><input type="checkbox" defaultChecked /> Display new resource badges</label><label><input type="checkbox" /> Lock subject cards during review</label></div><div className="teacher-live-preview"><div className="preview-toolbar"><span>Live teacher dashboard preview</span><a href={routePath("teacher")} target="_blank" rel="noreferrer">Open full view</a></div><div className="preview-frame" key={previewKey}><TeacherDashboard config={config} /></div></div></article></section>;
+}
+
+function FirestoreStatus({ status, saveState }) {
+  if (status === "live" && !saveState) return null;
+
+  const messages = {
+    loading: "Loading Firestore dashboard config...",
+    missing: "Firestore connected. dashboardConfig/main has not been published yet.",
+    error: "Firestore config could not load. Check Firestore is enabled and rules allow access.",
+    saving: "Publishing dashboard config to Firestore...",
+    saved: "Dashboard config published to Firestore.",
+  };
+
+  const statusKey = saveState && saveState !== "idle" ? saveState : status;
+  return <p className={`firestore-status ${statusKey}`}>{messages[statusKey]}</p>;
 }
 
 function getRoutePath() {
@@ -252,9 +331,9 @@ function App() {
     };
   }, []);
 
-  if (path === "/teacher" || path === "/teacher.html") return <TeacherDashboard config={defaultDashboardConfig} />;
+  if (path === "/teacher" || path === "/teacher.html") return <TeacherPage />;
   if (path === "/staff" || path === "/staff.html") return <StaffConsole />;
-  if (path === "teacher" || path === "teacher.html") return <TeacherDashboard config={defaultDashboardConfig} />;
+  if (path === "teacher" || path === "teacher.html") return <TeacherPage />;
   if (path === "staff" || path === "staff.html") return <StaffConsole />;
   return <LandingPage />;
 }

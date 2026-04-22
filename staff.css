@@ -559,6 +559,26 @@ td {
   line-height: 1.5;
 }
 
+.firestore-status {
+  margin: 12px 0 0;
+  padding: 10px 12px;
+  border-radius: 7px;
+  color: var(--green-900);
+  background: var(--green-100);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.firestore-status.error {
+  color: #8b2635;
+  background: #fdebf2;
+}
+
+.firestore-status.saved {
+  color: var(--green-900);
+  background: #e6f4df;
+}
+
 .editor-actions {
   display: flex;
   align-items: start;
