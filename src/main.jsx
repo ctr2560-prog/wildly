@@ -22,6 +22,29 @@ const assets = {
   gorilla: assetPath("assets/gorilla.jpg"),
 };
 
+const stockImages = [
+  { label: "Koala with joey", subject: "Animals", key: "heroKoala", src: assets.heroKoala },
+  { label: "Koala portrait", subject: "Animals", key: "koala", src: assets.koala },
+  { label: "River habitat", subject: "Habitats", key: "river", src: assets.river },
+  { label: "Rhino habitat", subject: "Animals", key: "rhino", src: assets.rhino },
+  { label: "Giraffe", subject: "Animals", key: "giraffe", src: assets.giraffe },
+  { label: "Binturong", subject: "Animals", key: "binturong", src: assets.binturong },
+  { label: "Gorilla", subject: "Animals", key: "gorilla", src: assets.gorilla },
+  { label: "Rainforest canopy", subject: "Habitats", src: "https://loremflickr.com/900/520/rainforest,nature?lock=21" },
+  { label: "Ocean conservation", subject: "Science", src: "https://loremflickr.com/900/520/ocean,conservation?lock=22" },
+  { label: "Australian bushland", subject: "Habitats", src: "https://loremflickr.com/900/520/australian,bushland?lock=23" },
+  { label: "Wildlife camera", subject: "Technology & STEM", src: "https://loremflickr.com/900/520/wildlife,camera?lock=24" },
+  { label: "Students outdoors", subject: "Learning", src: "https://loremflickr.com/900/520/students,nature?lock=25" },
+  { label: "Animal tracks", subject: "Science", src: "https://loremflickr.com/900/520/animal,tracks?lock=26" },
+  { label: "Forest data collection", subject: "Mathematics", src: "https://loremflickr.com/900/520/fieldwork,data?lock=27" },
+  { label: "Wetlands", subject: "Geography", src: "https://loremflickr.com/900/520/wetland,wildlife?lock=28" },
+  { label: "Native plants", subject: "Science", src: "https://loremflickr.com/900/520/native,plants?lock=29" },
+  { label: "Conservation action", subject: "HSIE", src: "https://loremflickr.com/900/520/conservation,volunteer?lock=30" },
+  { label: "STEM design", subject: "Technology & STEM", src: "https://loremflickr.com/900/520/stem,design?lock=31" },
+  { label: "Creative nature art", subject: "CAPA", src: "https://loremflickr.com/900/520/nature,art?lock=32" },
+  { label: "Wellbeing in nature", subject: "PDHPE", src: "https://loremflickr.com/900/520/nature,wellbeing?lock=33" },
+];
+
 const subjects = [
   ["Science", "science", "Discover the living world and our place in it."],
   ["English", "english", "Communicate, create and explore ideas that matter."],
@@ -60,6 +83,9 @@ function createContentDraft(type = "Lesson") {
     summary: "",
     description: "",
     imageKey: "heroKoala",
+    image: "",
+    customImageUrl: "",
+    uploadedImageDataUrl: "",
     progress: 0,
     status: "Draft",
     durationMinutes: type === "Learning Path" ? 240 : 45,
@@ -72,6 +98,35 @@ function createContentDraft(type = "Lesson") {
     resourceLinks: "",
     lessonIds: [],
   };
+}
+
+function resizeImageFile(file) {
+  return new Promise((resolve, reject) => {
+    if (!file.type.startsWith("image/")) {
+      reject(new Error("Please choose an image file."));
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error("Unable to read image file."));
+    reader.onload = () => {
+      const image = new Image();
+      image.onerror = () => reject(new Error("Unable to load image file."));
+      image.onload = () => {
+        const maxWidth = 1000;
+        const maxHeight = 620;
+        const scale = Math.min(maxWidth / image.width, maxHeight / image.height, 1);
+        const canvas = document.createElement("canvas");
+        canvas.width = Math.round(image.width * scale);
+        canvas.height = Math.round(image.height * scale);
+        const context = canvas.getContext("2d");
+        context.drawImage(image, 0, 0, canvas.width, canvas.height);
+        resolve(canvas.toDataURL("image/jpeg", 0.76));
+      };
+      image.src = reader.result;
+    };
+    reader.readAsDataURL(file);
+  });
 }
 
 function Icon({ type, className = "nav-svg" }) {
@@ -431,6 +486,7 @@ function StaffConsole({ onLock }) {
       const contentType = item.type;
       const contentPayload = {
         ...item,
+        image: item.uploadedImageDataUrl || item.customImageUrl?.trim() || item.image || assets[item.imageKey] || assets.heroKoala,
         durationMinutes: Number(item.durationMinutes) || 0,
         outcomeCodes: Array.isArray(item.outcomeCodes) ? item.outcomeCodes : listFromText(item.outcomeCodes || ""),
         activityPrompts: Array.isArray(item.activityPrompts) ? item.activityPrompts : listFromText(item.activityPrompts || ""),
@@ -451,6 +507,8 @@ function StaffConsole({ onLock }) {
       delete contentPayload.studentWorksheetUrl;
       delete contentPayload.videoUrl;
       delete contentPayload.resourceLinks;
+      delete contentPayload.customImageUrl;
+      delete contentPayload.uploadedImageDataUrl;
 
       const contentRef = await addDoc(contentItemsCollection, {
         ...contentPayload,
@@ -522,7 +580,11 @@ function AnalyticsPanel() {
 function ContentPanel({ contentItems, status, saveState, seedContentItems, addContentItem }) {
   const [showForm, setShowForm] = useState(false);
   const [draft, setDraft] = useState(createContentDraft("Lesson"));
+  const [imageSearch, setImageSearch] = useState("");
+  const [imageError, setImageError] = useState("");
   const lessonOptions = contentItems.filter((item) => item.type === "Lesson");
+  const selectedImage = draft.uploadedImageDataUrl || draft.customImageUrl || draft.image || assets[draft.imageKey] || assets.heroKoala;
+  const filteredStockImages = stockImages.filter((image) => `${image.label} ${image.subject}`.toLowerCase().includes(imageSearch.toLowerCase()));
 
   async function submitContent(event) {
     event.preventDefault();
@@ -538,6 +600,29 @@ function ContentPanel({ contentItems, status, saveState, seedContentItems, addCo
   function changeType(type) {
     setDraft((current) => ({ ...createContentDraft(type), subject: current.subject, stage: current.stage, imageKey: current.imageKey }));
     setShowForm(true);
+  }
+
+  function chooseStockImage(stockImage) {
+    updateDraft({
+      imageKey: stockImage.key || "",
+      image: stockImage.key ? "" : stockImage.src,
+      customImageUrl: "",
+      uploadedImageDataUrl: "",
+    });
+    setImageError("");
+  }
+
+  async function uploadCardImage(event) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    try {
+      const dataUrl = await resizeImageFile(file);
+      updateDraft({ uploadedImageDataUrl: dataUrl, customImageUrl: "", image: dataUrl, imageKey: "" });
+      setImageError("");
+    } catch (error) {
+      setImageError(error.message);
+    }
   }
 
   function toggleLesson(lessonId) {
@@ -566,12 +651,28 @@ function ContentPanel({ contentItems, status, saveState, seedContentItems, addCo
         <label>Type<select value={draft.type} onChange={(event) => changeType(event.target.value)}><option>Lesson</option><option>Learning Path</option><option>Resource</option></select></label>
         <label>Subject<select value={draft.subject} onChange={(event) => updateDraft({ subject: event.target.value })}>{subjects.map(([label]) => <option key={label}>{label}</option>)}</select></label>
         <label>Stage<input type="text" value={draft.stage} onChange={(event) => updateDraft({ stage: event.target.value })} /></label>
-        <label>Image<select value={draft.imageKey} onChange={(event) => updateDraft({ imageKey: event.target.value })}><option value="heroKoala">Koala with joey</option><option value="river">River habitat</option><option value="rhino">Rhino</option><option value="giraffe">Giraffe</option><option value="binturong">Binturong</option><option value="gorilla">Gorilla</option><option value="koala">Koala</option></select></label>
         <label>Status<select value={draft.status} onChange={(event) => updateDraft({ status: event.target.value })}><option>Draft</option><option>Review</option><option>Published</option></select></label>
         <label>Duration<input type="number" min="0" value={draft.durationMinutes} onChange={(event) => updateDraft({ durationMinutes: event.target.value })} /></label>
         {draft.type !== "Learning Path" && <label>Progress<input type="number" min="0" max="100" value={draft.progress} onChange={(event) => updateDraft({ progress: event.target.value })} /></label>}
         <label className="wide-field">Summary<input type="text" required value={draft.summary} onChange={(event) => updateDraft({ summary: event.target.value })} /></label>
         <label className="wide-field">Description<textarea value={draft.description} onChange={(event) => updateDraft({ description: event.target.value })}></textarea></label>
+        <div className="content-form-header image-header">
+          <span className="content-type">Card Image</span>
+          <h3>Choose, paste or upload</h3>
+          <p>Pick from the stock range, paste an image URL, or upload a local image. Uploaded images are resized and saved with the Firestore card record.</p>
+        </div>
+        <div className="card-image-manager">
+          <div className="card-image-preview"><img src={selectedImage} alt="" /><span>Current card image</span></div>
+          <div className="image-controls">
+            <label>Search stock<input type="search" value={imageSearch} onChange={(event) => setImageSearch(event.target.value)} placeholder="koala, data, habitat, wellbeing..." /></label>
+            <label>Image URL<input type="url" value={draft.customImageUrl} onChange={(event) => updateDraft({ customImageUrl: event.target.value, uploadedImageDataUrl: "", image: event.target.value, imageKey: "" })} placeholder="https://..." /></label>
+            <label>Upload image<input type="file" accept="image/*" onChange={uploadCardImage} /></label>
+            {imageError && <p className="auth-error">{imageError}</p>}
+          </div>
+          <div className="stock-image-grid" aria-label="Stock image choices">
+            {filteredStockImages.map((stockImage) => <button type="button" className={selectedImage === stockImage.src ? "selected" : ""} key={`${stockImage.label}-${stockImage.src}`} onClick={() => chooseStockImage(stockImage)}><img src={stockImage.src} alt="" /><span>{stockImage.label}</span><small>{stockImage.subject}</small></button>)}
+          </div>
+        </div>
         <label className="wide-field">Curriculum outcomes<textarea placeholder="One outcome per line, e.g. ST2-4LW-S" value={draft.outcomeCodes} onChange={(event) => updateDraft({ outcomeCodes: event.target.value })}></textarea></label>
         <label className="wide-field">Teacher/student activities<textarea placeholder="One activity or prompt per line" value={draft.activityPrompts} onChange={(event) => updateDraft({ activityPrompts: event.target.value })}></textarea></label>
         <div className="content-form-header materials-header">
@@ -599,7 +700,7 @@ function ContentPanel({ contentItems, status, saveState, seedContentItems, addCo
           ...(item.materials?.resourceLinks || []),
         ].filter(Boolean).length;
 
-        return <article key={item.id || item.title}><span className="content-type">{item.type}</span><h3>{item.title}</h3><p>{item.summary || item.description}</p><small>{item.subject} - {item.stage} - {item.status}</small>{item.durationMinutes ? <small>{item.durationMinutes} minutes</small> : null}{item.lessonIds?.length ? <small>{item.lessonIds.length} sequenced lessons</small> : null}{materialCount ? <div className="material-tags"><span>{materialCount} material links</span>{item.materials?.canvaEmbedUrl ? <a href={item.materials.canvaEmbedUrl} target="_blank" rel="noreferrer">Canva</a> : null}{item.materials?.teacherGuideUrl ? <a href={item.materials.teacherGuideUrl} target="_blank" rel="noreferrer">Teacher guide</a> : null}{item.materials?.studentWorksheetUrl ? <a href={item.materials.studentWorksheetUrl} target="_blank" rel="noreferrer">Worksheet</a> : null}{item.materials?.videoUrl ? <a href={item.materials.videoUrl} target="_blank" rel="noreferrer">Video</a> : null}</div> : null}<button>Firestore item</button></article>;
+        return <article key={item.id || item.title}><img className="content-thumb" src={item.image} alt="" /><span className="content-type">{item.type}</span><h3>{item.title}</h3><p>{item.summary || item.description}</p><small>{item.subject} - {item.stage} - {item.status}</small>{item.durationMinutes ? <small>{item.durationMinutes} minutes</small> : null}{item.lessonIds?.length ? <small>{item.lessonIds.length} sequenced lessons</small> : null}{materialCount ? <div className="material-tags"><span>{materialCount} material links</span>{item.materials?.canvaEmbedUrl ? <a href={item.materials.canvaEmbedUrl} target="_blank" rel="noreferrer">Canva</a> : null}{item.materials?.teacherGuideUrl ? <a href={item.materials.teacherGuideUrl} target="_blank" rel="noreferrer">Teacher guide</a> : null}{item.materials?.studentWorksheetUrl ? <a href={item.materials.studentWorksheetUrl} target="_blank" rel="noreferrer">Worksheet</a> : null}{item.materials?.videoUrl ? <a href={item.materials.videoUrl} target="_blank" rel="noreferrer">Video</a> : null}</div> : null}<button>Firestore item</button></article>;
       })}<article className="create-card" onClick={() => changeType("Lesson")}><Icon type="plus" className="" /><h3>Create new content</h3><p>Start a lesson, learning path, media activity or Tracka mission.</p></article></div>
     </section>
   );
