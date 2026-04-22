@@ -92,12 +92,6 @@ button {
   margin-top: 22px;
 }
 
-.staff-auth-message {
-  display: grid;
-  gap: 16px;
-  margin-top: 22px;
-}
-
 .staff-auth-card label {
   display: grid;
   gap: 7px;

@@ -1,8 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { createRoot } from "react-dom/client";
-import { onAuthStateChanged, signInWithEmailAndPassword, signOut } from "firebase/auth";
 import { doc, onSnapshot, serverTimestamp, setDoc } from "firebase/firestore";
-import { auth, db } from "./firebase";
+import { db } from "./firebase";
 import "../landing.css";
 import "../styles.css";
 import "../staff.css";
@@ -42,16 +41,8 @@ const resources = [
   { title: "Wellbeing Through Nature Connection", subject: "PDHPE", stage: "Stage 2", progress: 80, image: assets.gorilla, type: "Reflection lesson" },
 ];
 
-const staffLoginDefaults = {
-  email: "staff@wildly.com.au",
-  password: "admin1",
-};
-
-const staffEmails = new Set([staffLoginDefaults.email]);
-
-function isStaffUser(user) {
-  return Boolean(user?.email && staffEmails.has(user.email.toLowerCase()));
-}
+const staffPassword = "admin";
+const staffSessionKey = "wildly-staff-session";
 
 function Icon({ type, className = "nav-svg" }) {
   const icons = {
@@ -239,57 +230,39 @@ function TeacherPage() {
   );
 }
 
-function useStaffAuth() {
-  const [user, setUser] = useState(null);
-  const [status, setStatus] = useState("loading");
-
-  useEffect(() => {
-    return onAuthStateChanged(auth, (currentUser) => {
-      setUser(currentUser);
-      setStatus("ready");
-    });
-  }, []);
-
-  return { user, status };
-}
-
 function StaffPage() {
-  const { user, status } = useStaffAuth();
+  const [isUnlocked, setIsUnlocked] = useState(() => window.sessionStorage.getItem(staffSessionKey) === "unlocked");
 
-  if (status === "loading") {
-    return <StaffAuthScreen mode="loading" />;
+  function unlock() {
+    window.sessionStorage.setItem(staffSessionKey, "unlocked");
+    setIsUnlocked(true);
   }
 
-  if (!user) {
-    return <StaffAuthScreen />;
+  function lock() {
+    window.sessionStorage.removeItem(staffSessionKey);
+    setIsUnlocked(false);
   }
 
-  if (!isStaffUser(user)) {
-    return <StaffAuthScreen mode="unauthorized" user={user} />;
+  if (!isUnlocked) {
+    return <StaffPasswordScreen onUnlock={unlock} />;
   }
 
-  return <StaffConsole user={user} />;
+  return <StaffConsole onLock={lock} />;
 }
 
-function StaffAuthScreen({ mode, user }) {
-  const [email, setEmail] = useState(staffLoginDefaults.email);
+function StaffPasswordScreen({ onUnlock }) {
   const [password, setPassword] = useState("");
-  const [status, setStatus] = useState("idle");
   const [error, setError] = useState("");
 
-  async function handleSubmit(event) {
+  function handleSubmit(event) {
     event.preventDefault();
-    setStatus("signing-in");
-    setError("");
 
-    try {
-      await signInWithEmailAndPassword(auth, email.trim(), password);
-      setStatus("idle");
-    } catch (authError) {
-      console.error("Unable to sign in staff user", authError);
-      setStatus("error");
-      setError("Staff login failed. Check the staff email exists in Firebase Auth and the password is correct.");
+    if (password === staffPassword) {
+      onUnlock();
+      return;
     }
+
+    setError("Incorrect password.");
   }
 
   return (
@@ -297,28 +270,19 @@ function StaffAuthScreen({ mode, user }) {
       <section className="staff-auth-card" aria-label="Taronga staff login">
         <img src={assets.wildlyLogo} alt="Wildly by Taronga" />
         <span>Taronga Staff Console</span>
-        <h1>Staff login</h1>
-        {mode === "loading" ? (
-          <p>Checking staff session...</p>
-        ) : mode === "unauthorized" ? (
-          <div className="staff-auth-message">
-            <p>{user.email} is signed in, but this account is not authorised for the Taronga staff console.</p>
-            <button type="button" onClick={() => signOut(auth)}>Sign out</button>
-          </div>
-        ) : (
-          <form onSubmit={handleSubmit}>
-            <label>Email<input type="email" value={email} onChange={(event) => setEmail(event.target.value)} autoComplete="username" /></label>
-            <label>Password<input type="password" value={password} onChange={(event) => setPassword(event.target.value)} placeholder={staffLoginDefaults.password} autoComplete="current-password" /></label>
-            {error && <p className="auth-error">{error}</p>}
-            <button type="submit" disabled={status === "signing-in"}>{status === "signing-in" ? "Signing in..." : "Log in"}</button>
-          </form>
-        )}
+        <h1>Staff password</h1>
+        <p>Enter the temporary staff password to edit Wildly dashboard content.</p>
+        <form onSubmit={handleSubmit}>
+          <label>Password<input type="password" value={password} onChange={(event) => setPassword(event.target.value)} placeholder={staffPassword} autoComplete="current-password" autoFocus /></label>
+          {error && <p className="auth-error">{error}</p>}
+          <button type="submit">Enter staff console</button>
+        </form>
       </section>
     </main>
   );
 }
 
-function StaffConsole({ user }) {
+function StaffConsole({ onLock }) {
   const [panel, setPanel] = useState("overview");
   const { config: savedConfig, status } = useDashboardConfig();
   const [config, setConfig] = useState(defaultDashboardConfig);
@@ -364,10 +328,10 @@ function StaffConsole({ user }) {
             ["dashboard", "monitor", "Edit Dashboard"],
           ].map(([id, icon, label]) => <button className={panel === id ? "active" : ""} type="button" data-panel={id} key={id} onClick={() => setPanel(id)}><Icon type={icon} className="" />{label}</button>)}
         </nav>
-        <article className="tracka-mini"><img src={assets.trackaLogo} alt="Taronga Tracka" /><p>Signed in as {user.email}. Tracka data connector ready for staff review.</p></article>
+        <article className="tracka-mini"><img src={assets.trackaLogo} alt="Taronga Tracka" /><p>Staff editing is unlocked for this browser session. Tracka data connector ready for staff review.</p></article>
       </aside>
       <main className="staff-workspace">
-        <header className="staff-topbar"><div><span>Taronga Staff Console</span><h1>Wildly learning operations</h1></div><div className="staff-actions"><a href={routePath("teacher")}>Teacher view</a><button type="button">Publish updates</button><button type="button" className="sign-out-button" onClick={() => signOut(auth)}>Sign out</button></div></header>
+        <header className="staff-topbar"><div><span>Taronga Staff Console</span><h1>Wildly learning operations</h1></div><div className="staff-actions"><a href={routePath("teacher")}>Teacher view</a><button type="button">Publish updates</button><button type="button" className="sign-out-button" onClick={onLock}>Lock staff view</button></div></header>
         {panel === "overview" && <section className="staff-panel active"><div className="overview-grid">{[["Active users", "4,286", "Teachers, students and Taronga staff this term"], ["Assigned resources", "18,940", "Lessons, learning paths and missions launched"], ["Tracka-linked sessions", "72%", "Activities connected to excursion or citizen science data"], ["Curriculum coverage", "146", "Mapped outcomes across NSW and Australian Curriculum"]].map(([label, value, copy]) => <article key={label}><span>{label}</span><strong>{value}</strong><p>{copy}</p></article>)}</div><div className="overview-snapshot"><article><h2>Current priorities</h2><p>Science and HSIE pathways are seeing the strongest uptake this month, with data interpretation flagged as the highest-value support area.</p></article><article><h2>Next recommended action</h2><p>Review Stage 3 animal adaptations lessons and prepare a Tracka mission bundle for upcoming school visits.</p></article></div></section>}
         {panel === "users" && <UsersPanel />}
         {panel === "analytics" && <AnalyticsPanel />}
