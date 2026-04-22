@@ -44,6 +44,31 @@ const defaultContentItems = [
 const staffPassword = "admin";
 const staffSessionKey = "wildly-staff-session";
 
+function listFromText(value) {
+  return value
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean);
+}
+
+function createContentDraft(type = "Lesson") {
+  return {
+    title: "",
+    type,
+    subject: "Science",
+    stage: "Stage 2",
+    summary: "",
+    description: "",
+    imageKey: "heroKoala",
+    progress: 0,
+    status: "Draft",
+    durationMinutes: type === "Learning Path" ? 240 : 45,
+    outcomeCodes: "",
+    activityPrompts: "",
+    lessonIds: [],
+  };
+}
+
 function Icon({ type, className = "nav-svg" }) {
   const icons = {
     grid: <><rect x="3" y="4" width="7" height="7" rx="1.5" /><rect x="14" y="4" width="7" height="7" rx="1.5" /><rect x="3" y="15" width="7" height="5" rx="1.5" /><rect x="14" y="15" width="7" height="5" rx="1.5" /></>,
@@ -369,11 +394,25 @@ function StaffConsole({ onLock }) {
   async function seedContentItems() {
     setContentSaveState("saving");
     try {
-      await Promise.all(defaultContentItems.map((item) => setDoc(
-        doc(db, "contentItems", item.id),
-        { ...item, updatedAt: serverTimestamp() },
-        { merge: true },
-      )));
+      await Promise.all(defaultContentItems.flatMap((item) => {
+        const writes = [
+          setDoc(
+            doc(db, "contentItems", item.id),
+            { ...item, itemKind: item.type === "Learning Path" ? "learningPath" : item.type === "Lesson" ? "lesson" : "resource", updatedAt: serverTimestamp() },
+            { merge: true },
+          ),
+        ];
+
+        if (item.type === "Lesson") {
+          writes.push(setDoc(doc(db, "lessons", item.id), { ...item, itemKind: "lesson", updatedAt: serverTimestamp() }, { merge: true }));
+        }
+
+        if (item.type === "Learning Path") {
+          writes.push(setDoc(doc(db, "learningPaths", item.id), { ...item, itemKind: "learningPath", lessonIds: item.lessonIds || [], updatedAt: serverTimestamp() }, { merge: true }));
+        }
+
+        return writes;
+      }));
       setContentSaveState("saved");
     } catch (error) {
       console.error("Unable to seed contentItems", error);
@@ -384,13 +423,42 @@ function StaffConsole({ onLock }) {
   async function addContentItem(item) {
     setContentSaveState("saving");
     try {
-      await addDoc(contentItemsCollection, {
+      const contentType = item.type;
+      const contentPayload = {
         ...item,
-        progress: Number(item.progress) || 0,
+        durationMinutes: Number(item.durationMinutes) || 0,
+        outcomeCodes: Array.isArray(item.outcomeCodes) ? item.outcomeCodes : listFromText(item.outcomeCodes || ""),
+        activityPrompts: Array.isArray(item.activityPrompts) ? item.activityPrompts : listFromText(item.activityPrompts || ""),
+        lessonIds: Array.isArray(item.lessonIds) ? item.lessonIds : [],
+        progress: contentType === "Learning Path" ? 0 : Number(item.progress) || 0,
+        itemKind: contentType === "Learning Path" ? "learningPath" : contentType === "Lesson" ? "lesson" : "resource",
+      };
+
+      const contentRef = await addDoc(contentItemsCollection, {
+        ...contentPayload,
         order: contentItems.length + 1,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
       });
+
+      if (contentType === "Lesson") {
+        await setDoc(doc(db, "lessons", contentRef.id), {
+          ...contentPayload,
+          contentItemId: contentRef.id,
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+        });
+      }
+
+      if (contentType === "Learning Path") {
+        await setDoc(doc(db, "learningPaths", contentRef.id), {
+          ...contentPayload,
+          contentItemId: contentRef.id,
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+        });
+      }
+
       setContentSaveState("saved");
     } catch (error) {
       console.error("Unable to add content item", error);
@@ -435,32 +503,13 @@ function AnalyticsPanel() {
 
 function ContentPanel({ contentItems, status, saveState, seedContentItems, addContentItem }) {
   const [showForm, setShowForm] = useState(false);
-  const [draft, setDraft] = useState({
-    title: "",
-    type: "Lesson",
-    subject: "Science",
-    stage: "Stage 2",
-    summary: "",
-    description: "",
-    imageKey: "heroKoala",
-    progress: 0,
-    status: "Draft",
-  });
+  const [draft, setDraft] = useState(createContentDraft("Lesson"));
+  const lessonOptions = contentItems.filter((item) => item.type === "Lesson");
 
   async function submitContent(event) {
     event.preventDefault();
     await addContentItem(draft);
-    setDraft({
-      title: "",
-      type: "Lesson",
-      subject: "Science",
-      stage: "Stage 2",
-      summary: "",
-      description: "",
-      imageKey: "heroKoala",
-      progress: 0,
-      status: "Draft",
-    });
+    setDraft(createContentDraft(draft.type));
     setShowForm(false);
   }
 
@@ -468,26 +517,52 @@ function ContentPanel({ contentItems, status, saveState, seedContentItems, addCo
     setDraft((current) => ({ ...current, ...patch }));
   }
 
+  function changeType(type) {
+    setDraft((current) => ({ ...createContentDraft(type), subject: current.subject, stage: current.stage, imageKey: current.imageKey }));
+    setShowForm(true);
+  }
+
+  function toggleLesson(lessonId) {
+    setDraft((current) => {
+      const lessonIds = current.lessonIds.includes(lessonId)
+        ? current.lessonIds.filter((id) => id !== lessonId)
+        : [...current.lessonIds, lessonId];
+      return { ...current, lessonIds };
+    });
+  }
+
   return (
     <section className="staff-section staff-panel active">
       <div className="section-heading">
-        <div><h2>Content</h2><p>Add, review and publish learning paths, lessons and resource-library items from Firestore.</p></div>
-        <div className="heading-actions"><button type="button" onClick={seedContentItems}>Seed Firestore content</button><button type="button" onClick={() => setShowForm((current) => !current)}>{showForm ? "Close form" : "Add content"}</button></div>
+        <div><h2>Content</h2><p>Create structured lessons and learning paths that teachers can browse, assign and eventually connect to Tracka missions.</p></div>
+        <div className="heading-actions"><button type="button" onClick={seedContentItems}>Seed Firestore content</button><button type="button" onClick={() => changeType("Lesson")}>New lesson</button><button type="button" onClick={() => changeType("Learning Path")}>New path</button></div>
       </div>
       <ContentFirestoreStatus status={status} saveState={saveState} />
       {showForm && <form className="content-form" onSubmit={submitContent}>
+        <div className="content-form-header">
+          <span className="content-type">{draft.type} Builder</span>
+          <h3>{draft.type === "Learning Path" ? "Create a sequenced learning path" : "Create a structured lesson"}</h3>
+          <p>{draft.type === "Learning Path" ? "Bundle published and draft lessons into a pathway teachers can assign as a sequence." : "Add the teaching details needed for a real classroom-ready lesson."}</p>
+        </div>
         <label>Title<input type="text" required value={draft.title} onChange={(event) => updateDraft({ title: event.target.value })} /></label>
-        <label>Type<select value={draft.type} onChange={(event) => updateDraft({ type: event.target.value })}><option>Lesson</option><option>Learning Path</option><option>Resource</option></select></label>
+        <label>Type<select value={draft.type} onChange={(event) => changeType(event.target.value)}><option>Lesson</option><option>Learning Path</option><option>Resource</option></select></label>
         <label>Subject<select value={draft.subject} onChange={(event) => updateDraft({ subject: event.target.value })}>{subjects.map(([label]) => <option key={label}>{label}</option>)}</select></label>
         <label>Stage<input type="text" value={draft.stage} onChange={(event) => updateDraft({ stage: event.target.value })} /></label>
         <label>Image<select value={draft.imageKey} onChange={(event) => updateDraft({ imageKey: event.target.value })}><option value="heroKoala">Koala with joey</option><option value="river">River habitat</option><option value="rhino">Rhino</option><option value="giraffe">Giraffe</option><option value="binturong">Binturong</option><option value="gorilla">Gorilla</option><option value="koala">Koala</option></select></label>
         <label>Status<select value={draft.status} onChange={(event) => updateDraft({ status: event.target.value })}><option>Draft</option><option>Review</option><option>Published</option></select></label>
-        <label>Progress<input type="number" min="0" max="100" value={draft.progress} onChange={(event) => updateDraft({ progress: event.target.value })} /></label>
+        <label>Duration<input type="number" min="0" value={draft.durationMinutes} onChange={(event) => updateDraft({ durationMinutes: event.target.value })} /></label>
+        {draft.type !== "Learning Path" && <label>Progress<input type="number" min="0" max="100" value={draft.progress} onChange={(event) => updateDraft({ progress: event.target.value })} /></label>}
         <label className="wide-field">Summary<input type="text" required value={draft.summary} onChange={(event) => updateDraft({ summary: event.target.value })} /></label>
         <label className="wide-field">Description<textarea value={draft.description} onChange={(event) => updateDraft({ description: event.target.value })}></textarea></label>
+        <label className="wide-field">Curriculum outcomes<textarea placeholder="One outcome per line, e.g. ST2-4LW-S" value={draft.outcomeCodes} onChange={(event) => updateDraft({ outcomeCodes: event.target.value })}></textarea></label>
+        <label className="wide-field">Teacher/student activities<textarea placeholder="One activity or prompt per line" value={draft.activityPrompts} onChange={(event) => updateDraft({ activityPrompts: event.target.value })}></textarea></label>
+        {draft.type === "Learning Path" && <fieldset className="lesson-picker">
+          <legend>Path lesson sequence</legend>
+          {lessonOptions.length ? lessonOptions.map((lesson) => <label key={lesson.id || lesson.title}><input type="checkbox" checked={draft.lessonIds.includes(lesson.id)} onChange={() => toggleLesson(lesson.id)} />{lesson.title}<small>{lesson.subject} - {lesson.stage}</small></label>) : <p>Create or seed lessons first, then add them to this path.</p>}
+        </fieldset>}
         <button type="submit" disabled={saveState === "saving"}>{saveState === "saving" ? "Saving..." : "Save to Firestore"}</button>
       </form>}
-      <div className="content-grid">{contentItems.map((item) => <article key={item.id || item.title}><span className="content-type">{item.type}</span><h3>{item.title}</h3><p>{item.summary || item.description}</p><small>{item.subject} - {item.stage} - {item.status}</small><button>Firestore item</button></article>)}<article className="create-card" onClick={() => setShowForm(true)}><Icon type="plus" className="" /><h3>Create new content</h3><p>Start a learning path, lesson, media activity or Tracka mission.</p></article></div>
+      <div className="content-grid">{contentItems.map((item) => <article key={item.id || item.title}><span className="content-type">{item.type}</span><h3>{item.title}</h3><p>{item.summary || item.description}</p><small>{item.subject} - {item.stage} - {item.status}</small>{item.durationMinutes ? <small>{item.durationMinutes} minutes</small> : null}{item.lessonIds?.length ? <small>{item.lessonIds.length} sequenced lessons</small> : null}<button>Firestore item</button></article>)}<article className="create-card" onClick={() => changeType("Lesson")}><Icon type="plus" className="" /><h3>Create new content</h3><p>Start a lesson, learning path, media activity or Tracka mission.</p></article></div>
     </section>
   );
 }

@@ -11,5 +11,15 @@ service cloud.firestore {
       allow read: if true;
       allow write: if true;
     }
+
+    match /lessons/{docId} {
+      allow read: if true;
+      allow write: if true;
+    }
+
+    match /learningPaths/{docId} {
+      allow read: if true;
+      allow write: if true;
+    }
   }
 }

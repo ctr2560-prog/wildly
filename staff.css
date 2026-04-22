@@ -748,6 +748,23 @@ td {
   background: #f8fbf6;
 }
 
+.content-form-header {
+  grid-column: 1 / -1;
+}
+
+.content-form-header h3 {
+  margin: 8px 0 6px;
+  color: var(--green-950);
+  font-size: 20px;
+}
+
+.content-form-header p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
 .content-form textarea {
   min-height: 92px;
   padding-top: 10px;
@@ -767,6 +784,56 @@ td {
   background: var(--green-900);
   font-size: 13px;
   font-weight: 900;
+}
+
+.lesson-picker {
+  display: grid;
+  grid-column: 1 / -1;
+  gap: 8px;
+  margin: 0;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+}
+
+.lesson-picker legend {
+  padding: 0 6px;
+  color: #516058;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.lesson-picker label {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-height: 38px;
+  padding: 0 10px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: #fbfcfa;
+  color: #435149;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.lesson-picker input {
+  width: auto;
+  height: auto;
+  accent-color: var(--green-900);
+}
+
+.lesson-picker small {
+  margin-left: auto;
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.lesson-picker p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
 }
 
 .flag-grid {
