@@ -65,6 +65,11 @@ function createContentDraft(type = "Lesson") {
     durationMinutes: type === "Learning Path" ? 240 : 45,
     outcomeCodes: "",
     activityPrompts: "",
+    canvaEmbedUrl: "",
+    teacherGuideUrl: "",
+    studentWorksheetUrl: "",
+    videoUrl: "",
+    resourceLinks: "",
     lessonIds: [],
   };
 }
@@ -429,10 +434,23 @@ function StaffConsole({ onLock }) {
         durationMinutes: Number(item.durationMinutes) || 0,
         outcomeCodes: Array.isArray(item.outcomeCodes) ? item.outcomeCodes : listFromText(item.outcomeCodes || ""),
         activityPrompts: Array.isArray(item.activityPrompts) ? item.activityPrompts : listFromText(item.activityPrompts || ""),
+        materials: {
+          canvaEmbedUrl: item.canvaEmbedUrl?.trim() || "",
+          teacherGuideUrl: item.teacherGuideUrl?.trim() || "",
+          studentWorksheetUrl: item.studentWorksheetUrl?.trim() || "",
+          videoUrl: item.videoUrl?.trim() || "",
+          resourceLinks: Array.isArray(item.resourceLinks) ? item.resourceLinks : listFromText(item.resourceLinks || ""),
+        },
         lessonIds: Array.isArray(item.lessonIds) ? item.lessonIds : [],
         progress: contentType === "Learning Path" ? 0 : Number(item.progress) || 0,
         itemKind: contentType === "Learning Path" ? "learningPath" : contentType === "Lesson" ? "lesson" : "resource",
       };
+
+      delete contentPayload.canvaEmbedUrl;
+      delete contentPayload.teacherGuideUrl;
+      delete contentPayload.studentWorksheetUrl;
+      delete contentPayload.videoUrl;
+      delete contentPayload.resourceLinks;
 
       const contentRef = await addDoc(contentItemsCollection, {
         ...contentPayload,
@@ -556,13 +574,33 @@ function ContentPanel({ contentItems, status, saveState, seedContentItems, addCo
         <label className="wide-field">Description<textarea value={draft.description} onChange={(event) => updateDraft({ description: event.target.value })}></textarea></label>
         <label className="wide-field">Curriculum outcomes<textarea placeholder="One outcome per line, e.g. ST2-4LW-S" value={draft.outcomeCodes} onChange={(event) => updateDraft({ outcomeCodes: event.target.value })}></textarea></label>
         <label className="wide-field">Teacher/student activities<textarea placeholder="One activity or prompt per line" value={draft.activityPrompts} onChange={(event) => updateDraft({ activityPrompts: event.target.value })}></textarea></label>
+        <div className="content-form-header materials-header">
+          <span className="content-type">Lesson Materials</span>
+          <h3>Links and embeds</h3>
+          <p>Paste Canva embeds, file links, video links or external resources. File upload buttons can come later with Firebase Storage.</p>
+        </div>
+        <label className="wide-field">Canva embed URL<input type="url" value={draft.canvaEmbedUrl} onChange={(event) => updateDraft({ canvaEmbedUrl: event.target.value })} placeholder="https://www.canva.com/design/..." /></label>
+        <label>Teacher guide URL<input type="url" value={draft.teacherGuideUrl} onChange={(event) => updateDraft({ teacherGuideUrl: event.target.value })} placeholder="PDF, Google Drive or Canva link" /></label>
+        <label>Student worksheet URL<input type="url" value={draft.studentWorksheetUrl} onChange={(event) => updateDraft({ studentWorksheetUrl: event.target.value })} placeholder="Worksheet link" /></label>
+        <label>Video/media URL<input type="url" value={draft.videoUrl} onChange={(event) => updateDraft({ videoUrl: event.target.value })} placeholder="YouTube, Vimeo or hosted media" /></label>
+        <label className="wide-field">Extra resource links<textarea placeholder="One URL per line" value={draft.resourceLinks} onChange={(event) => updateDraft({ resourceLinks: event.target.value })}></textarea></label>
         {draft.type === "Learning Path" && <fieldset className="lesson-picker">
           <legend>Path lesson sequence</legend>
           {lessonOptions.length ? lessonOptions.map((lesson) => <label key={lesson.id || lesson.title}><input type="checkbox" checked={draft.lessonIds.includes(lesson.id)} onChange={() => toggleLesson(lesson.id)} />{lesson.title}<small>{lesson.subject} - {lesson.stage}</small></label>) : <p>Create or seed lessons first, then add them to this path.</p>}
         </fieldset>}
         <button type="submit" disabled={saveState === "saving"}>{saveState === "saving" ? "Saving..." : "Save to Firestore"}</button>
       </form>}
-      <div className="content-grid">{contentItems.map((item) => <article key={item.id || item.title}><span className="content-type">{item.type}</span><h3>{item.title}</h3><p>{item.summary || item.description}</p><small>{item.subject} - {item.stage} - {item.status}</small>{item.durationMinutes ? <small>{item.durationMinutes} minutes</small> : null}{item.lessonIds?.length ? <small>{item.lessonIds.length} sequenced lessons</small> : null}<button>Firestore item</button></article>)}<article className="create-card" onClick={() => changeType("Lesson")}><Icon type="plus" className="" /><h3>Create new content</h3><p>Start a lesson, learning path, media activity or Tracka mission.</p></article></div>
+      <div className="content-grid">{contentItems.map((item) => {
+        const materialCount = [
+          item.materials?.canvaEmbedUrl,
+          item.materials?.teacherGuideUrl,
+          item.materials?.studentWorksheetUrl,
+          item.materials?.videoUrl,
+          ...(item.materials?.resourceLinks || []),
+        ].filter(Boolean).length;
+
+        return <article key={item.id || item.title}><span className="content-type">{item.type}</span><h3>{item.title}</h3><p>{item.summary || item.description}</p><small>{item.subject} - {item.stage} - {item.status}</small>{item.durationMinutes ? <small>{item.durationMinutes} minutes</small> : null}{item.lessonIds?.length ? <small>{item.lessonIds.length} sequenced lessons</small> : null}{materialCount ? <div className="material-tags"><span>{materialCount} material links</span>{item.materials?.canvaEmbedUrl ? <a href={item.materials.canvaEmbedUrl} target="_blank" rel="noreferrer">Canva</a> : null}{item.materials?.teacherGuideUrl ? <a href={item.materials.teacherGuideUrl} target="_blank" rel="noreferrer">Teacher guide</a> : null}{item.materials?.studentWorksheetUrl ? <a href={item.materials.studentWorksheetUrl} target="_blank" rel="noreferrer">Worksheet</a> : null}{item.materials?.videoUrl ? <a href={item.materials.videoUrl} target="_blank" rel="noreferrer">Video</a> : null}</div> : null}<button>Firestore item</button></article>;
+      })}<article className="create-card" onClick={() => changeType("Lesson")}><Icon type="plus" className="" /><h3>Create new content</h3><p>Start a lesson, learning path, media activity or Tracka mission.</p></article></div>
     </section>
   );
 }
