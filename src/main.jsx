@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { createRoot } from "react-dom/client";
-import { doc, onSnapshot, serverTimestamp, setDoc } from "firebase/firestore";
+import { addDoc, collection, doc, onSnapshot, serverTimestamp, setDoc } from "firebase/firestore";
 import { db } from "./firebase";
 import "../landing.css";
 import "../styles.css";
@@ -32,13 +32,13 @@ const subjects = [
   ["Technology & STEM", "stem", "Design, innovate and solve real-world challenges."],
 ];
 
-const resources = [
-  { title: "Adaptations of Australian Animals", subject: "Science", stage: "Stage 2", progress: 65, image: assets.river, type: "Lesson sequence" },
-  { title: "First Nations Cultures and Country", subject: "HSIE", stage: "Stage 3", progress: 40, image: assets.rhino, type: "Inquiry resource" },
-  { title: "Design for a Sustainable Future", subject: "Technology & STEM", stage: "Stage 4", progress: 25, image: assets.binturong, type: "Design challenge" },
-  { title: "Persuasive Texts for Wildlife Action", subject: "English", stage: "Stage 3", progress: 15, image: assets.koala, type: "Writing task" },
-  { title: "Animal Movement and Data Patterns", subject: "Mathematics", stage: "Stage 3", progress: 55, image: assets.giraffe, type: "Data activity" },
-  { title: "Wellbeing Through Nature Connection", subject: "PDHPE", stage: "Stage 2", progress: 80, image: assets.gorilla, type: "Reflection lesson" },
+const defaultContentItems = [
+  { id: "adaptations-australian-animals", title: "Adaptations of Australian Animals", type: "Lesson", subject: "Science", stage: "Stage 2", progress: 65, imageKey: "river", summary: "Stage 2 science lesson with teacher guide and student prompts.", description: "Explore animal adaptations through observation, vocabulary and evidence-based explanation.", status: "Published", order: 1 },
+  { id: "first-nations-cultures-country", title: "First Nations Cultures and Country", type: "Resource", subject: "HSIE", stage: "Stage 3", progress: 40, imageKey: "rhino", summary: "First Nations perspectives for Stage 3 inquiry.", description: "Support respectful inquiry into Country, culture and conservation connections.", status: "Published", order: 2 },
+  { id: "sustainable-futures", title: "Sustainable Futures", type: "Learning Path", subject: "Technology & STEM", stage: "Stage 4", progress: 25, imageKey: "binturong", summary: "8 lessons across Science, HSIE and Technology & STEM.", description: "Build a sequence around conservation design, systems thinking and action planning.", status: "Published", order: 3 },
+  { id: "persuasive-texts-wildlife-action", title: "Persuasive Texts for Wildlife Action", type: "Lesson", subject: "English", stage: "Stage 3", progress: 15, imageKey: "koala", summary: "Writing task with model texts and scaffolds.", description: "Use wildlife conservation contexts to plan, draft and refine persuasive writing.", status: "Draft", order: 4 },
+  { id: "animal-movement-data-patterns", title: "Animal Movement and Data Patterns", type: "Resource", subject: "Mathematics", stage: "Stage 3", progress: 55, imageKey: "giraffe", summary: "Data activity using animal movement and habitat observations.", description: "Interpret data patterns and represent findings using classroom-friendly datasets.", status: "Published", order: 5 },
+  { id: "wellbeing-through-nature", title: "Wellbeing Through Nature Connection", type: "Lesson", subject: "PDHPE", stage: "Stage 2", progress: 80, imageKey: "gorilla", summary: "Reflection lesson connecting wellbeing, nature and community.", description: "Guide students through reflective prompts about nature connection and wellbeing.", status: "Review", order: 6 },
 ];
 
 const staffPassword = "admin";
@@ -141,14 +141,15 @@ function LandingPage() {
   );
 }
 
-function TeacherDashboard({ config }) {
+function TeacherDashboard({ config, contentItems = defaultContentItems.map(resolveContentItem) }) {
   const [activeSubject, setActiveSubject] = useState(null);
   const [query, setQuery] = useState("");
-  const visibleResources = useMemo(() => resources.filter((resource) => {
+  const visibleResources = useMemo(() => contentItems.filter((resource) => {
+    const isPublished = resource.status === "Published";
     const matchesSubject = !activeSubject || resource.subject === activeSubject;
     const haystack = `${resource.title} ${resource.subject} ${resource.stage} ${resource.type}`.toLowerCase();
-    return matchesSubject && haystack.includes(query.toLowerCase());
-  }).slice(0, 3), [activeSubject, query]);
+    return isPublished && matchesSubject && haystack.includes(query.toLowerCase());
+  }).slice(0, 3), [activeSubject, contentItems, query]);
 
   const showContinue = config.showContinueLearning;
   const showUpcoming = config.showUpcomingPanel;
@@ -194,6 +195,52 @@ const defaultDashboardConfig = {
 };
 
 const dashboardConfigRef = doc(db, "dashboardConfig", "main");
+const contentItemsCollection = collection(db, "contentItems");
+
+function resolveContentItem(item = {}) {
+  const image = item.image || assets[item.imageKey] || assets.heroKoala;
+  return {
+    progress: 0,
+    status: "Draft",
+    type: "Resource",
+    subject: "Science",
+    stage: "Stage 2",
+    ...item,
+    image,
+  };
+}
+
+function sortContentItems(items) {
+  return [...items].sort((a, b) => (a.order ?? 999) - (b.order ?? 999) || a.title.localeCompare(b.title));
+}
+
+function useContentItems() {
+  const [items, setItems] = useState(defaultContentItems.map(resolveContentItem));
+  const [status, setStatus] = useState("loading");
+
+  useEffect(() => {
+    return onSnapshot(
+      contentItemsCollection,
+      (snapshot) => {
+        if (snapshot.empty) {
+          setItems(defaultContentItems.map(resolveContentItem));
+          setStatus("missing");
+          return;
+        }
+
+        setItems(sortContentItems(snapshot.docs.map((snapshotDoc) => resolveContentItem({ id: snapshotDoc.id, ...snapshotDoc.data() }))));
+        setStatus("live");
+      },
+      (error) => {
+        console.error("Unable to load contentItems", error);
+        setItems(defaultContentItems.map(resolveContentItem));
+        setStatus("error");
+      },
+    );
+  }, []);
+
+  return { items, status };
+}
 
 function withDefaultDashboardConfig(config = {}) {
   return { ...defaultDashboardConfig, ...config };
@@ -222,10 +269,12 @@ function useDashboardConfig() {
 
 function TeacherPage() {
   const { config, status } = useDashboardConfig();
+  const { items: contentItems, status: contentStatus } = useContentItems();
   return (
     <>
       <FirestoreStatus status={status} />
-      <TeacherDashboard config={config} />
+      <ContentFirestoreStatus status={contentStatus} />
+      <TeacherDashboard config={config} contentItems={contentItems} />
     </>
   );
 }
@@ -285,9 +334,11 @@ function StaffPasswordScreen({ onUnlock }) {
 function StaffConsole({ onLock }) {
   const [panel, setPanel] = useState("overview");
   const { config: savedConfig, status } = useDashboardConfig();
+  const { items: contentItems, status: contentStatus } = useContentItems();
   const [config, setConfig] = useState(defaultDashboardConfig);
   const [previewKey, setPreviewKey] = useState(0);
   const [saveState, setSaveState] = useState("idle");
+  const [contentSaveState, setContentSaveState] = useState("idle");
 
   useEffect(() => {
     setConfig(savedConfig);
@@ -315,6 +366,38 @@ function StaffConsole({ onLock }) {
     }
   }
 
+  async function seedContentItems() {
+    setContentSaveState("saving");
+    try {
+      await Promise.all(defaultContentItems.map((item) => setDoc(
+        doc(db, "contentItems", item.id),
+        { ...item, updatedAt: serverTimestamp() },
+        { merge: true },
+      )));
+      setContentSaveState("saved");
+    } catch (error) {
+      console.error("Unable to seed contentItems", error);
+      setContentSaveState("error");
+    }
+  }
+
+  async function addContentItem(item) {
+    setContentSaveState("saving");
+    try {
+      await addDoc(contentItemsCollection, {
+        ...item,
+        progress: Number(item.progress) || 0,
+        order: contentItems.length + 1,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      });
+      setContentSaveState("saved");
+    } catch (error) {
+      console.error("Unable to add content item", error);
+      setContentSaveState("error");
+    }
+  }
+
   return (
     <div className="staff-shell">
       <aside className="staff-sidebar">
@@ -335,8 +418,8 @@ function StaffConsole({ onLock }) {
         {panel === "overview" && <section className="staff-panel active"><div className="overview-grid">{[["Active users", "4,286", "Teachers, students and Taronga staff this term"], ["Assigned resources", "18,940", "Lessons, learning paths and missions launched"], ["Tracka-linked sessions", "72%", "Activities connected to excursion or citizen science data"], ["Curriculum coverage", "146", "Mapped outcomes across NSW and Australian Curriculum"]].map(([label, value, copy]) => <article key={label}><span>{label}</span><strong>{value}</strong><p>{copy}</p></article>)}</div><div className="overview-snapshot"><article><h2>Current priorities</h2><p>Science and HSIE pathways are seeing the strongest uptake this month, with data interpretation flagged as the highest-value support area.</p></article><article><h2>Next recommended action</h2><p>Review Stage 3 animal adaptations lessons and prepare a Tracka mission bundle for upcoming school visits.</p></article></div></section>}
         {panel === "users" && <UsersPanel />}
         {panel === "analytics" && <AnalyticsPanel />}
-        {panel === "content" && <ContentPanel />}
-        {panel === "dashboard" && <DashboardEditor config={config} updateConfig={updateConfig} reset={() => { setConfig(defaultDashboardConfig); setPreviewKey((key) => key + 1); }} previewKey={previewKey} publish={publishDashboardConfig} status={status} saveState={saveState} />}
+        {panel === "content" && <ContentPanel contentItems={contentItems} status={contentStatus} saveState={contentSaveState} seedContentItems={seedContentItems} addContentItem={addContentItem} />}
+        {panel === "dashboard" && <DashboardEditor config={config} contentItems={contentItems} updateConfig={updateConfig} reset={() => { setConfig(defaultDashboardConfig); setPreviewKey((key) => key + 1); }} previewKey={previewKey} publish={publishDashboardConfig} status={status} saveState={saveState} />}
       </main>
     </div>
   );
@@ -350,13 +433,68 @@ function AnalyticsPanel() {
   return <section className="staff-section staff-panel active"><div className="section-heading"><div><h2>Analytics</h2><p>View engagement, learning progress, curriculum gaps and Tracka-connected outcomes.</p></div><button>Export report</button></div><div className="analytics-grid"><article className="wide-card"><h3>Learning engagement by week</h3><div className="bar-chart">{[42, 58, 51, 76, 68, 88, 81].map((height) => <span style={{ height: `${height}%` }} key={height}></span>)}</div></article><article><h3>Knowledge gaps</h3>{[["Adaptation vs behaviour", 64], ["Data interpretation", 48], ["Persuasive writing", 37]].map(([label, width]) => <React.Fragment key={label}><p className="metric">{label}</p><div className="meter"><span style={{ width: `${width}%` }}></span></div></React.Fragment>)}</article><article><h3>Results snapshot</h3><ul className="result-list"><li>Below expected <strong>18%</strong></li><li>At expected <strong>57%</strong></li><li>Above expected <strong>25%</strong></li></ul></article></div></section>;
 }
 
-function ContentPanel() {
-  return <section className="staff-section staff-panel active"><div className="section-heading"><div><h2>Content</h2><p>Add, review and publish learning paths, lessons and resource-library items.</p></div><button type="button">Add content</button></div><div className="content-grid">{[["Learning Path", "Sustainable Futures", "8 lessons across Science, HSIE and Technology & STEM.", "Edit path"], ["Lesson", "Adaptations of Australian Animals", "Stage 2 science lesson with teacher guide and student prompts.", "Edit lesson"], ["Resource", "Koala Encounter Media Pack", "Images, video prompts and vocabulary support for early years.", "Edit resource"]].map(([type, title, copy, action]) => <article key={title}><span className="content-type">{type}</span><h3>{title}</h3><p>{copy}</p><button>{action}</button></article>)}<article className="create-card"><Icon type="plus" className="" /><h3>Create new content</h3><p>Start a learning path, lesson, media activity or Tracka mission.</p></article></div></section>;
+function ContentPanel({ contentItems, status, saveState, seedContentItems, addContentItem }) {
+  const [showForm, setShowForm] = useState(false);
+  const [draft, setDraft] = useState({
+    title: "",
+    type: "Lesson",
+    subject: "Science",
+    stage: "Stage 2",
+    summary: "",
+    description: "",
+    imageKey: "heroKoala",
+    progress: 0,
+    status: "Draft",
+  });
+
+  async function submitContent(event) {
+    event.preventDefault();
+    await addContentItem(draft);
+    setDraft({
+      title: "",
+      type: "Lesson",
+      subject: "Science",
+      stage: "Stage 2",
+      summary: "",
+      description: "",
+      imageKey: "heroKoala",
+      progress: 0,
+      status: "Draft",
+    });
+    setShowForm(false);
+  }
+
+  function updateDraft(patch) {
+    setDraft((current) => ({ ...current, ...patch }));
+  }
+
+  return (
+    <section className="staff-section staff-panel active">
+      <div className="section-heading">
+        <div><h2>Content</h2><p>Add, review and publish learning paths, lessons and resource-library items from Firestore.</p></div>
+        <div className="heading-actions"><button type="button" onClick={seedContentItems}>Seed Firestore content</button><button type="button" onClick={() => setShowForm((current) => !current)}>{showForm ? "Close form" : "Add content"}</button></div>
+      </div>
+      <ContentFirestoreStatus status={status} saveState={saveState} />
+      {showForm && <form className="content-form" onSubmit={submitContent}>
+        <label>Title<input type="text" required value={draft.title} onChange={(event) => updateDraft({ title: event.target.value })} /></label>
+        <label>Type<select value={draft.type} onChange={(event) => updateDraft({ type: event.target.value })}><option>Lesson</option><option>Learning Path</option><option>Resource</option></select></label>
+        <label>Subject<select value={draft.subject} onChange={(event) => updateDraft({ subject: event.target.value })}>{subjects.map(([label]) => <option key={label}>{label}</option>)}</select></label>
+        <label>Stage<input type="text" value={draft.stage} onChange={(event) => updateDraft({ stage: event.target.value })} /></label>
+        <label>Image<select value={draft.imageKey} onChange={(event) => updateDraft({ imageKey: event.target.value })}><option value="heroKoala">Koala with joey</option><option value="river">River habitat</option><option value="rhino">Rhino</option><option value="giraffe">Giraffe</option><option value="binturong">Binturong</option><option value="gorilla">Gorilla</option><option value="koala">Koala</option></select></label>
+        <label>Status<select value={draft.status} onChange={(event) => updateDraft({ status: event.target.value })}><option>Draft</option><option>Review</option><option>Published</option></select></label>
+        <label>Progress<input type="number" min="0" max="100" value={draft.progress} onChange={(event) => updateDraft({ progress: event.target.value })} /></label>
+        <label className="wide-field">Summary<input type="text" required value={draft.summary} onChange={(event) => updateDraft({ summary: event.target.value })} /></label>
+        <label className="wide-field">Description<textarea value={draft.description} onChange={(event) => updateDraft({ description: event.target.value })}></textarea></label>
+        <button type="submit" disabled={saveState === "saving"}>{saveState === "saving" ? "Saving..." : "Save to Firestore"}</button>
+      </form>}
+      <div className="content-grid">{contentItems.map((item) => <article key={item.id || item.title}><span className="content-type">{item.type}</span><h3>{item.title}</h3><p>{item.summary || item.description}</p><small>{item.subject} - {item.stage} - {item.status}</small><button>Firestore item</button></article>)}<article className="create-card" onClick={() => setShowForm(true)}><Icon type="plus" className="" /><h3>Create new content</h3><p>Start a learning path, lesson, media activity or Tracka mission.</p></article></div>
+    </section>
+  );
 }
 
-function DashboardEditor({ config, updateConfig, reset, previewKey, publish, status, saveState }) {
+function DashboardEditor({ config, contentItems, updateConfig, reset, previewKey, publish, status, saveState }) {
   const saveText = saveState === "saving" ? "Publishing..." : "Publish changes";
-  return <section className="staff-section staff-panel active"><div className="section-heading"><div><h2>Edit teacher dashboard</h2><p>Live-edit teacher-facing dashboard text, imagery and visibility flags before publishing.</p></div><div className="heading-actions"><button type="button" onClick={reset}>Reset preview</button><button type="button" onClick={publish} disabled={saveState === "saving"}>{saveText}</button></div></div><article className="dashboard-editor live-dashboard-editor"><div className="editor-copy"><span className="content-type">Teacher Dashboard Editor</span><h3>Update teacher-facing dashboard content</h3><p>Changes below update the preview immediately. Publishing writes the values to Firestore at dashboardConfig/main.</p><FirestoreStatus status={status} saveState={saveState} /></div><form className="editor-form"><label>Hero headline<input type="text" value={config.heroTitle} onChange={(event) => updateConfig({ heroTitle: event.target.value })} /></label><label>Hero subheading<input type="text" value={config.heroSubtitle} onChange={(event) => updateConfig({ heroSubtitle: event.target.value })} /></label><label>Hero image<select value={config.heroImageUrl} onChange={(event) => updateConfig({ heroImageUrl: event.target.value })}><option value={assets.heroKoala}>Koala with joey</option><option value={assets.giraffe}>Giraffe at Taronga</option><option value={assets.binturong}>Binturong encounter</option><option value={assets.gorilla}>Gorilla habitat</option></select></label><label>Featured resource title<select value={config.featuredResourceTitle} onChange={(event) => updateConfig({ featuredResourceTitle: event.target.value })}><option>Sustainable Futures</option><option>Adaptations of Australian Animals</option><option>Voices for Country</option></select></label></form><div className="flag-grid" aria-label="Teacher dashboard content flags"><label><input type="checkbox" checked={config.showContinueLearning} onChange={(event) => updateConfig({ showContinueLearning: event.target.checked })} /> Show Continue Learning</label><label><input type="checkbox" checked={config.showUpcomingPanel} onChange={(event) => updateConfig({ showUpcomingPanel: event.target.checked })} /> Show Upcoming panel</label><label><input type="checkbox" checked={config.showTrackaCard} onChange={(event) => updateConfig({ showTrackaCard: event.target.checked })} /> Feature Taronga Tracka card</label><label><input type="checkbox" /> Show beta student insights</label><label><input type="checkbox" defaultChecked /> Display new resource badges</label><label><input type="checkbox" /> Lock subject cards during review</label></div><div className="teacher-live-preview"><div className="preview-toolbar"><span>Live teacher dashboard preview</span><a href={routePath("teacher")} target="_blank" rel="noreferrer">Open full view</a></div><div className="preview-frame" key={previewKey}><TeacherDashboard config={config} /></div></div></article></section>;
+  return <section className="staff-section staff-panel active"><div className="section-heading"><div><h2>Edit teacher dashboard</h2><p>Live-edit teacher-facing dashboard text, imagery and visibility flags before publishing.</p></div><div className="heading-actions"><button type="button" onClick={reset}>Reset preview</button><button type="button" onClick={publish} disabled={saveState === "saving"}>{saveText}</button></div></div><article className="dashboard-editor live-dashboard-editor"><div className="editor-copy"><span className="content-type">Teacher Dashboard Editor</span><h3>Update teacher-facing dashboard content</h3><p>Changes below update the preview immediately. Publishing writes the values to Firestore at dashboardConfig/main.</p><FirestoreStatus status={status} saveState={saveState} /></div><form className="editor-form"><label>Hero headline<input type="text" value={config.heroTitle} onChange={(event) => updateConfig({ heroTitle: event.target.value })} /></label><label>Hero subheading<input type="text" value={config.heroSubtitle} onChange={(event) => updateConfig({ heroSubtitle: event.target.value })} /></label><label>Hero image<select value={config.heroImageUrl} onChange={(event) => updateConfig({ heroImageUrl: event.target.value })}><option value={assets.heroKoala}>Koala with joey</option><option value={assets.giraffe}>Giraffe at Taronga</option><option value={assets.binturong}>Binturong encounter</option><option value={assets.gorilla}>Gorilla habitat</option></select></label><label>Featured resource title<select value={config.featuredResourceTitle} onChange={(event) => updateConfig({ featuredResourceTitle: event.target.value })}>{contentItems.map((item) => <option key={item.id || item.title}>{item.title}</option>)}</select></label></form><div className="flag-grid" aria-label="Teacher dashboard content flags"><label><input type="checkbox" checked={config.showContinueLearning} onChange={(event) => updateConfig({ showContinueLearning: event.target.checked })} /> Show Continue Learning</label><label><input type="checkbox" checked={config.showUpcomingPanel} onChange={(event) => updateConfig({ showUpcomingPanel: event.target.checked })} /> Show Upcoming panel</label><label><input type="checkbox" checked={config.showTrackaCard} onChange={(event) => updateConfig({ showTrackaCard: event.target.checked })} /> Feature Taronga Tracka card</label><label><input type="checkbox" /> Show beta student insights</label><label><input type="checkbox" defaultChecked /> Display new resource badges</label><label><input type="checkbox" /> Lock subject cards during review</label></div><div className="teacher-live-preview"><div className="preview-toolbar"><span>Live teacher dashboard preview</span><a href={routePath("teacher")} target="_blank" rel="noreferrer">Open full view</a></div><div className="preview-frame" key={previewKey}><TeacherDashboard config={config} contentItems={contentItems} /></div></div></article></section>;
 }
 
 function FirestoreStatus({ status, saveState }) {
@@ -368,6 +506,21 @@ function FirestoreStatus({ status, saveState }) {
     error: "Firestore config could not load. Check Firestore is enabled and rules allow access.",
     saving: "Publishing dashboard config to Firestore...",
     saved: "Dashboard config published to Firestore.",
+  };
+
+  const statusKey = saveState && saveState !== "idle" ? saveState : status;
+  return <p className={`firestore-status ${statusKey}`}>{messages[statusKey]}</p>;
+}
+
+function ContentFirestoreStatus({ status, saveState }) {
+  if (status === "live" && !saveState) return null;
+
+  const messages = {
+    loading: "Loading Firestore content library...",
+    missing: "Firestore contentItems is empty. Showing fallback content until you seed or add content.",
+    error: "Firestore content could not load. Check rules allow access to contentItems.",
+    saving: "Writing content to Firestore...",
+    saved: "Content saved to Firestore.",
   };
 
   const statusKey = saveState && saveState !== "idle" ? saveState : status;
