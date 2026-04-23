@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { createRoot } from "react-dom/client";
-import { addDoc, collection, doc, onSnapshot, serverTimestamp, setDoc } from "firebase/firestore";
+import { addDoc, collection, deleteDoc, doc, onSnapshot, serverTimestamp, setDoc } from "firebase/firestore";
 import { db } from "./firebase";
 import "../landing.css";
 import "../styles.css";
@@ -88,15 +88,23 @@ function createContentDraft(type = "Lesson") {
     uploadedImageDataUrl: "",
     progress: 0,
     status: "Draft",
-    durationMinutes: type === "Learning Path" ? 240 : 45,
+    durationMinutes: type === "Lesson" ? 45 : 0,
+    durationWeeks: type === "Learning Path" ? 6 : 0,
     outcomeCodes: "",
     activityPrompts: "",
     canvaEmbedUrl: "",
     teacherGuideUrl: "",
     studentWorksheetUrl: "",
     videoUrl: "",
+    teacherAdminUrl: "",
+    unitPlanUrl: "",
+    lessonPlanUrl: "",
+    resourceUrl: "",
     resourceLinks: "",
+    learningPathId: "",
+    lessonId: "",
     lessonIds: [],
+    resourceIds: [],
   };
 }
 
@@ -282,6 +290,18 @@ const defaultDashboardConfig = {
 const dashboardConfigRef = doc(db, "dashboardConfig", "main");
 const contentItemsCollection = collection(db, "contentItems");
 
+function collectionForContentType(type) {
+  return {
+    "Learning Path": "learningPaths",
+    Lesson: "lessons",
+    Resource: "resources",
+  }[type] || "";
+}
+
+function itemKindForContentType(type) {
+  return type === "Learning Path" ? "learningPath" : type === "Lesson" ? "lesson" : "resource";
+}
+
 function resolveContentItem(item = {}) {
   const image = item.image || assets[item.imageKey] || assets.heroKoala;
   return {
@@ -290,6 +310,9 @@ function resolveContentItem(item = {}) {
     type: "Resource",
     subject: "Science",
     stage: "Stage 2",
+    materials: {},
+    lessonIds: [],
+    resourceIds: [],
     ...item,
     image,
   };
@@ -455,20 +478,23 @@ function StaffConsole({ onLock }) {
     setContentSaveState("saving");
     try {
       await Promise.all(defaultContentItems.flatMap((item) => {
+        const mirrorCollection = collectionForContentType(item.type);
         const writes = [
           setDoc(
             doc(db, "contentItems", item.id),
-            { ...item, itemKind: item.type === "Learning Path" ? "learningPath" : item.type === "Lesson" ? "lesson" : "resource", updatedAt: serverTimestamp() },
+            { ...item, itemKind: itemKindForContentType(item.type), updatedAt: serverTimestamp() },
             { merge: true },
           ),
         ];
 
-        if (item.type === "Lesson") {
-          writes.push(setDoc(doc(db, "lessons", item.id), { ...item, itemKind: "lesson", updatedAt: serverTimestamp() }, { merge: true }));
-        }
-
-        if (item.type === "Learning Path") {
-          writes.push(setDoc(doc(db, "learningPaths", item.id), { ...item, itemKind: "learningPath", lessonIds: item.lessonIds || [], updatedAt: serverTimestamp() }, { merge: true }));
+        if (mirrorCollection) {
+          writes.push(setDoc(doc(db, mirrorCollection, item.id), {
+            ...item,
+            itemKind: itemKindForContentType(item.type),
+            lessonIds: item.lessonIds || [],
+            resourceIds: item.resourceIds || [],
+            updatedAt: serverTimestamp(),
+          }, { merge: true }));
         }
 
         return writes;
@@ -484,10 +510,12 @@ function StaffConsole({ onLock }) {
     setContentSaveState("saving");
     try {
       const contentType = item.type;
+      const mirrorCollection = collectionForContentType(contentType);
       const contentPayload = {
         ...item,
         image: item.uploadedImageDataUrl || item.customImageUrl?.trim() || item.image || assets[item.imageKey] || assets.heroKoala,
         durationMinutes: Number(item.durationMinutes) || 0,
+        durationWeeks: Number(item.durationWeeks) || 0,
         outcomeCodes: Array.isArray(item.outcomeCodes) ? item.outcomeCodes : listFromText(item.outcomeCodes || ""),
         activityPrompts: Array.isArray(item.activityPrompts) ? item.activityPrompts : listFromText(item.activityPrompts || ""),
         materials: {
@@ -495,17 +523,28 @@ function StaffConsole({ onLock }) {
           teacherGuideUrl: item.teacherGuideUrl?.trim() || "",
           studentWorksheetUrl: item.studentWorksheetUrl?.trim() || "",
           videoUrl: item.videoUrl?.trim() || "",
+          teacherAdminUrl: item.teacherAdminUrl?.trim() || "",
+          unitPlanUrl: item.unitPlanUrl?.trim() || "",
+          lessonPlanUrl: item.lessonPlanUrl?.trim() || "",
+          resourceUrl: item.resourceUrl?.trim() || "",
           resourceLinks: Array.isArray(item.resourceLinks) ? item.resourceLinks : listFromText(item.resourceLinks || ""),
         },
         lessonIds: Array.isArray(item.lessonIds) ? item.lessonIds : [],
+        resourceIds: Array.isArray(item.resourceIds) ? item.resourceIds : [],
+        learningPathId: item.learningPathId || "",
+        lessonId: item.lessonId || "",
         progress: contentType === "Learning Path" ? 0 : Number(item.progress) || 0,
-        itemKind: contentType === "Learning Path" ? "learningPath" : contentType === "Lesson" ? "lesson" : "resource",
+        itemKind: itemKindForContentType(contentType),
       };
 
       delete contentPayload.canvaEmbedUrl;
       delete contentPayload.teacherGuideUrl;
       delete contentPayload.studentWorksheetUrl;
       delete contentPayload.videoUrl;
+      delete contentPayload.teacherAdminUrl;
+      delete contentPayload.unitPlanUrl;
+      delete contentPayload.lessonPlanUrl;
+      delete contentPayload.resourceUrl;
       delete contentPayload.resourceLinks;
       delete contentPayload.customImageUrl;
       delete contentPayload.uploadedImageDataUrl;
@@ -517,17 +556,8 @@ function StaffConsole({ onLock }) {
         updatedAt: serverTimestamp(),
       });
 
-      if (contentType === "Lesson") {
-        await setDoc(doc(db, "lessons", contentRef.id), {
-          ...contentPayload,
-          contentItemId: contentRef.id,
-          createdAt: serverTimestamp(),
-          updatedAt: serverTimestamp(),
-        });
-      }
-
-      if (contentType === "Learning Path") {
-        await setDoc(doc(db, "learningPaths", contentRef.id), {
+      if (mirrorCollection) {
+        await setDoc(doc(db, mirrorCollection, contentRef.id), {
           ...contentPayload,
           contentItemId: contentRef.id,
           createdAt: serverTimestamp(),
@@ -538,6 +568,23 @@ function StaffConsole({ onLock }) {
       setContentSaveState("saved");
     } catch (error) {
       console.error("Unable to add content item", error);
+      setContentSaveState("error");
+    }
+  }
+
+  async function deleteContentItem(item) {
+    if (!item?.id) return;
+
+    setContentSaveState("saving");
+    try {
+      await deleteDoc(doc(db, "contentItems", item.id));
+      const mirrorCollection = collectionForContentType(item.type);
+      if (mirrorCollection) {
+        await deleteDoc(doc(db, mirrorCollection, item.id));
+      }
+      setContentSaveState("saved");
+    } catch (error) {
+      console.error("Unable to delete content item", error);
       setContentSaveState("error");
     }
   }
@@ -562,7 +609,7 @@ function StaffConsole({ onLock }) {
         {panel === "overview" && <section className="staff-panel active"><div className="overview-grid">{[["Active users", "4,286", "Teachers, students and Taronga staff this term"], ["Assigned resources", "18,940", "Lessons, learning paths and missions launched"], ["Tracka-linked sessions", "72%", "Activities connected to excursion or citizen science data"], ["Curriculum coverage", "146", "Mapped outcomes across NSW and Australian Curriculum"]].map(([label, value, copy]) => <article key={label}><span>{label}</span><strong>{value}</strong><p>{copy}</p></article>)}</div><div className="overview-snapshot"><article><h2>Current priorities</h2><p>Science and HSIE pathways are seeing the strongest uptake this month, with data interpretation flagged as the highest-value support area.</p></article><article><h2>Next recommended action</h2><p>Review Stage 3 animal adaptations lessons and prepare a Tracka mission bundle for upcoming school visits.</p></article></div></section>}
         {panel === "users" && <UsersPanel />}
         {panel === "analytics" && <AnalyticsPanel />}
-        {panel === "content" && <ContentPanel contentItems={contentItems} status={contentStatus} saveState={contentSaveState} seedContentItems={seedContentItems} addContentItem={addContentItem} />}
+        {panel === "content" && <ContentPanel contentItems={contentItems} status={contentStatus} saveState={contentSaveState} seedContentItems={seedContentItems} addContentItem={addContentItem} deleteContentItem={deleteContentItem} />}
         {panel === "dashboard" && <DashboardEditor config={config} contentItems={contentItems} updateConfig={updateConfig} reset={() => { setConfig(defaultDashboardConfig); setPreviewKey((key) => key + 1); }} previewKey={previewKey} publish={publishDashboardConfig} status={status} saveState={saveState} />}
       </main>
     </div>
@@ -577,14 +624,19 @@ function AnalyticsPanel() {
   return <section className="staff-section staff-panel active"><div className="section-heading"><div><h2>Analytics</h2><p>View engagement, learning progress, curriculum gaps and Tracka-connected outcomes.</p></div><button>Export report</button></div><div className="analytics-grid"><article className="wide-card"><h3>Learning engagement by week</h3><div className="bar-chart">{[42, 58, 51, 76, 68, 88, 81].map((height) => <span style={{ height: `${height}%` }} key={height}></span>)}</div></article><article><h3>Knowledge gaps</h3>{[["Adaptation vs behaviour", 64], ["Data interpretation", 48], ["Persuasive writing", 37]].map(([label, width]) => <React.Fragment key={label}><p className="metric">{label}</p><div className="meter"><span style={{ width: `${width}%` }}></span></div></React.Fragment>)}</article><article><h3>Results snapshot</h3><ul className="result-list"><li>Below expected <strong>18%</strong></li><li>At expected <strong>57%</strong></li><li>Above expected <strong>25%</strong></li></ul></article></div></section>;
 }
 
-function ContentPanel({ contentItems, status, saveState, seedContentItems, addContentItem }) {
+function ContentPanel({ contentItems, status, saveState, seedContentItems, addContentItem, deleteContentItem }) {
   const [showForm, setShowForm] = useState(false);
-  const [draft, setDraft] = useState(createContentDraft("Lesson"));
-  const [imageSearch, setImageSearch] = useState("");
+  const [draft, setDraft] = useState(createContentDraft("Learning Path"));
   const [imageError, setImageError] = useState("");
+  const learningPaths = contentItems.filter((item) => item.type === "Learning Path");
   const lessonOptions = contentItems.filter((item) => item.type === "Lesson");
+  const resourceOptions = contentItems.filter((item) => item.type === "Resource");
+  const groupedContent = [
+    ["Learning Path", learningPaths],
+    ["Lesson", lessonOptions],
+    ["Resource", resourceOptions],
+  ];
   const selectedImage = draft.uploadedImageDataUrl || draft.customImageUrl || draft.image || assets[draft.imageKey] || assets.heroKoala;
-  const filteredStockImages = stockImages.filter((image) => `${image.label} ${image.subject}`.toLowerCase().includes(imageSearch.toLowerCase()));
 
   async function submitContent(event) {
     event.preventDefault();
@@ -598,17 +650,14 @@ function ContentPanel({ contentItems, status, saveState, seedContentItems, addCo
   }
 
   function changeType(type) {
-    setDraft((current) => ({ ...createContentDraft(type), subject: current.subject, stage: current.stage, imageKey: current.imageKey }));
+    setDraft((current) => ({
+      ...createContentDraft(type),
+      subject: current.subject,
+      stage: current.stage,
+      imageKey: current.imageKey,
+      image: current.image,
+    }));
     setShowForm(true);
-  }
-
-  function chooseStockImage(stockImage) {
-    updateDraft({
-      imageKey: stockImage.key || "",
-      image: stockImage.key ? "" : stockImage.src,
-      customImageUrl: "",
-      uploadedImageDataUrl: "",
-    });
     setImageError("");
   }
 
@@ -625,83 +674,99 @@ function ContentPanel({ contentItems, status, saveState, seedContentItems, addCo
     }
   }
 
-  function toggleLesson(lessonId) {
+  function toggleListItem(field, itemId) {
     setDraft((current) => {
-      const lessonIds = current.lessonIds.includes(lessonId)
-        ? current.lessonIds.filter((id) => id !== lessonId)
-        : [...current.lessonIds, lessonId];
-      return { ...current, lessonIds };
+      const currentList = current[field] || [];
+      const nextList = currentList.includes(itemId)
+        ? currentList.filter((id) => id !== itemId)
+        : [...currentList, itemId];
+      return { ...current, [field]: nextList };
     });
+  }
+
+  function chooseStockImage(src) {
+    const stockImage = stockImages.find((image) => image.src === src);
+    updateDraft({
+      imageKey: stockImage?.key || "",
+      image: stockImage?.key ? "" : src,
+      customImageUrl: "",
+      uploadedImageDataUrl: "",
+    });
+    setImageError("");
+  }
+
+  async function confirmDelete(item) {
+    const label = `${item.type}: ${item.title}`;
+    if (!window.confirm(`Delete ${label}? This removes the Firestore content item and its ${item.type.toLowerCase()} record.`)) return;
+    await deleteContentItem(item);
+  }
+
+  function itemTitle(items, id) {
+    return items.find((item) => item.id === id)?.title || "";
+  }
+
+  function materialCount(item) {
+    return [
+      item.materials?.canvaEmbedUrl,
+      item.materials?.teacherGuideUrl,
+      item.materials?.studentWorksheetUrl,
+      item.materials?.videoUrl,
+      item.materials?.teacherAdminUrl,
+      item.materials?.unitPlanUrl,
+      item.materials?.lessonPlanUrl,
+      item.materials?.resourceUrl,
+      ...(item.materials?.resourceLinks || []),
+    ].filter(Boolean).length;
   }
 
   return (
     <section className="staff-section staff-panel active">
       <div className="section-heading">
-        <div><h2>Content</h2><p>Create structured lessons and learning paths that teachers can browse, assign and eventually connect to Tracka missions.</p></div>
-        <div className="heading-actions"><button type="button" onClick={seedContentItems}>Seed Firestore content</button><button type="button" onClick={() => changeType("Lesson")}>New lesson</button><button type="button" onClick={() => changeType("Learning Path")}>New path</button></div>
+        <div><h2>Content</h2><p>Build content in the real LMS order: learning path, lesson, resource. Each item can also stand alone.</p></div>
+        <div className="heading-actions"><button type="button" onClick={seedContentItems}>Seed Firestore content</button></div>
       </div>
       <ContentFirestoreStatus status={status} saveState={saveState} />
+      <div className="content-builder-options" aria-label="Create content">
+        <button type="button" onClick={() => changeType("Learning Path")}><span>1</span><strong>Learning Path</strong><small>Unit, weeks, outcomes, admin docs</small></button>
+        <button type="button" onClick={() => changeType("Lesson")}><span>2</span><strong>Lesson</strong><small>Lesson plan, outcomes, path link</small></button>
+        <button type="button" onClick={() => changeType("Resource")}><span>3</span><strong>Resource</strong><small>File, link, description, lesson link</small></button>
+      </div>
       {showForm && <form className="content-form" onSubmit={submitContent}>
         <div className="content-form-header">
           <span className="content-type">{draft.type} Builder</span>
-          <h3>{draft.type === "Learning Path" ? "Create a sequenced learning path" : "Create a structured lesson"}</h3>
-          <p>{draft.type === "Learning Path" ? "Bundle published and draft lessons into a pathway teachers can assign as a sequence." : "Add the teaching details needed for a real classroom-ready lesson."}</p>
+          <h3>{draft.type === "Learning Path" ? "Create a learning path" : draft.type === "Lesson" ? "Create a lesson" : "Create a resource"}</h3>
+          <p>{draft.type === "Learning Path" ? "A learning path is the full unit or sequence teachers assign over multiple weeks." : draft.type === "Lesson" ? "A lesson can sit inside a learning path or be used by itself." : "A resource can sit inside a lesson or be used by itself."}</p>
         </div>
         <label>Title<input type="text" required value={draft.title} onChange={(event) => updateDraft({ title: event.target.value })} /></label>
         <label>Type<select value={draft.type} onChange={(event) => changeType(event.target.value)}><option>Lesson</option><option>Learning Path</option><option>Resource</option></select></label>
         <label>Subject<select value={draft.subject} onChange={(event) => updateDraft({ subject: event.target.value })}>{subjects.map(([label]) => <option key={label}>{label}</option>)}</select></label>
         <label>Stage<input type="text" value={draft.stage} onChange={(event) => updateDraft({ stage: event.target.value })} /></label>
         <label>Status<select value={draft.status} onChange={(event) => updateDraft({ status: event.target.value })}><option>Draft</option><option>Review</option><option>Published</option></select></label>
-        <label>Duration<input type="number" min="0" value={draft.durationMinutes} onChange={(event) => updateDraft({ durationMinutes: event.target.value })} /></label>
-        {draft.type !== "Learning Path" && <label>Progress<input type="number" min="0" max="100" value={draft.progress} onChange={(event) => updateDraft({ progress: event.target.value })} /></label>}
+        {draft.type === "Learning Path" && <label>Duration in weeks<input type="number" min="0" value={draft.durationWeeks} onChange={(event) => updateDraft({ durationWeeks: event.target.value })} /></label>}
+        {draft.type === "Lesson" && <label>Duration in minutes<input type="number" min="0" value={draft.durationMinutes} onChange={(event) => updateDraft({ durationMinutes: event.target.value })} /></label>}
         <label className="wide-field">Summary<input type="text" required value={draft.summary} onChange={(event) => updateDraft({ summary: event.target.value })} /></label>
         <label className="wide-field">Description<textarea value={draft.description} onChange={(event) => updateDraft({ description: event.target.value })}></textarea></label>
-        <div className="content-form-header image-header">
-          <span className="content-type">Card Image</span>
-          <h3>Choose, paste or upload</h3>
-          <p>Pick from the stock range, paste an image URL, or upload a local image. Uploaded images are resized and saved with the Firestore card record.</p>
-        </div>
-        <div className="card-image-manager">
-          <div className="card-image-preview"><img src={selectedImage} alt="" /><span>Current card image</span></div>
-          <div className="image-controls">
-            <label>Search stock<input type="search" value={imageSearch} onChange={(event) => setImageSearch(event.target.value)} placeholder="koala, data, habitat, wellbeing..." /></label>
+        <div className="simple-image-picker">
+          <img src={selectedImage} alt="" />
+          <div>
+            <span className="content-type">Image</span>
+            <label>Stock image<select value={selectedImage} onChange={(event) => chooseStockImage(event.target.value)}>{stockImages.map((stockImage) => <option value={stockImage.src} key={`${stockImage.label}-${stockImage.src}`}>{stockImage.label}</option>)}</select></label>
             <label>Image URL<input type="url" value={draft.customImageUrl} onChange={(event) => updateDraft({ customImageUrl: event.target.value, uploadedImageDataUrl: "", image: event.target.value, imageKey: "" })} placeholder="https://..." /></label>
             <label>Upload image<input type="file" accept="image/*" onChange={uploadCardImage} /></label>
             {imageError && <p className="auth-error">{imageError}</p>}
           </div>
-          <div className="stock-image-grid" aria-label="Stock image choices">
-            {filteredStockImages.map((stockImage) => <button type="button" className={selectedImage === stockImage.src ? "selected" : ""} key={`${stockImage.label}-${stockImage.src}`} onClick={() => chooseStockImage(stockImage)}><img src={stockImage.src} alt="" /><span>{stockImage.label}</span><small>{stockImage.subject}</small></button>)}
-          </div>
         </div>
         <label className="wide-field">Curriculum outcomes<textarea placeholder="One outcome per line, e.g. ST2-4LW-S" value={draft.outcomeCodes} onChange={(event) => updateDraft({ outcomeCodes: event.target.value })}></textarea></label>
-        <label className="wide-field">Teacher/student activities<textarea placeholder="One activity or prompt per line" value={draft.activityPrompts} onChange={(event) => updateDraft({ activityPrompts: event.target.value })}></textarea></label>
-        <div className="content-form-header materials-header">
-          <span className="content-type">Lesson Materials</span>
-          <h3>Links and embeds</h3>
-          <p>Paste Canva embeds, file links, video links or external resources. File upload buttons can come later with Firebase Storage.</p>
-        </div>
-        <label className="wide-field">Canva embed URL<input type="url" value={draft.canvaEmbedUrl} onChange={(event) => updateDraft({ canvaEmbedUrl: event.target.value })} placeholder="https://www.canva.com/design/..." /></label>
-        <label>Teacher guide URL<input type="url" value={draft.teacherGuideUrl} onChange={(event) => updateDraft({ teacherGuideUrl: event.target.value })} placeholder="PDF, Google Drive or Canva link" /></label>
-        <label>Student worksheet URL<input type="url" value={draft.studentWorksheetUrl} onChange={(event) => updateDraft({ studentWorksheetUrl: event.target.value })} placeholder="Worksheet link" /></label>
-        <label>Video/media URL<input type="url" value={draft.videoUrl} onChange={(event) => updateDraft({ videoUrl: event.target.value })} placeholder="YouTube, Vimeo or hosted media" /></label>
-        <label className="wide-field">Extra resource links<textarea placeholder="One URL per line" value={draft.resourceLinks} onChange={(event) => updateDraft({ resourceLinks: event.target.value })}></textarea></label>
+        {draft.type === "Learning Path" && <><label>Teacher admin documents URL<input type="url" value={draft.teacherAdminUrl} onChange={(event) => updateDraft({ teacherAdminUrl: event.target.value })} placeholder="Drive, PDF or Canva link" /></label><label>Unit plan URL<input type="url" value={draft.unitPlanUrl} onChange={(event) => updateDraft({ unitPlanUrl: event.target.value })} placeholder="Scope, sequence or program link" /></label><fieldset className="lesson-picker"><legend>Lessons in this learning path</legend>{lessonOptions.length ? lessonOptions.map((lesson) => <label key={lesson.id || lesson.title}><input type="checkbox" checked={draft.lessonIds.includes(lesson.id)} onChange={() => toggleListItem("lessonIds", lesson.id)} />{lesson.title}<small>{lesson.subject} - {lesson.stage}</small></label>) : <p>Create or seed lessons first, then add them to this path.</p>}</fieldset></>}
+        {draft.type === "Lesson" && <><label>Learning path<select value={draft.learningPathId} onChange={(event) => updateDraft({ learningPathId: event.target.value })}><option value="">Standalone lesson</option>{learningPaths.map((path) => <option value={path.id} key={path.id || path.title}>{path.title}</option>)}</select></label><label>Lesson plan URL<input type="url" value={draft.lessonPlanUrl} onChange={(event) => updateDraft({ lessonPlanUrl: event.target.value })} placeholder="PDF, Google Drive or Canva link" /></label><fieldset className="lesson-picker"><legend>Resources in this lesson</legend>{resourceOptions.length ? resourceOptions.map((resource) => <label key={resource.id || resource.title}><input type="checkbox" checked={draft.resourceIds.includes(resource.id)} onChange={() => toggleListItem("resourceIds", resource.id)} />{resource.title}<small>{resource.subject} - {resource.stage}</small></label>) : <p>Create resources first, then add them to this lesson.</p>}</fieldset></>}
+        {draft.type === "Resource" && <><label>Lesson<select value={draft.lessonId} onChange={(event) => updateDraft({ lessonId: event.target.value })}><option value="">Standalone resource</option>{lessonOptions.map((lesson) => <option value={lesson.id} key={lesson.id || lesson.title}>{lesson.title}</option>)}</select></label><label>Resource file or Canva URL<input type="url" value={draft.resourceUrl} onChange={(event) => updateDraft({ resourceUrl: event.target.value })} placeholder="PDF, image, video, Canva or Drive link" /></label><label className="wide-field">Extra resource links<textarea placeholder="One URL per line" value={draft.resourceLinks} onChange={(event) => updateDraft({ resourceLinks: event.target.value })}></textarea></label></>}
         {draft.type === "Learning Path" && <fieldset className="lesson-picker">
-          <legend>Path lesson sequence</legend>
-          {lessonOptions.length ? lessonOptions.map((lesson) => <label key={lesson.id || lesson.title}><input type="checkbox" checked={draft.lessonIds.includes(lesson.id)} onChange={() => toggleLesson(lesson.id)} />{lesson.title}<small>{lesson.subject} - {lesson.stage}</small></label>) : <p>Create or seed lessons first, then add them to this path.</p>}
+          <legend>Optional activity prompts</legend>
+          <label className="wide-field">Teacher notes<textarea placeholder="One activity or prompt per line" value={draft.activityPrompts} onChange={(event) => updateDraft({ activityPrompts: event.target.value })}></textarea></label>
         </fieldset>}
-        <button type="submit" disabled={saveState === "saving"}>{saveState === "saving" ? "Saving..." : "Save to Firestore"}</button>
+        <div className="content-form-actions"><button type="button" className="secondary-button" onClick={() => setShowForm(false)}>Cancel</button><button type="submit" disabled={saveState === "saving"}>{saveState === "saving" ? "Saving..." : "Save to Firestore"}</button></div>
       </form>}
-      <div className="content-grid">{contentItems.map((item) => {
-        const materialCount = [
-          item.materials?.canvaEmbedUrl,
-          item.materials?.teacherGuideUrl,
-          item.materials?.studentWorksheetUrl,
-          item.materials?.videoUrl,
-          ...(item.materials?.resourceLinks || []),
-        ].filter(Boolean).length;
-
-        return <article key={item.id || item.title}><img className="content-thumb" src={item.image} alt="" /><span className="content-type">{item.type}</span><h3>{item.title}</h3><p>{item.summary || item.description}</p><small>{item.subject} - {item.stage} - {item.status}</small>{item.durationMinutes ? <small>{item.durationMinutes} minutes</small> : null}{item.lessonIds?.length ? <small>{item.lessonIds.length} sequenced lessons</small> : null}{materialCount ? <div className="material-tags"><span>{materialCount} material links</span>{item.materials?.canvaEmbedUrl ? <a href={item.materials.canvaEmbedUrl} target="_blank" rel="noreferrer">Canva</a> : null}{item.materials?.teacherGuideUrl ? <a href={item.materials.teacherGuideUrl} target="_blank" rel="noreferrer">Teacher guide</a> : null}{item.materials?.studentWorksheetUrl ? <a href={item.materials.studentWorksheetUrl} target="_blank" rel="noreferrer">Worksheet</a> : null}{item.materials?.videoUrl ? <a href={item.materials.videoUrl} target="_blank" rel="noreferrer">Video</a> : null}</div> : null}<button>Firestore item</button></article>;
-      })}<article className="create-card" onClick={() => changeType("Lesson")}><Icon type="plus" className="" /><h3>Create new content</h3><p>Start a lesson, learning path, media activity or Tracka mission.</p></article></div>
+      <div className="content-sections">{groupedContent.map(([type, items]) => <section className="content-section-card" key={type}><div className="content-section-heading"><div><span className="content-type">{type}</span><h3>{type === "Learning Path" ? "Units and sequences" : type === "Lesson" ? "Assignable lessons" : "Individual resources"}</h3></div><button type="button" onClick={() => changeType(type)}>Add {type.toLowerCase()}</button></div><div className="content-list">{items.length ? items.map((item) => <article className="content-item-card" key={item.id || item.title}><img className="content-thumb" src={item.image} alt="" /><div><span className="content-type">{item.status}</span><h4>{item.title}</h4><p>{item.summary || item.description}</p><small>{item.subject} - {item.stage}</small>{item.durationWeeks ? <small>{item.durationWeeks} weeks</small> : null}{item.durationMinutes ? <small>{item.durationMinutes} minutes</small> : null}{item.learningPathId ? <small>Path: {itemTitle(learningPaths, item.learningPathId)}</small> : null}{item.lessonId ? <small>Lesson: {itemTitle(lessonOptions, item.lessonId)}</small> : null}{item.lessonIds?.length ? <small>{item.lessonIds.length} lessons sequenced</small> : null}{item.resourceIds?.length ? <small>{item.resourceIds.length} resources attached</small> : null}{materialCount(item) ? <div className="material-tags"><span>{materialCount(item)} links/files</span></div> : null}<div className="content-card-actions"><span className="sync-chip">Firestore synced</span><button type="button" className="delete-button" onClick={() => confirmDelete(item)}>Delete</button></div></div></article>) : <article className="empty-content-card"><Icon type="plus" className="" /><h4>No {type.toLowerCase()}s yet</h4><p>Add one here, or create it as a standalone item first.</p></article>}</div></section>)}</div>
     </section>
   );
 }
