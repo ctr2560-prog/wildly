@@ -176,7 +176,60 @@ function subjectIconType(label) {
   }[label];
 }
 
+const appLinks = {
+  tracka: "",
+  demoBooking: "",
+  support: "",
+  excursions: "",
+};
+
+function NoticeBanner({ notice, onClose }) {
+  if (!notice) return null;
+  return (
+    <div className="notice-banner" role="status">
+      <p>{notice}</p>
+      <button type="button" onClick={onClose}>Close</button>
+    </div>
+  );
+}
+
+function downloadTextFile(filename, content, mimeType = "text/plain;charset=utf-8") {
+  const blob = new Blob([content], { type: mimeType });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  link.click();
+  URL.revokeObjectURL(url);
+}
+
+function openConfiguredLink(url, setNotice, label) {
+  if (url) {
+    window.open(url, "_blank", "noopener,noreferrer");
+    return;
+  }
+
+  setNotice(`${label} is still a placeholder. Add the real URL in the app config when you have it.`);
+}
+
+function contentPrimaryLink(item) {
+  return (
+    item.materials?.resourceUrl
+    || item.materials?.lessonPlanUrl
+    || item.materials?.unitPlanUrl
+    || item.materials?.teacherAdminUrl
+    || item.materials?.teacherGuideUrl
+    || item.materials?.studentWorksheetUrl
+    || item.materials?.canvaEmbedUrl
+    || item.materials?.videoUrl
+    || item.materials?.resourceLinks?.[0]
+    || ""
+  );
+}
+
 function LandingPage() {
+  const [notice, setNotice] = useState("");
+
   return (
     <>
       <header className="site-header">
@@ -204,6 +257,7 @@ function LandingPage() {
             <div className="phone"><img src={assets.heroKoala} alt="" /><h3>Adaptations of Australian Animals</h3><p>Ready to assign</p><a href={routePath("teacher")}>View resource</a></div>
           </div>
         </section>
+        <NoticeBanner notice={notice} onClose={() => setNotice("")} />
         <section className="feature-row">
           {[
             ["leaf", "Curriculum-aligned learning", "Engaging lessons mapped to the Australian Curriculum across multiple subject areas."],
@@ -222,12 +276,12 @@ function LandingPage() {
           <div className="journey-line">{["Pre-visit learning", "At the zoo", "Tracka missions", "Post-visit reflection"].map((title, index) => <article key={title}><span>{String(index + 1).padStart(2, "0")}</span><h3>{title}</h3><p>{["Build background knowledge and curiosity before your excursion.", "Engage in guided experiences and real-world investigation.", "Take action with live data, citizen science and reflective tasks.", "Consolidate learning and connect back to curriculum outcomes."][index]}</p></article>)}</div>
         </section>
         <section className="trust-row" id="tracka">
-          <article><img src={assets.trackaLogo} alt="Taronga Tracka" /><span>Proudly connected with Taronga Tracka</span></article>
+          <article><button type="button" className="trust-action" onClick={() => openConfiguredLink(appLinks.tracka, setNotice, "Taronga Tracka")}><img src={assets.trackaLogo} alt="Taronga Tracka" /><span>Proudly connected with Taronga Tracka</span></button></article>
           <article><Icon type="book" className="" /><span>Aligned to NSW and Australian curriculums (Early Stage 1 - Stage 6)</span></article>
           <article><Icon type="blocks" className="" /><span>Aligned to the Early Years Learning Framework (Pre-School)</span></article>
           <article><Icon type="bookmark" className="" /><span>Secure, reliable teacher resources</span></article>
         </section>
-        <section className="cta-section"><img src={assets.heroKoala} alt="Koala with joey" /><div><h2>Bring learning to life through nature</h2><p>Join thousands of educators using Wildly to inspire the next generation to care for nature - together.</p><div className="hero-actions"><a className="primary-action" href={routePath("teacher")}>Get started free</a><a className="secondary-action" href={routePath("teacher")}>Book a demo</a></div></div></section>
+        <section className="cta-section" id="schools"><img src={assets.heroKoala} alt="Koala with joey" /><div><h2>Bring learning to life through nature</h2><p>Join thousands of educators using Wildly to inspire the next generation to care for nature - together.</p><div className="hero-actions"><a className="primary-action" href={routePath("teacher")}>Get started free</a><button type="button" className="secondary-action" onClick={() => openConfiguredLink(appLinks.demoBooking, setNotice, "Book a demo")}>Book a demo</button></div></div></section>
         <footer className="site-footer"><a className="staff-login" href={routePath("staff")}>Taronga staff login</a></footer>
       </main>
     </>
@@ -237,41 +291,133 @@ function LandingPage() {
 function TeacherDashboard({ config, contentItems = defaultContentItems.map(resolveContentItem) }) {
   const [activeSubject, setActiveSubject] = useState(null);
   const [query, setQuery] = useState("");
+  const [activeView, setActiveView] = useState("dashboard");
+  const [selectedContent, setSelectedContent] = useState(null);
+  const [notice, setNotice] = useState("");
+  const publishedItems = useMemo(() => contentItems.filter((item) => item.status === "Published"), [contentItems]);
+  const learningPaths = useMemo(() => publishedItems.filter((item) => item.type === "Learning Path"), [publishedItems]);
+  const lessons = useMemo(() => publishedItems.filter((item) => item.type === "Lesson"), [publishedItems]);
+  const resources = useMemo(() => publishedItems.filter((item) => item.type === "Resource"), [publishedItems]);
+  const filteredItems = useMemo(() => publishedItems.filter((item) => {
+    const matchesSubject = !activeSubject || item.subject === activeSubject;
+    const haystack = `${item.title} ${item.subject} ${item.stage} ${item.type} ${item.summary} ${item.description}`.toLowerCase();
+    return matchesSubject && haystack.includes(query.toLowerCase());
+  }), [activeSubject, publishedItems, query]);
   const visibleResources = useMemo(() => contentItems.filter((resource) => {
     const isPublished = resource.status === "Published";
     const matchesSubject = !activeSubject || resource.subject === activeSubject;
     const haystack = `${resource.title} ${resource.subject} ${resource.stage} ${resource.type}`.toLowerCase();
     return isPublished && matchesSubject && haystack.includes(query.toLowerCase());
   }).slice(0, 3), [activeSubject, contentItems, query]);
+  const navItems = [
+    ["dashboard", "Dashboard", "grid"],
+    ["classes", "My Classes", "users"],
+    ["students", "Students", "cap"],
+    ["reports", "Reports", "report"],
+    ["saved", "Saved", "bookmark"],
+    ["calendar", "Calendar", "calendar"],
+  ];
+  const exploreItems = [
+    ["paths", "Learning Paths", "path"],
+    ["excursions", "Excursions & Zoo Links", "pin"],
+    ["tracka", "Tracka Missions", "target"],
+  ];
+  const teacherClasses = [
+    { title: "Year 3 Blue", detail: "26 students · Stage 2 focus", action: "Open class", view: "students" },
+    { title: "Year 4 Green", detail: "24 students · upcoming zoo visit", action: "Review tasks", view: "calendar" },
+    { title: "Stage 3 Extension", detail: "12 students · inquiry project", action: "View progress", view: "reports" },
+  ];
+  const studentSnapshots = [
+    ["Ava Wilson", "Needs support with data interpretation", "Stage 2 science"],
+    ["Noah Patel", "Ready for extension in persuasive writing", "Stage 3 English"],
+    ["Mia Brown", "Completed Tracka mission reflection", "PDHPE / Science"],
+  ];
+  const reportSnapshots = [
+    ["Curriculum coverage", "146 mapped outcomes across live content"],
+    ["Highest engagement", "Science, HSIE and Technology & STEM this month"],
+    ["Recommended action", "Publish more Stage 2 resources before the next zoo visit"],
+  ];
 
   const showContinue = config.showContinueLearning;
   const showUpcoming = config.showUpcomingPanel;
   const showTracka = config.showTrackaCard;
+
+  function resetFilters() {
+    setActiveSubject(null);
+    setQuery("");
+  }
+
+  function openSubject(label) {
+    setActiveSubject(label);
+    setActiveView("subjects");
+  }
+
+  function openContent(item) {
+    setSelectedContent(item);
+  }
+
+  function openPrimaryContent(item) {
+    const primaryLink = contentPrimaryLink(item);
+    if (primaryLink) {
+      window.open(primaryLink, "_blank", "noopener,noreferrer");
+      return;
+    }
+
+    openContent(item);
+    setNotice(`${item.title} is ready for content links, but the primary lesson/resource URL still needs to be added.`);
+  }
+
+  function openExplorePanel(panel) {
+    if (panel === "paths") {
+      setActiveView("paths");
+      return;
+    }
+
+    if (panel === "tracka") {
+      openConfiguredLink(appLinks.tracka, setNotice, "Taronga Tracka");
+      return;
+    }
+
+    setActiveView("calendar");
+    setNotice("Excursions & Zoo Links is active as a placeholder. Add the real booking or excursion URL when you have it.");
+  }
+
+  const contentDetail = selectedContent ? resolveContentItem(selectedContent) : null;
 
   return (
     <div className="app-shell">
       <aside className="sidebar" aria-label="Teacher navigation">
         <a className="brand" href={routePath()} aria-label="Wildly by Taronga dashboard"><img className="brand-logo" src={assets.wildlyLogo} alt="Wildly by Taronga - Learning through nature" /></a>
         <nav className="main-nav">
-          {["Dashboard", "My Classes", "Students", "Reports", "Saved", "Calendar"].map((item, i) => <a className={`nav-item ${i === 0 ? "active" : ""}`} href="#" key={item}><Icon type={["grid", "users", "cap", "report", "bookmark", "calendar"][i]} />{item}</a>)}
+          {navItems.map(([id, label, icon]) => <button type="button" className={`nav-item ${activeView === id ? "active" : ""}`} key={label} onClick={() => setActiveView(id)}><Icon type={icon} />{label}</button>)}
         </nav>
-        <section className="side-section" aria-labelledby="subjects-title"><h2 id="subjects-title">Subject Areas</h2>{subjects.map(([label, cls]) => <button className={`subject-link ${cls}`} data-filter={label} key={label} onClick={() => setActiveSubject(label)}><Icon type={subjectIconType(label)} className="subject-svg" />{label}</button>)}</section>
-        <section className="side-section" aria-labelledby="explore-title"><h2 id="explore-title">Explore</h2><a className="nav-item small" href="#"><Icon type="path" />Learning Paths</a><a className="nav-item small" href="#"><Icon type="pin" />Excursions & Zoo Links</a><a className="nav-item small" href="#"><Icon type="target" />Tracka Missions<span className="external"></span></a></section>
-        {showTracka && <article className="tracka-card"><img className="tracka-logo" src={assets.trackaLogo} alt="Taronga Tracka" /><div><strong>Connected to Taronga Tracka</strong><p>Extend learning beyond your visit with real data and citizen science.</p><button>Go to Tracka</button></div></article>}
+        <section className="side-section" aria-labelledby="subjects-title"><h2 id="subjects-title">Subject Areas</h2>{subjects.map(([label, cls]) => <button className={`subject-link ${cls}`} data-filter={label} key={label} onClick={() => openSubject(label)}><Icon type={subjectIconType(label)} className="subject-svg" />{label}</button>)}</section>
+        <section className="side-section" aria-labelledby="explore-title"><h2 id="explore-title">Explore</h2>{exploreItems.map(([id, label, icon]) => <button type="button" className="nav-item small" key={label} onClick={() => openExplorePanel(id)}><Icon type={icon} />{label}{id === "tracka" ? <span className="external"></span> : null}</button>)}</section>
+        {showTracka && <article className="tracka-card"><img className="tracka-logo" src={assets.trackaLogo} alt="Taronga Tracka" /><div><strong>Connected to Taronga Tracka</strong><p>Extend learning beyond your visit with real data and citizen science.</p><button type="button" onClick={() => openConfiguredLink(appLinks.tracka, setNotice, "Taronga Tracka")}>Go to Tracka</button></div></article>}
       </aside>
       <main className="workspace">
-        <header className="topbar"><button className="menu-button" aria-label="Open navigation"></button><nav className="top-links" aria-label="Primary"><a className="selected" href="#">Dashboard</a><a href="#">Subjects</a><a href="#">Learning Paths</a><a href="#">Resources</a><a href="#">My Classes</a></nav><div className="top-actions"><button className="top-icon-button" aria-label="Notifications"><Icon type="bell" className="" /></button><button className="icon-button help" aria-label="Help"></button><button className="profile-button"><span>JT</span><strong>Mr. Thompson</strong><small>Teacher</small></button></div></header>
-        <section className="hero"><div className="hero-copy"><h1>{config.heroTitle}</h1><p className="hero-subtitle">{config.heroSubtitle}</p><p>Curriculum-aligned lessons, real-world experiences and conservation connections - for every learner, everywhere.</p><div className="hero-actions"><button className="primary-action">Browse Subjects</button><button className="secondary-action"><Icon type="path" className="path-action-icon" />Start a Learning Path</button></div></div><img className="hero-animal" src={config.heroImageUrl} alt="Koala with joey at Taronga" /></section>
-        <section className="library-head"><div><h2>Explore by Subject</h2><p>Filter the teacher library by curriculum area, stage and resource type.</p></div><label className="search-box"><span></span><input value={query} onChange={(event) => setQuery(event.target.value)} type="search" placeholder="Search resources" /></label><button className="text-link" onClick={() => { setActiveSubject(null); setQuery(""); }}>View All Subjects</button></section>
-        <section className="subject-grid" aria-label="Subject cards">{subjects.map(([label, cls, copy]) => <article className={`subject-card ${cls} ${activeSubject === label ? "selected" : ""}`} key={label} onClick={() => setActiveSubject(label)}><Icon type={subjectIconType(label)} className="subject-icon" /><h3>{label}</h3><p>{copy}</p><button>Explore</button></article>)}</section>
-        <div className="dashboard-columns">
+        <header className="topbar"><button className="menu-button" type="button" aria-label="Open navigation" onClick={() => setNotice("Mobile menu placeholder. The sidebar is the main navigation for now.")}></button><nav className="top-links" aria-label="Primary"><button type="button" className={activeView === "dashboard" ? "selected" : ""} onClick={() => setActiveView("dashboard")}>Dashboard</button><button type="button" className={activeView === "subjects" ? "selected" : ""} onClick={() => setActiveView("subjects")}>Subjects</button><button type="button" className={activeView === "paths" ? "selected" : ""} onClick={() => setActiveView("paths")}>Learning Paths</button><button type="button" className={activeView === "resources" ? "selected" : ""} onClick={() => setActiveView("resources")}>Resources</button><button type="button" className={activeView === "classes" ? "selected" : ""} onClick={() => setActiveView("classes")}>My Classes</button></nav><div className="top-actions"><button type="button" className="top-icon-button" aria-label="Notifications" onClick={() => setNotice("Notifications placeholder: upcoming excursions, due tasks and Tracka mission alerts will appear here.")}><Icon type="bell" className="" /></button><button type="button" className="icon-button help" aria-label="Help" onClick={() => setNotice("Help placeholder: add your support email, docs URL or onboarding flow here.")}></button><button type="button" className="profile-button" onClick={() => setNotice("Profile placeholder: account settings and class preferences can sit here.")}><span>JT</span><strong>Mr. Thompson</strong><small>Teacher</small></button></div></header>
+        <NoticeBanner notice={notice} onClose={() => setNotice("")} />
+        <section className="hero"><div className="hero-copy"><h1>{config.heroTitle}</h1><p className="hero-subtitle">{config.heroSubtitle}</p><p>Curriculum-aligned lessons, real-world experiences and conservation connections - for every learner, everywhere.</p><div className="hero-actions"><button type="button" className="primary-action" onClick={() => { setActiveView("subjects"); resetFilters(); }}>Browse Subjects</button><button type="button" className="secondary-action" onClick={() => setActiveView("paths")}><Icon type="path" className="path-action-icon" />Start a Learning Path</button></div></div><img className="hero-animal" src={config.heroImageUrl} alt="Koala with joey at Taronga" /></section>
+        <section className="library-head"><div><h2>Explore by Subject</h2><p>Filter the teacher library by curriculum area, stage and resource type.</p></div><label className="search-box"><span></span><input value={query} onChange={(event) => { setQuery(event.target.value); setActiveView("subjects"); }} type="search" placeholder="Search resources" /></label><button type="button" className="text-link" onClick={() => { resetFilters(); setActiveView("subjects"); }}>View All Subjects</button></section>
+        <section className="subject-grid" aria-label="Subject cards">{subjects.map(([label, cls, copy]) => <article className={`subject-card ${cls} ${activeSubject === label ? "selected" : ""}`} key={label} onClick={() => openSubject(label)}><Icon type={subjectIconType(label)} className="subject-icon" /><h3>{label}</h3><p>{copy}</p><button type="button" onClick={(event) => { event.stopPropagation(); openSubject(label); }}>Explore</button></article>)}</section>
+        {activeView === "dashboard" && <div className="dashboard-columns">
           <section className="content-column">
-            {showContinue && <><div className="section-title-row"><h2>Continue Learning</h2><button className="text-link">View all</button></div><section className="learning-grid" aria-live="polite">{visibleResources.map((resource, index) => <article className="learning-card" key={resource.title}><img src={resource.image} alt="" /><div className="learning-body"><span className="pill">{resource.subject}</span><h3>{index === 0 ? config.featuredResourceTitle : resource.title}</h3><p>{resource.type} - {resource.stage}</p><div className="progress-row"><div className="progress-track"><span style={{ width: `${resource.progress}%` }}></span></div><small>{resource.progress}% Complete</small></div><button>Continue</button></div></article>)}</section></>}
-            <div className="section-title-row news-title"><h2>What's New on Wildly</h2><button className="text-link">View all</button></div>
-            <section className="news-grid"><article className="news-card blue"><img src={assets.rhino} alt="" /><div><span>New Resource</span><h3>Voices for Country</h3><p>First Nations perspectives for Stage 3 inquiry.</p></div></article><article className="news-card purple"><img src={assets.gorilla} alt="" /><div><span>Teacher Webinar</span><h3>Learning with Impact</h3><p>Plan lessons around conservation action.</p></div></article><article className="news-card green"><img src={assets.binturong} alt="" /><div><span>New Learning Path</span><h3>Sustainable Futures</h3><p>Build a full sequence across Science and HSIE.</p></div></article></section>
+            {showContinue && <><div className="section-title-row"><h2>Continue Learning</h2><button type="button" className="text-link" onClick={() => setActiveView("resources")}>View all</button></div><section className="learning-grid" aria-live="polite">{visibleResources.map((resource, index) => <article className="learning-card" key={resource.title}><img src={resource.image} alt="" /><div className="learning-body"><span className="pill">{resource.subject}</span><h3>{index === 0 ? config.featuredResourceTitle : resource.title}</h3><p>{resource.type} - {resource.stage}</p><div className="progress-row"><div className="progress-track"><span style={{ width: `${resource.progress}%` }}></span></div><small>{resource.progress}% Complete</small></div><button type="button" onClick={() => openPrimaryContent(resource)}>Continue</button></div></article>)}</section></>}
+            <div className="section-title-row news-title"><h2>What's New on Wildly</h2><button type="button" className="text-link" onClick={() => setActiveView("resources")}>View all</button></div>
+            <section className="news-grid"><article className="news-card blue" onClick={() => openContent(resources[0] || publishedItems[0])}><img src={assets.rhino} alt="" /><div><span>New Resource</span><h3>Voices for Country</h3><p>First Nations perspectives for Stage 3 inquiry.</p></div></article><article className="news-card purple" onClick={() => setNotice("Teacher webinar placeholder. Add your webinar or PD registration link here.")}><img src={assets.gorilla} alt="" /><div><span>Teacher Webinar</span><h3>Learning with Impact</h3><p>Plan lessons around conservation action.</p></div></article><article className="news-card green" onClick={() => openContent(learningPaths[0] || publishedItems[0])}><img src={assets.binturong} alt="" /><div><span>New Learning Path</span><h3>Sustainable Futures</h3><p>Build a full sequence across Science and HSIE.</p></div></article></section>
           </section>
-          {showUpcoming && <aside className="upcoming-panel" aria-labelledby="upcoming-title"><div className="section-title-row"><h2 id="upcoming-title">Upcoming</h2><button className="text-link">View Calendar</button></div><article className="event-card"><img src={assets.giraffe} alt="" /><div><span className="event-tag">Excursion</span><h3>Taronga Zoo Visit - Biodiversity in Action</h3><p>Tue 8 Jun - 9:30am</p></div></article><article className="event-card icon-event"><span className="target-icon"></span><div><span className="event-tag live">Live</span><h3>Tracka Mission - Citizen Science Challenge</h3><p>Fri 21 Jun - 11:00am</p></div></article><article className="event-card icon-event"><span className="leaf-badge"></span><div><span className="event-tag due">Due</span><h3>Creative Writing: Inspired by Nature</h3><p>Mon 24 Jun - 11:59pm</p></div></article><article className="difference-card"><span className="mini-mark" aria-hidden="true"></span><div><h3>Learning that makes a difference</h3><p>Inspiring the next generation to care for nature - together.</p></div></article></aside>}
-        </div>
+          {showUpcoming && <aside className="upcoming-panel" aria-labelledby="upcoming-title"><div className="section-title-row"><h2 id="upcoming-title">Upcoming</h2><button type="button" className="text-link" onClick={() => setActiveView("calendar")}>View Calendar</button></div><article className="event-card" onClick={() => setNotice("Excursion booking placeholder. Link this card to your booking or visit-planning workflow.")}><img src={assets.giraffe} alt="" /><div><span className="event-tag">Excursion</span><h3>Taronga Zoo Visit - Biodiversity in Action</h3><p>Tue 8 Jun - 9:30am</p></div></article><article className="event-card icon-event" onClick={() => openConfiguredLink(appLinks.tracka, setNotice, "Tracka mission")}><span className="target-icon"></span><div><span className="event-tag live">Live</span><h3>Tracka Mission - Citizen Science Challenge</h3><p>Fri 21 Jun - 11:00am</p></div></article><article className="event-card icon-event" onClick={() => openContent(lessons[0] || publishedItems[0])}><span className="leaf-badge"></span><div><span className="event-tag due">Due</span><h3>Creative Writing: Inspired by Nature</h3><p>Mon 24 Jun - 11:59pm</p></div></article><article className="difference-card"><span className="mini-mark" aria-hidden="true"></span><div><h3>Learning that makes a difference</h3><p>Inspiring the next generation to care for nature - together.</p></div></article></aside>}
+        </div>}
+        {activeView === "subjects" && <section className="teacher-panel"><div className="teacher-panel-header"><div><span className="content-type">Subjects</span><h2>{activeSubject || "All Subjects"}</h2><p>{filteredItems.length} published items ready for teachers to browse and assign.</p></div><button type="button" className="secondary-action" onClick={resetFilters}>Clear filters</button></div><div className="teacher-library-grid">{filteredItems.length ? filteredItems.map((item) => <article className="teacher-library-card" key={item.id || item.title}><img src={item.image} alt="" /><div><span className="pill">{item.type}</span><h3>{item.title}</h3><p>{item.summary || item.description}</p><small>{item.subject} - {item.stage}</small><div className="teacher-card-actions"><button type="button" className="primary-action" onClick={() => openPrimaryContent(item)}>Open</button><button type="button" className="secondary-action" onClick={() => openContent(item)}>Details</button></div></div></article>) : <article className="placeholder-card"><h3>No content matches this filter yet</h3><p>Try another subject, clear the search, or add more published content from the staff console.</p></article>}</div></section>}
+        {activeView === "paths" && <section className="teacher-panel"><div className="teacher-panel-header"><div><span className="content-type">Learning Paths</span><h2>Assignable units and sequences</h2><p>Open a full learning path, review its outcomes and follow the lesson sequence.</p></div><button type="button" className="secondary-action" onClick={() => setActiveView("dashboard")}>Back to dashboard</button></div><div className="teacher-library-grid">{learningPaths.length ? learningPaths.map((item) => <article className="teacher-library-card" key={item.id || item.title}><img src={item.image} alt="" /><div><span className="pill">{item.subject}</span><h3>{item.title}</h3><p>{item.summary || item.description}</p><small>{item.durationWeeks || 0} weeks · {item.lessonIds?.length || 0} lessons</small><div className="teacher-card-actions"><button type="button" className="primary-action" onClick={() => openContent(item)}>Open path</button><button type="button" className="secondary-action" onClick={() => setNotice("Assign path placeholder. Connect this to your class assignment workflow next.")}>Assign</button></div></div></article>) : <article className="placeholder-card"><h3>No learning paths published yet</h3><p>Create and publish a learning path from the staff Content tab to surface it here.</p></article>}</div></section>}
+        {activeView === "resources" && <section className="teacher-panel"><div className="teacher-panel-header"><div><span className="content-type">Resources</span><h2>Lessons and resources</h2><p>Everything published in the teacher library, ready to open.</p></div><button type="button" className="secondary-action" onClick={() => setActiveView("subjects")}>Filter by subject</button></div><div className="teacher-library-grid">{[...lessons, ...resources].length ? [...lessons, ...resources].map((item) => <article className="teacher-library-card" key={item.id || item.title}><img src={item.image} alt="" /><div><span className="pill">{item.type}</span><h3>{item.title}</h3><p>{item.summary || item.description}</p><small>{item.subject} - {item.stage}</small><div className="teacher-card-actions"><button type="button" className="primary-action" onClick={() => openPrimaryContent(item)}>Open</button><button type="button" className="secondary-action" onClick={() => setNotice("Assign resource placeholder. Hook this up to class assignment when you are ready.")}>Assign</button></div></div></article>) : <article className="placeholder-card"><h3>No published lessons or resources yet</h3><p>Publish some content in the staff console and it will appear here automatically.</p></article>}</div></section>}
+        {activeView === "classes" && <section className="teacher-panel"><div className="teacher-panel-header"><div><span className="content-type">My Classes</span><h2>Teaching groups</h2><p>Use this view for class-level assignment, planning and monitoring.</p></div><button type="button" className="secondary-action" onClick={() => setNotice("Class creation placeholder. Add your real class management flow here.")}>Create class</button></div><div className="teacher-summary-grid">{teacherClasses.map((classroom) => <article key={classroom.title} className="summary-card"><h3>{classroom.title}</h3><p>{classroom.detail}</p><button type="button" className="primary-action" onClick={() => setActiveView(classroom.view)}>{classroom.action}</button></article>)}</div></section>}
+        {activeView === "students" && <section className="teacher-panel"><div className="teacher-panel-header"><div><span className="content-type">Students</span><h2>Student snapshot</h2><p>Track support needs, extension opportunities and completion at a glance.</p></div><button type="button" className="secondary-action" onClick={() => setNotice("Student export placeholder. Add CSV export or SIS sync here.")}>Export students</button></div><div className="teacher-summary-grid">{studentSnapshots.map(([name, note, group]) => <article key={name} className="summary-card"><h3>{name}</h3><p>{note}</p><small>{group}</small></article>)}</div></section>}
+        {activeView === "reports" && <section className="teacher-panel"><div className="teacher-panel-header"><div><span className="content-type">Reports</span><h2>Teacher reporting</h2><p>Use this area for curriculum coverage, engagement and next-step recommendations.</p></div><button type="button" className="secondary-action" onClick={() => downloadTextFile("wildly-teacher-report.csv", "metric,value\nCurriculum coverage,146\nBelow expected,18%\nAt expected,57%\nAbove expected,25%\n", "text/csv;charset=utf-8")}>Download sample CSV</button></div><div className="teacher-summary-grid">{reportSnapshots.map(([title, copy]) => <article key={title} className="summary-card"><h3>{title}</h3><p>{copy}</p></article>)}</div></section>}
+        {activeView === "saved" && <section className="teacher-panel"><div className="teacher-panel-header"><div><span className="content-type">Saved</span><h2>Saved for later</h2><p>This is ready for bookmarking once you want persistent teacher saves.</p></div></div><article className="placeholder-card"><h3>No saved items yet</h3><p>Bookmarking is the next obvious feature here. For now, use the resource library and learning paths directly.</p></article></section>}
+        {activeView === "calendar" && <section className="teacher-panel"><div className="teacher-panel-header"><div><span className="content-type">Calendar</span><h2>Upcoming dates</h2><p>Assignments, excursions and Tracka missions can all surface here.</p></div><button type="button" className="secondary-action" onClick={() => setNotice("Calendar sync placeholder. Add Google Calendar, Outlook or school calendar sync here.")}>Connect calendar</button></div><div className="teacher-summary-grid"><article className="summary-card"><h3>Tue 8 Jun</h3><p>Taronga Zoo Visit - Biodiversity in Action</p></article><article className="summary-card"><h3>Fri 21 Jun</h3><p>Tracka Mission - Citizen Science Challenge</p></article><article className="summary-card"><h3>Mon 24 Jun</h3><p>Creative Writing: Inspired by Nature due</p></article></div></section>}
+        {contentDetail && <div className="detail-overlay" role="dialog" aria-modal="true"><div className="detail-modal"><button type="button" className="detail-close" onClick={() => setSelectedContent(null)}>Close</button><img src={contentDetail.image} alt="" /><div className="detail-copy"><span className="content-type">{contentDetail.type}</span><h2>{contentDetail.title}</h2><p>{contentDetail.description || contentDetail.summary}</p><div className="detail-meta"><small>{contentDetail.subject}</small><small>{contentDetail.stage}</small>{contentDetail.durationWeeks ? <small>{contentDetail.durationWeeks} weeks</small> : null}{contentDetail.durationMinutes ? <small>{contentDetail.durationMinutes} minutes</small> : null}</div><div className="teacher-card-actions"><button type="button" className="primary-action" onClick={() => openPrimaryContent(contentDetail)}>Open main link</button><button type="button" className="secondary-action" onClick={() => setNotice("Assignment placeholder. Connect this modal to your class assignment flow next.")}>Assign</button></div>{contentDetail.outcomeCodes?.length ? <div className="detail-list"><h3>Outcomes</h3><ul>{contentDetail.outcomeCodes.map((outcome) => <li key={outcome}>{outcome}</li>)}</ul></div> : null}{contentDetail.lessonIds?.length ? <div className="detail-list"><h3>Included lessons</h3><ul>{contentDetail.lessonIds.map((lessonId) => <li key={lessonId}>{lessons.find((lesson) => lesson.id === lessonId)?.title || lessonId}</li>)}</ul></div> : null}{contentDetail.resourceIds?.length ? <div className="detail-list"><h3>Attached resources</h3><ul>{contentDetail.resourceIds.map((resourceId) => <li key={resourceId}>{resources.find((resource) => resource.id === resourceId)?.title || resourceId}</li>)}</ul></div> : null}</div></div></div>}
       </main>
     </div>
   );
@@ -447,6 +593,7 @@ function StaffConsole({ onLock }) {
   const [previewKey, setPreviewKey] = useState(0);
   const [saveState, setSaveState] = useState("idle");
   const [contentSaveState, setContentSaveState] = useState("idle");
+  const [notice, setNotice] = useState("");
 
   useEffect(() => {
     setConfig(savedConfig);
@@ -589,6 +736,11 @@ function StaffConsole({ onLock }) {
     }
   }
 
+  async function publishUpdates() {
+    await publishDashboardConfig();
+    setNotice("Dashboard settings were published. Content items save to Firestore as soon as they are created or deleted.");
+  }
+
   return (
     <div className="staff-shell">
       <aside className="staff-sidebar">
@@ -605,10 +757,11 @@ function StaffConsole({ onLock }) {
         <article className="tracka-mini"><img src={assets.trackaLogo} alt="Taronga Tracka" /><p>Staff editing is unlocked for this browser session. Tracka data connector ready for staff review.</p></article>
       </aside>
       <main className="staff-workspace">
-        <header className="staff-topbar"><div><span>Taronga Staff Console</span><h1>Wildly learning operations</h1></div><div className="staff-actions"><a href={routePath("teacher")}>Teacher view</a><button type="button">Publish updates</button><button type="button" className="sign-out-button" onClick={onLock}>Lock staff view</button></div></header>
+        <header className="staff-topbar"><div><span>Taronga Staff Console</span><h1>Wildly learning operations</h1></div><div className="staff-actions"><a href={routePath("teacher")}>Teacher view</a><button type="button" onClick={publishUpdates}>Publish updates</button><button type="button" className="sign-out-button" onClick={onLock}>Lock staff view</button></div></header>
+        <NoticeBanner notice={notice} onClose={() => setNotice("")} />
         {panel === "overview" && <section className="staff-panel active"><div className="overview-grid">{[["Active users", "4,286", "Teachers, students and Taronga staff this term"], ["Assigned resources", "18,940", "Lessons, learning paths and missions launched"], ["Tracka-linked sessions", "72%", "Activities connected to excursion or citizen science data"], ["Curriculum coverage", "146", "Mapped outcomes across NSW and Australian Curriculum"]].map(([label, value, copy]) => <article key={label}><span>{label}</span><strong>{value}</strong><p>{copy}</p></article>)}</div><div className="overview-snapshot"><article><h2>Current priorities</h2><p>Science and HSIE pathways are seeing the strongest uptake this month, with data interpretation flagged as the highest-value support area.</p></article><article><h2>Next recommended action</h2><p>Review Stage 3 animal adaptations lessons and prepare a Tracka mission bundle for upcoming school visits.</p></article></div></section>}
-        {panel === "users" && <UsersPanel />}
-        {panel === "analytics" && <AnalyticsPanel />}
+        {panel === "users" && <UsersPanel onPlaceholder={(message) => setNotice(message)} />}
+        {panel === "analytics" && <AnalyticsPanel onPlaceholder={(message) => setNotice(message)} />}
         {panel === "content" && <ContentPanel contentItems={contentItems} status={contentStatus} saveState={contentSaveState} seedContentItems={seedContentItems} addContentItem={addContentItem} deleteContentItem={deleteContentItem} />}
         {panel === "dashboard" && <DashboardEditor config={config} contentItems={contentItems} updateConfig={updateConfig} reset={() => { setConfig(defaultDashboardConfig); setPreviewKey((key) => key + 1); }} previewKey={previewKey} publish={publishDashboardConfig} status={status} saveState={saveState} />}
       </main>
@@ -616,12 +769,35 @@ function StaffConsole({ onLock }) {
   );
 }
 
-function UsersPanel() {
-  return <section className="staff-section staff-panel active"><div className="section-heading"><div><h2>Users</h2><p>Analyse all teachers, students, schools and Taronga staff involved in Wildly.</p></div><button>Add user</button></div><div className="user-layout"><article className="user-breakdown"><h3>User mix</h3><div className="donut" aria-label="User mix chart"></div><ul>{[["teacher", "Teachers", "682"], ["student", "Students", "3,421"], ["staff", "Taronga staff", "74"], ["school", "School admins", "109"]].map(([cls, label, value]) => <li key={label}><span className={cls}></span>{label}<strong>{value}</strong></li>)}</ul></article><article className="user-table-card"><div className="table-toolbar"><label><Icon type="target" className="" /><input type="search" placeholder="Search users, schools or roles" /></label><select aria-label="Filter users"><option>All roles</option><option>Teachers</option><option>Students</option><option>Taronga staff</option></select></div><table><thead><tr><th>User</th><th>Role</th><th>Organisation</th><th>Status</th><th>Last active</th></tr></thead><tbody>{[["James Thompson", "Teacher", "Riverbank Public School", "Active", "Today"], ["Ava Wilson", "Student", "Riverbank Public School", "Active", "Today"], ["Maya Chen", "Taronga staff", "Taronga Education", "Review", "Yesterday"], ["Samir Patel", "School admin", "Western Sydney Learning Hub", "Active", "2 days ago"]].map(([name, role, org, status, active]) => <tr key={name}><td>{name}</td><td>{role}</td><td>{org}</td><td><span className={`status ${status === "Active" ? "active" : "review"}`}>{status}</span></td><td>{active}</td></tr>)}</tbody></table></article></div></section>;
+function UsersPanel({ onPlaceholder }) {
+  const userRows = [
+    ["James Thompson", "Teacher", "Riverbank Public School", "Active", "Today"],
+    ["Ava Wilson", "Student", "Riverbank Public School", "Active", "Today"],
+    ["Maya Chen", "Taronga staff", "Taronga Education", "Review", "Yesterday"],
+    ["Samir Patel", "School admin", "Western Sydney Learning Hub", "Active", "2 days ago"],
+  ];
+  const [search, setSearch] = useState("");
+  const [roleFilter, setRoleFilter] = useState("All roles");
+  const visibleRows = userRows.filter(([name, role, org]) => {
+    const matchesSearch = `${name} ${role} ${org}`.toLowerCase().includes(search.toLowerCase());
+    const matchesRole = roleFilter === "All roles" || role === roleFilter.slice(0, -1) || role === roleFilter;
+    return matchesSearch && matchesRole;
+  });
+
+  return <section className="staff-section staff-panel active"><div className="section-heading"><div><h2>Users</h2><p>Analyse all teachers, students, schools and Taronga staff involved in Wildly.</p></div><button type="button" onClick={() => onPlaceholder("Add user placeholder. Connect this to your user invite or provisioning flow.")}>Add user</button></div><div className="user-layout"><article className="user-breakdown"><h3>User mix</h3><div className="donut" aria-label="User mix chart"></div><ul>{[["teacher", "Teachers", "682"], ["student", "Students", "3,421"], ["staff", "Taronga staff", "74"], ["school", "School admins", "109"]].map(([cls, label, value]) => <li key={label}><span className={cls}></span>{label}<strong>{value}</strong></li>)}</ul></article><article className="user-table-card"><div className="table-toolbar"><label><Icon type="target" className="" /><input type="search" placeholder="Search users, schools or roles" value={search} onChange={(event) => setSearch(event.target.value)} /></label><select aria-label="Filter users" value={roleFilter} onChange={(event) => setRoleFilter(event.target.value)}><option>All roles</option><option>Teacher</option><option>Student</option><option>Taronga staff</option><option>School admin</option></select></div><table><thead><tr><th>User</th><th>Role</th><th>Organisation</th><th>Status</th><th>Last active</th></tr></thead><tbody>{visibleRows.map(([name, role, org, status, active]) => <tr key={name}><td>{name}</td><td>{role}</td><td>{org}</td><td><span className={`status ${status === "Active" ? "active" : "review"}`}>{status}</span></td><td>{active}</td></tr>)}</tbody></table>{visibleRows.length ? null : <p className="empty-table-copy">No users match this filter.</p>}</article></div></section>;
 }
 
-function AnalyticsPanel() {
-  return <section className="staff-section staff-panel active"><div className="section-heading"><div><h2>Analytics</h2><p>View engagement, learning progress, curriculum gaps and Tracka-connected outcomes.</p></div><button>Export report</button></div><div className="analytics-grid"><article className="wide-card"><h3>Learning engagement by week</h3><div className="bar-chart">{[42, 58, 51, 76, 68, 88, 81].map((height) => <span style={{ height: `${height}%` }} key={height}></span>)}</div></article><article><h3>Knowledge gaps</h3>{[["Adaptation vs behaviour", 64], ["Data interpretation", 48], ["Persuasive writing", 37]].map(([label, width]) => <React.Fragment key={label}><p className="metric">{label}</p><div className="meter"><span style={{ width: `${width}%` }}></span></div></React.Fragment>)}</article><article><h3>Results snapshot</h3><ul className="result-list"><li>Below expected <strong>18%</strong></li><li>At expected <strong>57%</strong></li><li>Above expected <strong>25%</strong></li></ul></article></div></section>;
+function AnalyticsPanel({ onPlaceholder }) {
+  function exportReport() {
+    downloadTextFile(
+      "wildly-analytics-report.csv",
+      "metric,value\nLearning engagement peak,88%\nBelow expected,18%\nAt expected,57%\nAbove expected,25%\nHighest gap,Adaptation vs behaviour\n",
+      "text/csv;charset=utf-8",
+    );
+    onPlaceholder("Analytics report exported as a sample CSV. Replace this with your real reporting export when ready.");
+  }
+
+  return <section className="staff-section staff-panel active"><div className="section-heading"><div><h2>Analytics</h2><p>View engagement, learning progress, curriculum gaps and Tracka-connected outcomes.</p></div><button type="button" onClick={exportReport}>Export report</button></div><div className="analytics-grid"><article className="wide-card"><h3>Learning engagement by week</h3><div className="bar-chart">{[42, 58, 51, 76, 68, 88, 81].map((height) => <span style={{ height: `${height}%` }} key={height}></span>)}</div></article><article><h3>Knowledge gaps</h3>{[["Adaptation vs behaviour", 64], ["Data interpretation", 48], ["Persuasive writing", 37]].map(([label, width]) => <React.Fragment key={label}><p className="metric">{label}</p><div className="meter"><span style={{ width: `${width}%` }}></span></div></React.Fragment>)}</article><article><h3>Results snapshot</h3><ul className="result-list"><li>Below expected <strong>18%</strong></li><li>At expected <strong>57%</strong></li><li>Above expected <strong>25%</strong></li></ul></article></div></section>;
 }
 
 function ContentPanel({ contentItems, status, saveState, seedContentItems, addContentItem, deleteContentItem }) {
