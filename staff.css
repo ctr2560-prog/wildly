@@ -927,6 +927,189 @@ td {
   line-height: 1.35;
 }
 
+.content-studio-tabs {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin: 16px 0;
+}
+
+.content-studio-tabs button {
+  display: grid;
+  gap: 6px;
+  min-height: 88px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--ink);
+  text-align: left;
+  box-shadow: 0 10px 24px rgba(14, 42, 28, 0.04);
+}
+
+.content-studio-tabs button.active {
+  border-color: rgba(11, 76, 50, 0.2);
+  background: #f8fbf6;
+  box-shadow: 0 0 0 2px rgba(19, 95, 61, 0.08);
+}
+
+.content-studio-tabs strong {
+  color: var(--green-950);
+  font-size: 16px;
+}
+
+.content-studio-tabs small {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1.35;
+}
+
+.content-studio-layout {
+  display: grid;
+  grid-template-columns: 380px minmax(0, 1fr);
+  gap: 16px;
+  align-items: start;
+}
+
+.content-library-panel,
+.content-editor-panel {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: 0 10px 24px rgba(14, 42, 28, 0.04);
+}
+
+.content-library-panel {
+  padding: 16px;
+}
+
+.content-library-header {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.content-library-header h3 {
+  margin: 5px 0 6px;
+  color: var(--green-950);
+  font-size: 20px;
+}
+
+.content-library-header p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.content-library-header button {
+  min-height: 34px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 6px;
+  color: var(--green-900);
+  background: var(--green-100);
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.content-list-scroll {
+  max-height: 960px;
+  overflow: auto;
+  padding-right: 2px;
+}
+
+.content-item-card.selectable {
+  cursor: pointer;
+}
+
+.content-item-card.selectable.selected {
+  border-color: rgba(11, 76, 50, 0.2);
+  background: #f8fbf6;
+  box-shadow: 0 0 0 2px rgba(19, 95, 61, 0.08);
+}
+
+.content-editor-panel {
+  display: grid;
+  gap: 18px;
+  padding: 18px;
+}
+
+.content-editor-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.45fr) minmax(280px, 0.75fr);
+  gap: 16px;
+  align-items: start;
+}
+
+.content-editor-main,
+.content-editor-side {
+  display: grid;
+  gap: 16px;
+}
+
+.content-editor-section {
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #f8fbf6;
+}
+
+.content-editor-section.compact {
+  background: #fff;
+}
+
+.content-editor-section h4 {
+  margin: 0 0 12px;
+  color: var(--green-950);
+  font-size: 15px;
+}
+
+.content-editor-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.content-editor-fields .wide-field,
+.content-editor-fields .lesson-picker {
+  grid-column: 1 / -1;
+}
+
+.simple-image-picker-stacked {
+  grid-template-columns: 1fr;
+}
+
+.editor-meta-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.editor-meta-list span {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  padding: 0 10px;
+  border-radius: 99px;
+  background: #eef4e8;
+  color: var(--green-900);
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.editor-delete-button {
+  min-height: 40px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 900;
+}
+
 .simple-image-picker {
   display: grid;
   grid-column: 1 / -1;
@@ -1312,7 +1495,8 @@ td {
   .overview-grid,
   .content-grid,
   .content-builder-options,
-  .content-sections {
+  .content-sections,
+  .content-studio-tabs {
     grid-template-columns: repeat(2, 1fr);
   }
 
@@ -1321,7 +1505,10 @@ td {
   .overview-snapshot,
   .editor-form,
   .flag-grid,
-  .content-form {
+  .content-form,
+  .content-studio-layout,
+  .content-editor-grid,
+  .content-editor-fields {
     grid-template-columns: 1fr;
   }
 
@@ -1338,6 +1525,11 @@ td {
   }
 
   .content-form .wide-field {
+    grid-column: auto;
+  }
+
+  .content-editor-fields .wide-field,
+  .content-editor-fields .lesson-picker {
     grid-column: auto;
   }
 
@@ -1388,6 +1580,7 @@ td {
   .overview-grid,
   .content-grid,
   .content-builder-options,
+  .content-studio-tabs,
   .content-sections,
   .staff-nav {
     grid-template-columns: 1fr;

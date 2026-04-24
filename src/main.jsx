@@ -1485,6 +1485,7 @@ function StaffConsole({ onLock }) {
     try {
       const contentType = item.type;
       const mirrorCollection = collectionForContentType(contentType);
+      const isExisting = Boolean(item.id);
       const contentPayload = {
         ...item,
         image: item.uploadedImageDataUrl || item.customImageUrl?.trim() || item.image || assets[item.imageKey] || assets.heroKoala,
@@ -1523,20 +1524,30 @@ function StaffConsole({ onLock }) {
       delete contentPayload.customImageUrl;
       delete contentPayload.uploadedImageDataUrl;
 
-      const contentRef = await addDoc(contentItemsCollection, {
-        ...contentPayload,
-        order: contentItems.length + 1,
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
-      });
+      let contentId = item.id;
 
-      if (mirrorCollection) {
-        await setDoc(doc(db, mirrorCollection, contentRef.id), {
+      if (isExisting) {
+        await setDoc(doc(db, "contentItems", item.id), {
           ...contentPayload,
-          contentItemId: contentRef.id,
+          updatedAt: serverTimestamp(),
+        }, { merge: true });
+      } else {
+        const contentRef = await addDoc(contentItemsCollection, {
+          ...contentPayload,
+          order: contentItems.length + 1,
           createdAt: serverTimestamp(),
           updatedAt: serverTimestamp(),
         });
+        contentId = contentRef.id;
+      }
+
+      if (mirrorCollection && contentId) {
+        await setDoc(doc(db, mirrorCollection, contentId), {
+          ...contentPayload,
+          contentItemId: contentId,
+          ...(isExisting ? {} : { createdAt: serverTimestamp() }),
+          updatedAt: serverTimestamp(),
+        }, { merge: true });
       }
 
       setContentSaveState("saved");
@@ -1628,40 +1639,114 @@ function AnalyticsPanel({ onPlaceholder }) {
 }
 
 function ContentPanel({ contentItems, status, saveState, seedContentItems, addContentItem, deleteContentItem }) {
-  const [showForm, setShowForm] = useState(false);
+  const [activeType, setActiveType] = useState("Learning Path");
+  const [selectedId, setSelectedId] = useState("");
   const [draft, setDraft] = useState(createContentDraft("Learning Path"));
   const [imageError, setImageError] = useState("");
   const learningPaths = contentItems.filter((item) => item.type === "Learning Path");
   const lessonOptions = contentItems.filter((item) => item.type === "Lesson");
   const resourceOptions = contentItems.filter((item) => item.type === "Resource");
-  const groupedContent = [
-    ["Learning Path", learningPaths],
-    ["Lesson", lessonOptions],
-    ["Resource", resourceOptions],
-  ];
+  const currentItems = activeType === "Learning Path" ? learningPaths : activeType === "Lesson" ? lessonOptions : resourceOptions;
+  const selectedItem = currentItems.find((item) => item.id === selectedId) || null;
   const selectedImage = draft.uploadedImageDataUrl || draft.customImageUrl || draft.image || assets[draft.imageKey] || assets.heroKoala;
+  const typeCopy = {
+    "Learning Path": {
+      title: "Learning paths",
+      description: "Full units or sequences with duration, outcomes, admin documents and linked lessons.",
+      button: "New learning path",
+    },
+    Lesson: {
+      title: "Lessons",
+      description: "Individual lessons that can sit inside a learning path or be used on their own.",
+      button: "New lesson",
+    },
+    Resource: {
+      title: "Resources",
+      description: "Files, links and supporting resources that can sit inside lessons or stand alone.",
+      button: "New resource",
+    },
+  };
 
-  async function submitContent(event) {
-    event.preventDefault();
-    await addContentItem(draft);
-    setDraft(createContentDraft(draft.type));
-    setShowForm(false);
+  function itemTitle(items, id) {
+    return items.find((item) => item.id === id)?.title || "";
+  }
+
+  function materialCount(item) {
+    return [
+      item.materials?.canvaEmbedUrl,
+      item.materials?.teacherGuideUrl,
+      item.materials?.studentWorksheetUrl,
+      item.materials?.videoUrl,
+      item.materials?.teacherAdminUrl,
+      item.materials?.unitPlanUrl,
+      item.materials?.lessonPlanUrl,
+      item.materials?.resourceUrl,
+      ...(item.materials?.resourceLinks || []),
+    ].filter(Boolean).length;
+  }
+
+  function makeEditableDraft(item) {
+    return {
+      ...createContentDraft(item.type),
+      ...item,
+      imageKey: item.imageKey || "",
+      image: item.image || "",
+      customImageUrl: item.imageKey ? "" : (item.image || ""),
+      uploadedImageDataUrl: "",
+      outcomeCodes: Array.isArray(item.outcomeCodes) ? item.outcomeCodes.join("\n") : (item.outcomeCodes || ""),
+      activityPrompts: Array.isArray(item.activityPrompts) ? item.activityPrompts.join("\n") : (item.activityPrompts || ""),
+      canvaEmbedUrl: item.materials?.canvaEmbedUrl || "",
+      teacherGuideUrl: item.materials?.teacherGuideUrl || "",
+      studentWorksheetUrl: item.materials?.studentWorksheetUrl || "",
+      videoUrl: item.materials?.videoUrl || "",
+      teacherAdminUrl: item.materials?.teacherAdminUrl || "",
+      unitPlanUrl: item.materials?.unitPlanUrl || "",
+      lessonPlanUrl: item.materials?.lessonPlanUrl || "",
+      resourceUrl: item.materials?.resourceUrl || "",
+      resourceLinks: Array.isArray(item.materials?.resourceLinks) ? item.materials.resourceLinks.join("\n") : "",
+      lessonIds: item.lessonIds || [],
+      resourceIds: item.resourceIds || [],
+      learningPathId: item.learningPathId || "",
+      lessonId: item.lessonId || "",
+    };
+  }
+
+  useEffect(() => {
+    if (selectedItem) {
+      setDraft(makeEditableDraft(selectedItem));
+      setImageError("");
+      return;
+    }
+
+    setDraft((current) => ({
+      ...createContentDraft(activeType),
+      subject: current.subject || "Science",
+      stage: current.stage || "Stage 2",
+    }));
+    setImageError("");
+  }, [activeType, selectedItem]);
+
+  function startNew(type = activeType) {
+    setActiveType(type);
+    setSelectedId("");
+    setDraft(createContentDraft(type));
+    setImageError("");
+  }
+
+  function selectItem(item) {
+    setActiveType(item.type);
+    setSelectedId(item.id);
   }
 
   function updateDraft(patch) {
     setDraft((current) => ({ ...current, ...patch }));
   }
 
-  function changeType(type) {
-    setDraft((current) => ({
-      ...createContentDraft(type),
-      subject: current.subject,
-      stage: current.stage,
-      imageKey: current.imageKey,
-      image: current.image,
-    }));
-    setShowForm(true);
-    setImageError("");
+  async function submitContent(event) {
+    event.preventDefault();
+    await addContentItem(draft);
+    setSelectedId("");
+    setDraft(createContentDraft(activeType));
   }
 
   async function uploadCardImage(event) {
@@ -1702,74 +1787,168 @@ function ContentPanel({ contentItems, status, saveState, seedContentItems, addCo
     const label = `${item.type}: ${item.title}`;
     if (!window.confirm(`Delete ${label}? This removes the Firestore content item and its ${item.type.toLowerCase()} record.`)) return;
     await deleteContentItem(item);
-  }
-
-  function itemTitle(items, id) {
-    return items.find((item) => item.id === id)?.title || "";
-  }
-
-  function materialCount(item) {
-    return [
-      item.materials?.canvaEmbedUrl,
-      item.materials?.teacherGuideUrl,
-      item.materials?.studentWorksheetUrl,
-      item.materials?.videoUrl,
-      item.materials?.teacherAdminUrl,
-      item.materials?.unitPlanUrl,
-      item.materials?.lessonPlanUrl,
-      item.materials?.resourceUrl,
-      ...(item.materials?.resourceLinks || []),
-    ].filter(Boolean).length;
+    setSelectedId("");
+    setDraft(createContentDraft(activeType));
   }
 
   return (
     <section className="staff-section staff-panel active">
       <div className="section-heading">
-        <div><h2>Content</h2><p>Build content in the real LMS order: learning path, lesson, resource. Each item can also stand alone.</p></div>
-        <div className="heading-actions"><button type="button" onClick={seedContentItems}>Seed Firestore content</button></div>
+        <div>
+          <h2>Content Studio</h2>
+          <p>Manage learning paths, lessons and resources in one clean workflow. Select an item to edit it, or create a new one from scratch.</p>
+        </div>
+        <div className="heading-actions">
+          <button type="button" onClick={seedContentItems}>Seed Firestore content</button>
+        </div>
       </div>
       <ContentFirestoreStatus status={status} saveState={saveState} />
-      <div className="content-builder-options" aria-label="Create content">
-        <button type="button" onClick={() => changeType("Learning Path")}><span>1</span><strong>Learning Path</strong><small>Unit, weeks, outcomes, admin docs</small></button>
-        <button type="button" onClick={() => changeType("Lesson")}><span>2</span><strong>Lesson</strong><small>Lesson plan, outcomes, path link</small></button>
-        <button type="button" onClick={() => changeType("Resource")}><span>3</span><strong>Resource</strong><small>File, link, description, lesson link</small></button>
+
+      <div className="content-studio-tabs" aria-label="Content types">
+        {["Learning Path", "Lesson", "Resource"].map((type) => (
+          <button key={type} type="button" className={activeType === type ? "active" : ""} onClick={() => startNew(type)}>
+            <strong>{type}</strong>
+            <small>{typeCopy[type].description}</small>
+          </button>
+        ))}
       </div>
-      {showForm && <form className="content-form" onSubmit={submitContent}>
-        <div className="content-form-header">
-          <span className="content-type">{draft.type} Builder</span>
-          <h3>{draft.type === "Learning Path" ? "Create a learning path" : draft.type === "Lesson" ? "Create a lesson" : "Create a resource"}</h3>
-          <p>{draft.type === "Learning Path" ? "A learning path is the full unit or sequence teachers assign over multiple weeks." : draft.type === "Lesson" ? "A lesson can sit inside a learning path or be used by itself." : "A resource can sit inside a lesson or be used by itself."}</p>
-        </div>
-        <label>Title<input type="text" required value={draft.title} onChange={(event) => updateDraft({ title: event.target.value })} /></label>
-        <label>Type<select value={draft.type} onChange={(event) => changeType(event.target.value)}><option>Lesson</option><option>Learning Path</option><option>Resource</option></select></label>
-        <label>Subject<select value={draft.subject} onChange={(event) => updateDraft({ subject: event.target.value })}>{subjects.map(([label]) => <option key={label}>{label}</option>)}</select></label>
-        <label>Stage<input type="text" value={draft.stage} onChange={(event) => updateDraft({ stage: event.target.value })} /></label>
-        <label>Status<select value={draft.status} onChange={(event) => updateDraft({ status: event.target.value })}><option>Draft</option><option>Review</option><option>Published</option></select></label>
-        {draft.type === "Learning Path" && <label>Duration in weeks<input type="number" min="0" value={draft.durationWeeks} onChange={(event) => updateDraft({ durationWeeks: event.target.value })} /></label>}
-        {draft.type === "Lesson" && <label>Duration in minutes<input type="number" min="0" value={draft.durationMinutes} onChange={(event) => updateDraft({ durationMinutes: event.target.value })} /></label>}
-        <label className="wide-field">Summary<input type="text" required value={draft.summary} onChange={(event) => updateDraft({ summary: event.target.value })} /></label>
-        <label className="wide-field">Description<textarea value={draft.description} onChange={(event) => updateDraft({ description: event.target.value })}></textarea></label>
-        <div className="simple-image-picker">
-          <img src={selectedImage} alt="" />
-          <div>
-            <span className="content-type">Image</span>
-            <label>Stock image<select value={selectedImage} onChange={(event) => chooseStockImage(event.target.value)}>{stockImages.map((stockImage) => <option value={stockImage.src} key={`${stockImage.label}-${stockImage.src}`}>{stockImage.label}</option>)}</select></label>
-            <label>Image URL<input type="url" value={draft.customImageUrl} onChange={(event) => updateDraft({ customImageUrl: event.target.value, uploadedImageDataUrl: "", image: event.target.value, imageKey: "" })} placeholder="https://..." /></label>
-            <label>Upload image<input type="file" accept="image/*" onChange={uploadCardImage} /></label>
-            {imageError && <p className="auth-error">{imageError}</p>}
+
+      <div className="content-studio-layout">
+        <aside className="content-library-panel">
+          <div className="content-library-header">
+            <div>
+              <span className="content-type">{activeType}</span>
+              <h3>{typeCopy[activeType].title}</h3>
+              <p>{typeCopy[activeType].description}</p>
+            </div>
+            <button type="button" onClick={() => startNew(activeType)}>{typeCopy[activeType].button}</button>
           </div>
-        </div>
-        <label className="wide-field">Curriculum outcomes<textarea placeholder="One outcome per line, e.g. ST2-4LW-S" value={draft.outcomeCodes} onChange={(event) => updateDraft({ outcomeCodes: event.target.value })}></textarea></label>
-        {draft.type === "Learning Path" && <><label>Teacher admin documents URL<input type="url" value={draft.teacherAdminUrl} onChange={(event) => updateDraft({ teacherAdminUrl: event.target.value })} placeholder="Drive, PDF or Canva link" /></label><label>Unit plan URL<input type="url" value={draft.unitPlanUrl} onChange={(event) => updateDraft({ unitPlanUrl: event.target.value })} placeholder="Scope, sequence or program link" /></label><fieldset className="lesson-picker"><legend>Lessons in this learning path</legend>{lessonOptions.length ? lessonOptions.map((lesson) => <label key={lesson.id || lesson.title}><input type="checkbox" checked={draft.lessonIds.includes(lesson.id)} onChange={() => toggleListItem("lessonIds", lesson.id)} />{lesson.title}<small>{lesson.subject} - {lesson.stage}</small></label>) : <p>Create or seed lessons first, then add them to this path.</p>}</fieldset></>}
-        {draft.type === "Lesson" && <><label>Learning path<select value={draft.learningPathId} onChange={(event) => updateDraft({ learningPathId: event.target.value })}><option value="">Standalone lesson</option>{learningPaths.map((path) => <option value={path.id} key={path.id || path.title}>{path.title}</option>)}</select></label><label>Lesson plan URL<input type="url" value={draft.lessonPlanUrl} onChange={(event) => updateDraft({ lessonPlanUrl: event.target.value })} placeholder="PDF, Google Drive or Canva link" /></label><fieldset className="lesson-picker"><legend>Resources in this lesson</legend>{resourceOptions.length ? resourceOptions.map((resource) => <label key={resource.id || resource.title}><input type="checkbox" checked={draft.resourceIds.includes(resource.id)} onChange={() => toggleListItem("resourceIds", resource.id)} />{resource.title}<small>{resource.subject} - {resource.stage}</small></label>) : <p>Create resources first, then add them to this lesson.</p>}</fieldset></>}
-        {draft.type === "Resource" && <><label>Lesson<select value={draft.lessonId} onChange={(event) => updateDraft({ lessonId: event.target.value })}><option value="">Standalone resource</option>{lessonOptions.map((lesson) => <option value={lesson.id} key={lesson.id || lesson.title}>{lesson.title}</option>)}</select></label><label>Resource file or Canva URL<input type="url" value={draft.resourceUrl} onChange={(event) => updateDraft({ resourceUrl: event.target.value })} placeholder="PDF, image, video, Canva or Drive link" /></label><label className="wide-field">Extra resource links<textarea placeholder="One URL per line" value={draft.resourceLinks} onChange={(event) => updateDraft({ resourceLinks: event.target.value })}></textarea></label></>}
-        {draft.type === "Learning Path" && <fieldset className="lesson-picker">
-          <legend>Optional activity prompts</legend>
-          <label className="wide-field">Teacher notes<textarea placeholder="One activity or prompt per line" value={draft.activityPrompts} onChange={(event) => updateDraft({ activityPrompts: event.target.value })}></textarea></label>
-        </fieldset>}
-        <div className="content-form-actions"><button type="button" className="secondary-button" onClick={() => setShowForm(false)}>Cancel</button><button type="submit" disabled={saveState === "saving"}>{saveState === "saving" ? "Saving..." : "Save to Firestore"}</button></div>
-      </form>}
-      <div className="content-sections">{groupedContent.map(([type, items]) => <section className="content-section-card" key={type}><div className="content-section-heading"><div><span className="content-type">{type}</span><h3>{type === "Learning Path" ? "Units and sequences" : type === "Lesson" ? "Assignable lessons" : "Individual resources"}</h3></div><button type="button" onClick={() => changeType(type)}>Add {type.toLowerCase()}</button></div><div className="content-list">{items.length ? items.map((item) => <article className="content-item-card" key={item.id || item.title}><img className="content-thumb" src={item.image} alt="" /><div><span className="content-type">{item.status}</span><h4>{item.title}</h4><p>{item.summary || item.description}</p><small>{item.subject} - {item.stage}</small>{item.durationWeeks ? <small>{item.durationWeeks} weeks</small> : null}{item.durationMinutes ? <small>{item.durationMinutes} minutes</small> : null}{item.learningPathId ? <small>Path: {itemTitle(learningPaths, item.learningPathId)}</small> : null}{item.lessonId ? <small>Lesson: {itemTitle(lessonOptions, item.lessonId)}</small> : null}{item.lessonIds?.length ? <small>{item.lessonIds.length} lessons sequenced</small> : null}{item.resourceIds?.length ? <small>{item.resourceIds.length} resources attached</small> : null}{materialCount(item) ? <div className="material-tags"><span>{materialCount(item)} links/files</span></div> : null}<div className="content-card-actions"><span className="sync-chip">Firestore synced</span><button type="button" className="delete-button" onClick={() => confirmDelete(item)}>Delete</button></div></div></article>) : <article className="empty-content-card"><Icon type="plus" className="" /><h4>No {type.toLowerCase()}s yet</h4><p>Add one here, or create it as a standalone item first.</p></article>}</div></section>)}</div>
+
+          <div className="content-list content-list-scroll">
+            {currentItems.length ? currentItems.map((item) => (
+              <article className={`content-item-card selectable ${selectedId === item.id ? "selected" : ""}`} key={item.id || item.title} onClick={() => selectItem(item)}>
+                <img className="content-thumb" src={item.image} alt="" />
+                <div>
+                  <span className="content-type">{item.status}</span>
+                  <h4>{item.title}</h4>
+                  <p>{item.summary || item.description}</p>
+                  <small>{item.subject} - {item.stage}</small>
+                  {item.durationWeeks ? <small>{item.durationWeeks} weeks</small> : null}
+                  {item.durationMinutes ? <small>{item.durationMinutes} minutes</small> : null}
+                  {item.learningPathId ? <small>Path: {itemTitle(learningPaths, item.learningPathId)}</small> : null}
+                  {item.lessonId ? <small>Lesson: {itemTitle(lessonOptions, item.lessonId)}</small> : null}
+                  {item.lessonIds?.length ? <small>{item.lessonIds.length} lessons linked</small> : null}
+                  {item.resourceIds?.length ? <small>{item.resourceIds.length} resources linked</small> : null}
+                  {materialCount(item) ? <div className="material-tags"><span>{materialCount(item)} links/files</span></div> : null}
+                </div>
+              </article>
+            )) : (
+              <article className="empty-content-card">
+                <Icon type="plus" className="" />
+                <h4>No {activeType.toLowerCase()}s yet</h4>
+                <p>Create the first one from the editor on the right.</p>
+              </article>
+            )}
+          </div>
+        </aside>
+
+        <form className="content-editor-panel" onSubmit={submitContent}>
+          <div className="content-form-header">
+            <span className="content-type">{selectedId ? "Editing" : "Creating"}</span>
+            <h3>{selectedId ? draft.title || `Edit ${draft.type.toLowerCase()}` : `New ${draft.type.toLowerCase()}`}</h3>
+            <p>{draft.type === "Learning Path" ? "Set up a unit with timing, outcomes, administration links and attached lessons." : draft.type === "Lesson" ? "Build a lesson that can stand alone or sit inside a learning path." : "Create a single resource teachers can open directly or attach to a lesson."}</p>
+          </div>
+
+          <div className="content-editor-grid">
+            <div className="content-editor-main">
+              <div className="content-editor-section">
+                <h4>Basics</h4>
+                <div className="content-editor-fields">
+                  <label>Title<input type="text" required value={draft.title} onChange={(event) => updateDraft({ title: event.target.value })} /></label>
+                  <label>Subject<select value={draft.subject} onChange={(event) => updateDraft({ subject: event.target.value })}>{subjects.map(([label]) => <option key={label}>{label}</option>)}</select></label>
+                  <label>Stage<input type="text" value={draft.stage} onChange={(event) => updateDraft({ stage: event.target.value })} /></label>
+                  <label>Status<select value={draft.status} onChange={(event) => updateDraft({ status: event.target.value })}><option>Draft</option><option>Review</option><option>Published</option></select></label>
+                  {draft.type === "Learning Path" ? <label>Duration in weeks<input type="number" min="0" value={draft.durationWeeks} onChange={(event) => updateDraft({ durationWeeks: event.target.value })} /></label> : null}
+                  {draft.type === "Lesson" ? <label>Duration in minutes<input type="number" min="0" value={draft.durationMinutes} onChange={(event) => updateDraft({ durationMinutes: event.target.value })} /></label> : null}
+                  <label className="wide-field">Summary<input type="text" required value={draft.summary} onChange={(event) => updateDraft({ summary: event.target.value })} /></label>
+                  <label className="wide-field">Description<textarea value={draft.description} onChange={(event) => updateDraft({ description: event.target.value })}></textarea></label>
+                  <label className="wide-field">Curriculum outcomes<textarea placeholder="One outcome per line" value={draft.outcomeCodes} onChange={(event) => updateDraft({ outcomeCodes: event.target.value })}></textarea></label>
+                </div>
+              </div>
+
+              {draft.type === "Learning Path" ? (
+                <div className="content-editor-section">
+                  <h4>Learning path setup</h4>
+                  <div className="content-editor-fields">
+                    <label>Teacher admin documents URL<input type="url" value={draft.teacherAdminUrl} onChange={(event) => updateDraft({ teacherAdminUrl: event.target.value })} placeholder="Drive, PDF or Canva link" /></label>
+                    <label>Unit plan URL<input type="url" value={draft.unitPlanUrl} onChange={(event) => updateDraft({ unitPlanUrl: event.target.value })} placeholder="Scope, sequence or program link" /></label>
+                    <label className="wide-field">Teacher notes<textarea placeholder="One activity or prompt per line" value={draft.activityPrompts} onChange={(event) => updateDraft({ activityPrompts: event.target.value })}></textarea></label>
+                    <fieldset className="lesson-picker wide-field">
+                      <legend>Lessons in this learning path</legend>
+                      {lessonOptions.length ? lessonOptions.map((lesson) => <label key={lesson.id || lesson.title}><input type="checkbox" checked={draft.lessonIds.includes(lesson.id)} onChange={() => toggleListItem("lessonIds", lesson.id)} />{lesson.title}<small>{lesson.subject} - {lesson.stage}</small></label>) : <p>Create lessons first, then attach them here.</p>}
+                    </fieldset>
+                  </div>
+                </div>
+              ) : null}
+
+              {draft.type === "Lesson" ? (
+                <div className="content-editor-section">
+                  <h4>Lesson setup</h4>
+                  <div className="content-editor-fields">
+                    <label>Learning path<select value={draft.learningPathId} onChange={(event) => updateDraft({ learningPathId: event.target.value })}><option value="">Standalone lesson</option>{learningPaths.map((path) => <option value={path.id} key={path.id || path.title}>{path.title}</option>)}</select></label>
+                    <label>Lesson plan URL<input type="url" value={draft.lessonPlanUrl} onChange={(event) => updateDraft({ lessonPlanUrl: event.target.value })} placeholder="PDF, Drive or Canva link" /></label>
+                    <fieldset className="lesson-picker wide-field">
+                      <legend>Resources in this lesson</legend>
+                      {resourceOptions.length ? resourceOptions.map((resource) => <label key={resource.id || resource.title}><input type="checkbox" checked={draft.resourceIds.includes(resource.id)} onChange={() => toggleListItem("resourceIds", resource.id)} />{resource.title}<small>{resource.subject} - {resource.stage}</small></label>) : <p>Create resources first, then attach them here.</p>}
+                    </fieldset>
+                  </div>
+                </div>
+              ) : null}
+
+              {draft.type === "Resource" ? (
+                <div className="content-editor-section">
+                  <h4>Resource setup</h4>
+                  <div className="content-editor-fields">
+                    <label>Lesson<select value={draft.lessonId} onChange={(event) => updateDraft({ lessonId: event.target.value })}><option value="">Standalone resource</option>{lessonOptions.map((lesson) => <option value={lesson.id} key={lesson.id || lesson.title}>{lesson.title}</option>)}</select></label>
+                    <label>Resource file or Canva URL<input type="url" value={draft.resourceUrl} onChange={(event) => updateDraft({ resourceUrl: event.target.value })} placeholder="PDF, image, video, Canva or Drive link" /></label>
+                    <label className="wide-field">Extra resource links<textarea placeholder="One URL per line" value={draft.resourceLinks} onChange={(event) => updateDraft({ resourceLinks: event.target.value })}></textarea></label>
+                  </div>
+                </div>
+              ) : null}
+            </div>
+
+            <aside className="content-editor-side">
+              <div className="content-editor-section">
+                <h4>Card image</h4>
+                <div className="simple-image-picker simple-image-picker-stacked">
+                  <img src={selectedImage} alt="" />
+                  <div>
+                    <label>Stock image<select value={selectedImage} onChange={(event) => chooseStockImage(event.target.value)}>{stockImages.map((stockImage) => <option value={stockImage.src} key={`${stockImage.label}-${stockImage.src}`}>{stockImage.label}</option>)}</select></label>
+                    <label>Image URL<input type="url" value={draft.customImageUrl} onChange={(event) => updateDraft({ customImageUrl: event.target.value, uploadedImageDataUrl: "", image: event.target.value, imageKey: "" })} placeholder="https://..." /></label>
+                    <label>Upload image<input type="file" accept="image/*" onChange={uploadCardImage} /></label>
+                    {imageError ? <p className="auth-error">{imageError}</p> : null}
+                  </div>
+                </div>
+              </div>
+
+              <div className="content-editor-section compact">
+                <h4>Publishing</h4>
+                <div className="editor-meta-list">
+                  <span>{selectedId ? "Existing Firestore item" : "New Firestore item"}</span>
+                  <span>{draft.type}</span>
+                  <span>{draft.status}</span>
+                </div>
+              </div>
+            </aside>
+          </div>
+
+          <div className="content-form-actions">
+            {selectedId ? <button type="button" className="delete-button editor-delete-button" onClick={() => confirmDelete(draft)}>Delete</button> : null}
+            <button type="button" className="secondary-button" onClick={() => startNew(activeType)}>Clear form</button>
+            <button type="submit" disabled={saveState === "saving"}>{saveState === "saving" ? "Saving..." : selectedId ? "Update content" : "Save to Firestore"}</button>
+          </div>
+        </form>
+      </div>
     </section>
   );
 }
