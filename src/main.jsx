@@ -82,6 +82,21 @@ const schoolOptions = [
   "Singapore International School",
 ];
 
+const defaultProfessionalLearningItems = [
+  {
+    id: "teacher-webinar-learning-with-impact",
+    title: "Teacher Webinar: Learning with Impact",
+    date: "2026-05-14",
+    time: "4:00 PM AEST",
+    summary: "A live online session on building conservation action into classroom planning.",
+    description: "Join Taronga education staff for a practical walkthrough of how to use Wildly content, Tracka data and curriculum alignment to build stronger classroom sequences.",
+    registrationUrl: "",
+    pdfUrl: "",
+    infoUrl: "",
+    status: "Published",
+  },
+];
+
 const staffPassword = "admin";
 const staffSessionKey = "wildly-staff-session";
 
@@ -199,7 +214,7 @@ const appLinks = {
   demoBooking: routePath("demo-booking"),
   support: routePath("support"),
   excursions: routePath("excursions"),
-  professionalLearning: routePath("professional-learning"),
+  professionalLearning: teacherRoute("professional-learning"),
 };
 
 function subjectSlug(label) {
@@ -590,7 +605,7 @@ function LandingPage() {
   );
 }
 
-function TeacherDashboard({ config, contentItems = defaultContentItems.map(resolveContentItem), page = "dashboard", subject = "", contentId = "", profile = null, onSignOut = null, preview = false }) {
+function TeacherDashboard({ config, contentItems = defaultContentItems.map(resolveContentItem), professionalLearningItems = defaultProfessionalLearningItems, page = "dashboard", subject = "", contentId = "", profile = null, onSignOut = null, preview = false }) {
   const [activeSubject, setActiveSubject] = useState(subjectFromSlug(subject));
   const [query, setQuery] = useState("");
   const [notice, setNotice] = useState("");
@@ -639,6 +654,9 @@ function TeacherDashboard({ config, contentItems = defaultContentItems.map(resol
     ["Highest engagement", "Science, HSIE and Technology & STEM this month"],
     ["Recommended action", "Publish more Stage 2 resources before the next zoo visit"],
   ];
+  const publishedProfessionalLearningItems = professionalLearningItems.filter((item) => item.status !== "Draft");
+  const nextProfessionalLearning = publishedProfessionalLearningItems[0] || null;
+  const notificationItems = publishedProfessionalLearningItems.slice(0, 3);
   const showContinue = config.showContinueLearning;
   const showUpcoming = config.showUpcomingPanel;
   const showTracka = config.showTrackaCard;
@@ -670,6 +688,12 @@ function TeacherDashboard({ config, contentItems = defaultContentItems.map(resol
       title: "Units and teaching sequences",
       description: "Open a full learning path, review outcomes and move straight into attached lessons.",
       action: <a className="secondary-action" href={teacherRoute("subjects")}>Browse subjects</a>,
+    },
+    "professional-learning": {
+      eyebrow: "Professional Learning",
+      title: "Teacher webinars and learning sessions",
+      description: "Upcoming professional learning sessions, registrations, supporting information and downloadable PDFs all live here.",
+      action: <a className="secondary-action" href={teacherRoute("calendar")}>Open calendar</a>,
     },
     resources: {
       eyebrow: "Resources",
@@ -737,7 +761,7 @@ function TeacherDashboard({ config, contentItems = defaultContentItems.map(resol
         </section>
         <section className="side-section" aria-labelledby="explore-title">
           <h2 id="explore-title">Explore</h2>
-          <a className="nav-item small" href={teacherRoute("paths")}><Icon type="path" />Learning Paths</a>
+          <a className="nav-item small" href={teacherRoute("professional-learning")}><Icon type="book" />Professional Learning</a>
           <a className="nav-item small" href={appLinks.excursions}><Icon type="pin" />Excursions & Zoo Links</a>
           <a className="nav-item small" href={appLinks.tracka || appLinks.excursions}><Icon type="target" />Tracka Missions<span className="external"></span></a>
         </section>
@@ -759,13 +783,13 @@ function TeacherDashboard({ config, contentItems = defaultContentItems.map(resol
           <nav className="top-links" aria-label="Primary">
             <a className={page === "dashboard" ? "selected" : ""} href={teacherRoute()}>Dashboard</a>
             <a className={page === "subjects" ? "selected" : ""} href={teacherRoute("subjects")}>Subjects</a>
-            <a className={page === "paths" ? "selected" : ""} href={teacherRoute("paths")}>Learning Paths</a>
+            <a className={page === "professional-learning" ? "selected" : ""} href={teacherRoute("professional-learning")}>Professional Learning</a>
             <a className={page === "resources" ? "selected" : ""} href={teacherRoute("resources")}>Resources</a>
             <a className={page === "classes" ? "selected" : ""} href={teacherRoute("classes")}>My Classes</a>
           </nav>
           <div className="top-actions">
             {!preview && onSignOut ? <button type="button" className="top-text-action" onClick={onSignOut}>Sign out</button> : null}
-            <button type="button" className="top-icon-button" aria-label="Notifications" onClick={() => setNotice("Notifications placeholder: upcoming excursions, due tasks and Tracka mission alerts will appear here.")}>
+            <button type="button" className="top-icon-button" aria-label="Notifications" onClick={() => setNotice(notificationItems.length ? notificationItems.map((item) => `${item.title} - ${item.date}${item.time ? `, ${item.time}` : ""}`).join("\n") : "No new professional learning notifications yet.")}>
               <Icon type="bell" className="" />
             </button>
             <a className="icon-button help" aria-label="Help" href={appLinks.support}></a>
@@ -858,7 +882,7 @@ function TeacherDashboard({ config, contentItems = defaultContentItems.map(resol
                       <p>First Nations perspectives for Stage 3 inquiry.</p>
                     </div>
                   </a>
-                  <a className="news-card purple" href={appLinks.professionalLearning}>
+                  <a className="news-card purple" href={teacherRoute("professional-learning")}>
                     <img src={assets.gorilla} alt="" />
                     <div>
                       <span>Professional Learning</span>
@@ -907,6 +931,16 @@ function TeacherDashboard({ config, contentItems = defaultContentItems.map(resol
                       <p>Mon 24 Jun - 11:59pm</p>
                     </div>
                   </a>
+                  {nextProfessionalLearning ? (
+                    <a className="event-card icon-event" href={teacherRoute("professional-learning")}>
+                      <span className="target-icon"></span>
+                      <div>
+                        <span className="event-tag live">PL</span>
+                        <h3>{nextProfessionalLearning.title}</h3>
+                        <p>{nextProfessionalLearning.date}{nextProfessionalLearning.time ? ` - ${nextProfessionalLearning.time}` : ""}</p>
+                      </div>
+                    </a>
+                  ) : null}
                   <article className="difference-card">
                     <span className="mini-mark" aria-hidden="true"></span>
                     <div>
@@ -1002,6 +1036,50 @@ function TeacherDashboard({ config, contentItems = defaultContentItems.map(resol
               )}
             </div>
           </section>
+        )}
+
+        {page === "professional-learning" && (
+          <>
+            <section className="teacher-summary-grid page-summary-grid">
+              {publishedProfessionalLearningItems.length ? publishedProfessionalLearningItems.map((item) => (
+                <article key={item.id} className="summary-card">
+                  <h3>{item.title}</h3>
+                  <p>{item.summary}</p>
+                  <small>{item.date}{item.time ? ` · ${item.time}` : ""}</small>
+                </article>
+              )) : (
+                <article className="summary-card">
+                  <h3>No sessions scheduled</h3>
+                  <p>Professional learning events created by staff will appear here.</p>
+                </article>
+              )}
+            </section>
+            <section className="teacher-panel">
+              <div className="teacher-library-grid">
+                {publishedProfessionalLearningItems.length ? publishedProfessionalLearningItems.map((item) => (
+                  <article key={item.id} className="teacher-library-card">
+                    <img src={assets.gorilla} alt="" />
+                    <div>
+                      <span className="pill">Professional Learning</span>
+                      <h3>{item.title}</h3>
+                      <p>{item.description || item.summary}</p>
+                      <small>{item.date}{item.time ? ` - ${item.time}` : ""}</small>
+                      <div className="teacher-card-actions">
+                        {item.registrationUrl ? <a className="primary-action" href={item.registrationUrl} target="_blank" rel="noreferrer">Open registration</a> : <button type="button" className="primary-action" onClick={() => setNotice("Add a registration link in the staff portal to activate this button.")}>Registration needed</button>}
+                        {item.pdfUrl ? <a className="secondary-action" href={item.pdfUrl} target="_blank" rel="noreferrer">Open PDF</a> : null}
+                        {item.infoUrl ? <a className="secondary-action" href={item.infoUrl} target="_blank" rel="noreferrer">More info</a> : null}
+                      </div>
+                    </div>
+                  </article>
+                )) : (
+                  <article className="placeholder-card">
+                    <h3>No professional learning sessions published yet</h3>
+                    <p>Create upcoming sessions in the staff portal and they will appear here automatically.</p>
+                  </article>
+                )}
+              </div>
+            </section>
+          </>
         )}
 
         {page === "resources" && (
@@ -1153,6 +1231,7 @@ function TeacherDashboard({ config, contentItems = defaultContentItems.map(resol
               <article className="summary-card"><h3>Tue 8 Jun</h3><p>Taronga Zoo Visit - Biodiversity in Action</p></article>
               <article className="summary-card"><h3>Fri 21 Jun</h3><p>Tracka Mission - Citizen Science Challenge</p></article>
               <article className="summary-card"><h3>Mon 24 Jun</h3><p>Creative Writing: Inspired by Nature due</p></article>
+              {publishedProfessionalLearningItems.slice(0, 2).map((item) => <article key={item.id} className="summary-card"><h3>{item.date}</h3><p>{item.title}</p></article>)}
             </section>
             <section className="teacher-panel">
               <div className="teacher-panel-header">
@@ -1231,6 +1310,7 @@ const defaultDashboardConfig = {
 
 const dashboardConfigRef = doc(db, "dashboardConfig", "main");
 const contentItemsCollection = collection(db, "contentItems");
+const professionalLearningCollection = collection(db, "professionalLearning");
 
 function collectionForContentType(type) {
   return {
@@ -1264,6 +1344,10 @@ function sortContentItems(items) {
   return [...items].sort((a, b) => (a.order ?? 999) - (b.order ?? 999) || a.title.localeCompare(b.title));
 }
 
+function sortProfessionalLearningItems(items) {
+  return [...items].sort((a, b) => `${a.date || ""}${a.time || ""}`.localeCompare(`${b.date || ""}${b.time || ""}`));
+}
+
 function useContentItems() {
   const [items, setItems] = useState(defaultContentItems.map(resolveContentItem));
   const [status, setStatus] = useState("loading");
@@ -1284,6 +1368,34 @@ function useContentItems() {
       (error) => {
         console.error("Unable to load contentItems", error);
         setItems(defaultContentItems.map(resolveContentItem));
+        setStatus("error");
+      },
+    );
+  }, []);
+
+  return { items, status };
+}
+
+function useProfessionalLearningItems() {
+  const [items, setItems] = useState(defaultProfessionalLearningItems);
+  const [status, setStatus] = useState("loading");
+
+  useEffect(() => {
+    return onSnapshot(
+      professionalLearningCollection,
+      (snapshot) => {
+        if (snapshot.empty) {
+          setItems(defaultProfessionalLearningItems);
+          setStatus("missing");
+          return;
+        }
+
+        setItems(sortProfessionalLearningItems(snapshot.docs.map((snapshotDoc) => ({ id: snapshotDoc.id, ...snapshotDoc.data() }))));
+        setStatus("live");
+      },
+      (error) => {
+        console.error("Unable to load professionalLearning", error);
+        setItems(defaultProfessionalLearningItems);
         setStatus("error");
       },
     );
@@ -1320,6 +1432,7 @@ function useDashboardConfig() {
 function TeacherPage({ page = "dashboard", subject = "", contentId = "", preview = false }) {
   const { config, status } = useDashboardConfig();
   const { items: contentItems, status: contentStatus } = useContentItems();
+  const { items: professionalLearningItems } = useProfessionalLearningItems();
   const { status: sessionStatus, user, profile } = useSessionUser();
 
   async function handleSignOut() {
@@ -1355,7 +1468,7 @@ function TeacherPage({ page = "dashboard", subject = "", contentId = "", preview
     <>
       <FirestoreStatus status={status} />
       <ContentFirestoreStatus status={contentStatus} />
-      <TeacherDashboard config={config} contentItems={contentItems} page={page} subject={subject} contentId={contentId} profile={profile} onSignOut={handleSignOut} preview={preview} />
+      <TeacherDashboard config={config} contentItems={contentItems} professionalLearningItems={professionalLearningItems} page={page} subject={subject} contentId={contentId} profile={profile} onSignOut={handleSignOut} preview={preview} />
     </>
   );
 }
@@ -1416,10 +1529,12 @@ function StaffConsole({ onLock }) {
   const [panel, setPanel] = useState("overview");
   const { config: savedConfig, status } = useDashboardConfig();
   const { items: contentItems, status: contentStatus } = useContentItems();
+  const { items: professionalLearningItems, status: professionalLearningStatus } = useProfessionalLearningItems();
   const [config, setConfig] = useState(defaultDashboardConfig);
   const [previewKey, setPreviewKey] = useState(0);
   const [saveState, setSaveState] = useState("idle");
   const [contentSaveState, setContentSaveState] = useState("idle");
+  const [professionalLearningSaveState, setProfessionalLearningSaveState] = useState("idle");
   const [notice, setNotice] = useState("");
 
   useEffect(() => {
@@ -1579,6 +1694,51 @@ function StaffConsole({ onLock }) {
     setNotice("Dashboard settings were published. Content items save to Firestore as soon as they are created or deleted.");
   }
 
+  async function saveProfessionalLearningItem(item) {
+    setProfessionalLearningSaveState("saving");
+    try {
+      const payload = {
+        title: item.title || "",
+        date: item.date || "",
+        time: item.time || "",
+        summary: item.summary || "",
+        description: item.description || "",
+        registrationUrl: item.registrationUrl || "",
+        pdfUrl: item.pdfUrl || "",
+        infoUrl: item.infoUrl || "",
+        status: item.status || "Draft",
+        updatedAt: serverTimestamp(),
+      };
+
+      if (item.id) {
+        await setDoc(doc(db, "professionalLearning", item.id), payload, { merge: true });
+      } else {
+        await addDoc(professionalLearningCollection, {
+          ...payload,
+          createdAt: serverTimestamp(),
+        });
+      }
+
+      setProfessionalLearningSaveState("saved");
+    } catch (error) {
+      console.error("Unable to save professional learning item", error);
+      setProfessionalLearningSaveState("error");
+    }
+  }
+
+  async function deleteProfessionalLearningItem(item) {
+    if (!item?.id) return;
+
+    setProfessionalLearningSaveState("saving");
+    try {
+      await deleteDoc(doc(db, "professionalLearning", item.id));
+      setProfessionalLearningSaveState("saved");
+    } catch (error) {
+      console.error("Unable to delete professional learning item", error);
+      setProfessionalLearningSaveState("error");
+    }
+  }
+
   return (
     <div className="staff-shell">
       <aside className="staff-sidebar">
@@ -1589,6 +1749,7 @@ function StaffConsole({ onLock }) {
             ["users", "users", "Users"],
             ["analytics", "report", "Analytics"],
             ["content", "report", "Content"],
+            ["professional-learning", "book", "Professional Learning"],
             ["dashboard", "monitor", "Edit Dashboard"],
           ].map(([id, icon, label]) => <button className={panel === id ? "active" : ""} type="button" data-panel={id} key={id} onClick={() => setPanel(id)}><Icon type={icon} className="" />{label}</button>)}
         </nav>
@@ -1601,6 +1762,7 @@ function StaffConsole({ onLock }) {
         {panel === "users" && <UsersPanel onPlaceholder={(message) => setNotice(message)} />}
         {panel === "analytics" && <AnalyticsPanel onPlaceholder={(message) => setNotice(message)} />}
         {panel === "content" && <ContentPanel contentItems={contentItems} status={contentStatus} saveState={contentSaveState} seedContentItems={seedContentItems} addContentItem={addContentItem} deleteContentItem={deleteContentItem} />}
+        {panel === "professional-learning" && <ProfessionalLearningPanel items={professionalLearningItems} status={professionalLearningStatus} saveState={professionalLearningSaveState} saveItem={saveProfessionalLearningItem} deleteItem={deleteProfessionalLearningItem} />}
         {panel === "dashboard" && <DashboardEditor config={config} contentItems={contentItems} updateConfig={updateConfig} reset={() => { setConfig(defaultDashboardConfig); setPreviewKey((key) => key + 1); }} previewKey={previewKey} publish={publishDashboardConfig} status={status} saveState={saveState} />}
       </main>
     </div>
@@ -1953,6 +2115,155 @@ function ContentPanel({ contentItems, status, saveState, seedContentItems, addCo
   );
 }
 
+function ProfessionalLearningPanel({ items, status, saveState, saveItem, deleteItem }) {
+  const [selectedId, setSelectedId] = useState("");
+  const [draft, setDraft] = useState({
+    title: "",
+    date: "",
+    time: "",
+    summary: "",
+    description: "",
+    registrationUrl: "",
+    pdfUrl: "",
+    infoUrl: "",
+    status: "Draft",
+  });
+
+  const selectedItem = items.find((item) => item.id === selectedId) || null;
+
+  useEffect(() => {
+    if (selectedItem) {
+      setDraft({
+        id: selectedItem.id,
+        title: selectedItem.title || "",
+        date: selectedItem.date || "",
+        time: selectedItem.time || "",
+        summary: selectedItem.summary || "",
+        description: selectedItem.description || "",
+        registrationUrl: selectedItem.registrationUrl || "",
+        pdfUrl: selectedItem.pdfUrl || "",
+        infoUrl: selectedItem.infoUrl || "",
+        status: selectedItem.status || "Draft",
+      });
+      return;
+    }
+
+    setDraft({
+      title: "",
+      date: "",
+      time: "",
+      summary: "",
+      description: "",
+      registrationUrl: "",
+      pdfUrl: "",
+      infoUrl: "",
+      status: "Draft",
+    });
+  }, [selectedItem]);
+
+  async function handleSubmit(event) {
+    event.preventDefault();
+    await saveItem(draft);
+    setSelectedId("");
+  }
+
+  async function handleDelete() {
+    if (!selectedItem) return;
+    if (!window.confirm(`Delete professional learning event "${selectedItem.title}"?`)) return;
+    await deleteItem(selectedItem);
+    setSelectedId("");
+  }
+
+  return (
+    <section className="staff-section staff-panel active">
+      <div className="section-heading">
+        <div>
+          <h2>Professional Learning</h2>
+          <p>Create upcoming professional learning sessions for teachers. These surface in the teacher professional learning page, calendar and notification bell.</p>
+        </div>
+      </div>
+      <ContentFirestoreStatus status={status} saveState={saveState} />
+      <div className="content-studio-layout">
+        <aside className="content-library-panel">
+          <div className="content-library-header">
+            <div>
+              <span className="content-type">Professional Learning</span>
+              <h3>Upcoming sessions</h3>
+              <p>Webinars, workshops and staff-led sessions for teachers.</p>
+            </div>
+            <button type="button" onClick={() => setSelectedId("")}>New session</button>
+          </div>
+          <div className="content-list content-list-scroll">
+            {items.length ? items.map((item) => (
+              <article className={`content-item-card selectable ${selectedId === item.id ? "selected" : ""}`} key={item.id} onClick={() => setSelectedId(item.id)}>
+                <img className="content-thumb" src={assets.gorilla} alt="" />
+                <div>
+                  <span className="content-type">{item.status}</span>
+                  <h4>{item.title}</h4>
+                  <p>{item.summary}</p>
+                  <small>{item.date}{item.time ? ` - ${item.time}` : ""}</small>
+                </div>
+              </article>
+            )) : (
+              <article className="empty-content-card">
+                <Icon type="plus" className="" />
+                <h4>No sessions yet</h4>
+                <p>Create the first professional learning session here.</p>
+              </article>
+            )}
+          </div>
+        </aside>
+
+        <form className="content-editor-panel" onSubmit={handleSubmit}>
+          <div className="content-form-header">
+            <span className="content-type">{selectedItem ? "Editing" : "Creating"}</span>
+            <h3>{selectedItem ? selectedItem.title : "New professional learning session"}</h3>
+            <p>Add the session date, registration link, information page and PDF. Published sessions will show up for teachers automatically.</p>
+          </div>
+          <div className="content-editor-grid">
+            <div className="content-editor-main">
+              <div className="content-editor-section">
+                <h4>Session details</h4>
+                <div className="content-editor-fields">
+                  <label>Title<input type="text" required value={draft.title} onChange={(event) => setDraft((current) => ({ ...current, title: event.target.value }))} /></label>
+                  <label>Status<select value={draft.status} onChange={(event) => setDraft((current) => ({ ...current, status: event.target.value }))}><option>Draft</option><option>Published</option></select></label>
+                  <label>Date<input type="date" value={draft.date} onChange={(event) => setDraft((current) => ({ ...current, date: event.target.value }))} /></label>
+                  <label>Time<input type="text" value={draft.time} onChange={(event) => setDraft((current) => ({ ...current, time: event.target.value }))} placeholder="4:00 PM AEST" /></label>
+                  <label className="wide-field">Summary<input type="text" value={draft.summary} onChange={(event) => setDraft((current) => ({ ...current, summary: event.target.value }))} /></label>
+                  <label className="wide-field">Description<textarea value={draft.description} onChange={(event) => setDraft((current) => ({ ...current, description: event.target.value }))}></textarea></label>
+                </div>
+              </div>
+              <div className="content-editor-section">
+                <h4>Links and files</h4>
+                <div className="content-editor-fields">
+                  <label>Registration link<input type="url" value={draft.registrationUrl} onChange={(event) => setDraft((current) => ({ ...current, registrationUrl: event.target.value }))} placeholder="https://..." /></label>
+                  <label>Information link<input type="url" value={draft.infoUrl} onChange={(event) => setDraft((current) => ({ ...current, infoUrl: event.target.value }))} placeholder="https://..." /></label>
+                  <label className="wide-field">PDF link<input type="url" value={draft.pdfUrl} onChange={(event) => setDraft((current) => ({ ...current, pdfUrl: event.target.value }))} placeholder="https://..." /></label>
+                </div>
+              </div>
+            </div>
+            <aside className="content-editor-side">
+              <div className="content-editor-section compact">
+                <h4>Teacher experience</h4>
+                <div className="editor-meta-list">
+                  <span>Professional Learning page</span>
+                  <span>Teacher calendar</span>
+                  <span>Notification bell</span>
+                </div>
+              </div>
+            </aside>
+          </div>
+          <div className="content-form-actions">
+            {selectedItem ? <button type="button" className="delete-button editor-delete-button" onClick={handleDelete}>Delete</button> : null}
+            <button type="button" className="secondary-button" onClick={() => setSelectedId("")}>Clear form</button>
+            <button type="submit" disabled={saveState === "saving"}>{saveState === "saving" ? "Saving..." : selectedItem ? "Update session" : "Save session"}</button>
+          </div>
+        </form>
+      </div>
+    </section>
+  );
+}
+
 function DashboardEditor({ config, contentItems, updateConfig, reset, previewKey, publish, status, saveState }) {
   const saveText = saveState === "saving" ? "Publishing..." : "Publish changes";
   return <section className="staff-section staff-panel active"><div className="section-heading"><div><h2>Edit teacher dashboard</h2><p>Live-edit teacher-facing dashboard text, imagery and visibility flags before publishing.</p></div><div className="heading-actions"><button type="button" onClick={reset}>Reset preview</button><button type="button" onClick={publish} disabled={saveState === "saving"}>{saveText}</button></div></div><article className="dashboard-editor live-dashboard-editor"><div className="editor-copy"><span className="content-type">Teacher Dashboard Editor</span><h3>Update teacher-facing dashboard content</h3><p>Changes below update the preview immediately. Publishing writes the values to Firestore at dashboardConfig/main.</p><FirestoreStatus status={status} saveState={saveState} /></div><form className="editor-form"><label>Hero headline<input type="text" value={config.heroTitle} onChange={(event) => updateConfig({ heroTitle: event.target.value })} /></label><label>Hero subheading<input type="text" value={config.heroSubtitle} onChange={(event) => updateConfig({ heroSubtitle: event.target.value })} /></label><label>Hero image<select value={config.heroImageUrl} onChange={(event) => updateConfig({ heroImageUrl: event.target.value })}><option value={assets.heroKoala}>Koala with joey</option><option value={assets.giraffe}>Giraffe at Taronga</option><option value={assets.binturong}>Binturong encounter</option><option value={assets.gorilla}>Gorilla habitat</option></select></label><label>Featured resource title<select value={config.featuredResourceTitle} onChange={(event) => updateConfig({ featuredResourceTitle: event.target.value })}>{contentItems.map((item) => <option key={item.id || item.title}>{item.title}</option>)}</select></label></form><div className="flag-grid" aria-label="Teacher dashboard content flags"><label><input type="checkbox" checked={config.showContinueLearning} onChange={(event) => updateConfig({ showContinueLearning: event.target.checked })} /> Show Continue Learning</label><label><input type="checkbox" checked={config.showUpcomingPanel} onChange={(event) => updateConfig({ showUpcomingPanel: event.target.checked })} /> Show Upcoming panel</label><label><input type="checkbox" checked={config.showTrackaCard} onChange={(event) => updateConfig({ showTrackaCard: event.target.checked })} /> Feature Taronga Tracka card</label><label><input type="checkbox" /> Show beta student insights</label><label><input type="checkbox" defaultChecked /> Display new resource badges</label><label><input type="checkbox" /> Lock subject cards during review</label></div><div className="teacher-live-preview"><div className="preview-toolbar"><span>Live teacher dashboard preview</span><a href={routePath("teacher")} target="_blank" rel="noreferrer">Open full view</a></div><div className="preview-frame" key={previewKey}><TeacherDashboard config={config} contentItems={contentItems} /></div></div></article></section>;
@@ -2050,6 +2361,7 @@ function App() {
     if (section === "preview") return <TeacherPage preview />;
     if (section === "subjects") return <TeacherPage page="subjects" subject={third} />;
     if (section === "content") return <TeacherPage page="content" contentId={third} />;
+    if (section === "professional-learning") return <TeacherPage page="professional-learning" />;
     return <TeacherPage page={section || "dashboard"} />;
   }
   if (path === "/staff" || path === "/staff.html") return <StaffPage />;
@@ -2057,7 +2369,7 @@ function App() {
   if (path === "demo-booking") return <PlaceholderExperiencePage eyebrow="Demo Booking" title="Book a Wildly demo" description="This page is ready for your real demo booking workflow. Use it for school enquiries, implementation calls and onboarding sessions." points={["Demo request form or embedded scheduler", "School details and contact intake", "Implementation readiness checklist"]} primaryLabel="Teacher Dashboard" primaryHref={teacherRoute()} secondaryLabel="Support" secondaryHref={appLinks.support} />;
   if (path === "support") return <PlaceholderExperiencePage eyebrow="Support" title="Wildly support" description="This is the right place for help content, onboarding docs, support contact details and troubleshooting guidance." points={["Teacher help centre or FAQs", "Support email, form or live chat", "Technical setup and Firestore guidance"]} primaryLabel="Teacher Dashboard" primaryHref={teacherRoute()} secondaryLabel="Professional Learning" secondaryHref={appLinks.professionalLearning} />;
   if (path === "excursions") return <PlaceholderExperiencePage eyebrow="Excursions" title="Excursions and zoo links" description="Use this space for visit planning, excursion bookings, pre-visit resources and Tracka-connected field learning." points={["Excursion booking links", "Pre-visit teacher packs", "On-site learning workflows and Tracka links"]} primaryLabel="Teacher Dashboard" primaryHref={teacherRoute("calendar")} secondaryLabel="Home" secondaryHref={routePath()} />;
-  if (path === "professional-learning") return <PlaceholderExperiencePage eyebrow="Professional Learning" title="Professional learning for teachers" description="This page can host webinars, PD registrations, implementation guides and exemplar programs for teachers using Wildly." points={["Upcoming webinars and registrations", "Recorded PD sessions", "Implementation guides and exemplar units"]} primaryLabel="Book a demo" primaryHref={appLinks.demoBooking} secondaryLabel="Support" secondaryHref={appLinks.support} />;
+  if (path === "professional-learning") return <TeacherPage page="professional-learning" />;
   return <LandingPage />;
 }
 
