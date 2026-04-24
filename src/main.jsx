@@ -1,7 +1,8 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { createRoot } from "react-dom/client";
-import { addDoc, collection, deleteDoc, doc, onSnapshot, serverTimestamp, setDoc } from "firebase/firestore";
-import { db } from "./firebase";
+import { createUserWithEmailAndPassword, onAuthStateChanged, signInWithEmailAndPassword, signOut } from "firebase/auth";
+import { addDoc, collection, deleteDoc, doc, getDoc, onSnapshot, serverTimestamp, setDoc } from "firebase/firestore";
+import { auth, db } from "./firebase";
 import "../landing.css";
 import "../styles.css";
 import "../staff.css";
@@ -11,6 +12,11 @@ const routePath = (path = "") => `${basePath}#${path}`;
 const assetPath = (path) => `${basePath}${path}`;
 const teacherRoute = (path = "") => routePath(path ? `teacher/${path}` : "teacher");
 const teacherContentRoute = (id) => teacherRoute(`content/${id}`);
+const teacherPreviewRoute = () => teacherRoute("preview");
+const loginRoute = () => routePath("login");
+const signupRoute = () => routePath("get-started");
+const aboutYouRoute = () => routePath("about-you");
+const demoSessionKey = "wildly-demo-session";
 
 const assets = {
   wildlyLogo: assetPath("assets/wildly-logo-transparent.png"),
@@ -64,6 +70,16 @@ const defaultContentItems = [
   { id: "persuasive-texts-wildlife-action", title: "Persuasive Texts for Wildlife Action", type: "Lesson", subject: "English", stage: "Stage 3", progress: 15, imageKey: "koala", summary: "Writing task with model texts and scaffolds.", description: "Use wildlife conservation contexts to plan, draft and refine persuasive writing.", status: "Draft", order: 4 },
   { id: "animal-movement-data-patterns", title: "Animal Movement and Data Patterns", type: "Resource", subject: "Mathematics", stage: "Stage 3", progress: 55, imageKey: "giraffe", summary: "Data activity using animal movement and habitat observations.", description: "Interpret data patterns and represent findings using classroom-friendly datasets.", status: "Published", order: 5 },
   { id: "wellbeing-through-nature", title: "Wellbeing Through Nature Connection", type: "Lesson", subject: "PDHPE", stage: "Stage 2", progress: 80, imageKey: "gorilla", summary: "Reflection lesson connecting wellbeing, nature and community.", description: "Guide students through reflective prompts about nature connection and wellbeing.", status: "Review", order: 6 },
+];
+
+const schoolOptions = [
+  "Taronga Education Centre",
+  "Sydney Secondary College",
+  "Dubbo Public School",
+  "Melbourne High School",
+  "Brisbane State High School",
+  "Auckland Grammar School",
+  "Singapore International School",
 ];
 
 const staffPassword = "admin";
@@ -254,6 +270,268 @@ function contentPrimaryLink(item) {
   );
 }
 
+function buildDemoProfile() {
+  return {
+    uid: "demo-zoo",
+    email: "demo@zoo",
+    name: "Demo Teacher",
+    country: "Australia",
+    role: "Teacher",
+    school: "Taronga Education Centre",
+    isDemo: true,
+  };
+}
+
+function createInitials(name = "") {
+  const initials = name
+    .trim()
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase() || "")
+    .join("");
+
+  return initials || "WT";
+}
+
+function useSessionUser() {
+  const [state, setState] = useState({ status: "loading", user: null, profile: null });
+
+  useEffect(() => {
+    const demoSession = window.localStorage.getItem(demoSessionKey);
+    if (demoSession === "active") {
+      const demoProfile = buildDemoProfile();
+      setState({ status: "ready", user: demoProfile, profile: demoProfile });
+      return () => {};
+    }
+
+    return onAuthStateChanged(auth, async (firebaseUser) => {
+      if (!firebaseUser) {
+        setState({ status: "ready", user: null, profile: null });
+        return;
+      }
+
+      try {
+        const profileSnapshot = await getDoc(doc(db, "users", firebaseUser.uid));
+        setState({
+          status: "ready",
+          user: firebaseUser,
+          profile: profileSnapshot.exists() ? profileSnapshot.data() : null,
+        });
+      } catch (error) {
+        console.error("Unable to load user profile", error);
+        setState({ status: "ready", user: firebaseUser, profile: null });
+      }
+    });
+  }, []);
+
+  return state;
+}
+
+function AuthScreen({ mode = "login" }) {
+  const isSignup = mode === "signup";
+  const { status, user, profile } = useSessionUser();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [notice, setNotice] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    if (status !== "ready" || !user) return;
+    window.location.hash = profile || user.isDemo ? "#teacher" : "#about-you";
+  }, [status, user, profile]);
+
+  async function handleSubmit(event) {
+    event.preventDefault();
+    setNotice("");
+    setBusy(true);
+
+    try {
+      if (!isSignup && email.trim().toLowerCase() === "demo@zoo") {
+        window.localStorage.setItem(demoSessionKey, "active");
+        window.location.hash = "#teacher";
+        return;
+      }
+
+      window.localStorage.removeItem(demoSessionKey);
+
+      if (!password.trim()) {
+        setNotice("Please enter your password.");
+        return;
+      }
+
+      if (isSignup) {
+        await createUserWithEmailAndPassword(auth, email.trim(), password);
+        window.location.hash = "#about-you";
+        return;
+      }
+
+      await signInWithEmailAndPassword(auth, email.trim(), password);
+      window.location.hash = "#teacher";
+    } catch (error) {
+      console.error("Auth flow failed", error);
+      setNotice(error.message || "Unable to complete authentication.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <main className="auth-page">
+      <section className="auth-card">
+        <a className="site-logo auth-logo" href={routePath()} aria-label="Wildly home">
+          <img src={assets.wildlyLogo} alt="Wildly by Taronga" />
+        </a>
+        <span className="audience-pill">{isSignup ? "Create account" : "Welcome back"}</span>
+        <h1>{isSignup ? "Get started with Wildly" : "Log in to Wildly"}</h1>
+        <p>{isSignup ? "Create your account first, then complete your educator profile on the next page." : "Use your email and password to access your teacher workspace."}</p>
+        <form className="auth-form" onSubmit={handleSubmit}>
+          <label>
+            Email
+            <input type="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder={isSignup ? "you@school.edu" : "Enter your email"} autoComplete="email" required />
+          </label>
+          <label>
+            Password
+            <input type="password" value={password} onChange={(event) => setPassword(event.target.value)} placeholder="Enter your password" autoComplete={isSignup ? "new-password" : "current-password"} />
+          </label>
+          {!isSignup ? <p className="auth-helper">Use `demo@zoo` to enter the demo teacher account instantly.</p> : null}
+          {notice ? <p className="auth-error">{notice}</p> : null}
+          <button type="submit" disabled={busy}>{busy ? "Working..." : isSignup ? "Continue" : "Log in"}</button>
+        </form>
+        <div className="auth-links">
+          {isSignup ? <a href={loginRoute()}>Already have an account? Log in</a> : <a href={signupRoute()}>Need an account? Get started</a>}
+          <a href={routePath("staff")}>Taronga staff login</a>
+        </div>
+      </section>
+    </main>
+  );
+}
+
+function AboutYouPage() {
+  const { status, user, profile } = useSessionUser();
+  const [form, setForm] = useState({
+    name: "",
+    country: "Australia",
+    role: "Teacher",
+    schoolSearch: "",
+    schoolManual: "",
+    cantFindSchool: false,
+  });
+  const [busy, setBusy] = useState(false);
+  const [notice, setNotice] = useState("");
+
+  useEffect(() => {
+    if (profile) {
+      setForm((current) => ({
+        ...current,
+        name: profile.name || "",
+        country: profile.country || "Australia",
+        role: profile.role || "Teacher",
+        schoolSearch: schoolOptions.includes(profile.school) ? profile.school : "",
+        schoolManual: schoolOptions.includes(profile.school) ? "" : (profile.school || ""),
+        cantFindSchool: profile.school ? !schoolOptions.includes(profile.school) : false,
+      }));
+    }
+  }, [profile]);
+
+  useEffect(() => {
+    if (status === "ready" && !user) {
+      window.location.hash = "#get-started";
+    }
+  }, [status, user]);
+
+  async function handleSubmit(event) {
+    event.preventDefault();
+    if (!user || user.isDemo) {
+      window.location.hash = "#teacher";
+      return;
+    }
+
+    const school = form.cantFindSchool ? form.schoolManual.trim() : form.schoolSearch.trim();
+    if (!school) {
+      setNotice("Please select your school or type it in.");
+      return;
+    }
+
+    setBusy(true);
+    setNotice("");
+
+    try {
+      await setDoc(doc(db, "users", user.uid), {
+        name: form.name.trim(),
+        country: form.country.trim(),
+        role: form.role,
+        school,
+        email: user.email,
+        updatedAt: serverTimestamp(),
+      }, { merge: true });
+
+      window.location.hash = "#teacher";
+    } catch (error) {
+      console.error("Unable to save profile", error);
+      setNotice(error.message || "Unable to save your profile.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  if (status === "loading") {
+    return <main className="auth-page"><section className="auth-card"><p>Loading your profile...</p></section></main>;
+  }
+
+  return (
+    <main className="auth-page">
+      <section className="auth-card auth-card-wide">
+        <a className="site-logo auth-logo" href={routePath()} aria-label="Wildly home">
+          <img src={assets.wildlyLogo} alt="Wildly by Taronga" />
+        </a>
+        <span className="audience-pill">About you</span>
+        <h1>Tell us about you</h1>
+        <p>This profile shapes the teacher experience and helps us personalise school content.</p>
+        <form className="auth-form" onSubmit={handleSubmit}>
+          <div className="auth-grid">
+            <label>
+              Name
+              <input type="text" value={form.name} onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))} placeholder="Your full name" required />
+            </label>
+            <label>
+              Country
+              <input type="text" value={form.country} onChange={(event) => setForm((current) => ({ ...current, country: event.target.value }))} placeholder="Country" required />
+            </label>
+            <label>
+              I am
+              <select value={form.role} onChange={(event) => setForm((current) => ({ ...current, role: event.target.value }))}>
+                {["Teacher", "School Leader", "Parent", "Student", "Curriculum Leader", "Education Staff"].map((role) => <option key={role} value={role}>{role}</option>)}
+              </select>
+            </label>
+            <label>
+              Search for school
+              <input list="school-options" value={form.schoolSearch} onChange={(event) => setForm((current) => ({ ...current, schoolSearch: event.target.value }))} placeholder="Start typing your school" disabled={form.cantFindSchool} />
+              <datalist id="school-options">
+                {schoolOptions.map((school) => <option key={school} value={school} />)}
+              </datalist>
+            </label>
+          </div>
+
+          <label className="checkbox-row">
+            <input type="checkbox" checked={form.cantFindSchool} onChange={(event) => setForm((current) => ({ ...current, cantFindSchool: event.target.checked }))} />
+            Can't find school
+          </label>
+
+          {form.cantFindSchool ? (
+            <label>
+              School name
+              <input type="text" value={form.schoolManual} onChange={(event) => setForm((current) => ({ ...current, schoolManual: event.target.value }))} placeholder="Type your school name" required />
+            </label>
+          ) : null}
+
+          {notice ? <p className="auth-error">{notice}</p> : null}
+          <button type="submit" disabled={busy}>{busy ? "Saving..." : "Finish setup"}</button>
+        </form>
+      </section>
+    </main>
+  );
+}
+
 function LandingPage() {
   return (
     <>
@@ -262,7 +540,7 @@ function LandingPage() {
         <nav className="site-nav" aria-label="Main navigation">
           <a href="#about">About</a><a href="#subjects">Subjects</a><a href="#paths">Learning Paths</a><a href="#tracka">Tracka</a><a href="#schools">Schools</a>
         </nav>
-        <div className="header-actions"><a className="login-link" href={teacherRoute()}>Log in</a><a className="start-link" href={teacherRoute()}>Get started</a></div>
+        <div className="header-actions"><a className="login-link" href={loginRoute()}>Log in</a><a className="start-link" href={signupRoute()}>Get started</a></div>
       </header>
       <main>
         <section className="hero-section" id="about">
@@ -271,15 +549,15 @@ function LandingPage() {
             <h1>Learning through nature</h1>
             <p className="hero-subtitle">Inspire curiosity. Create change.</p>
             <p>Curriculum-aligned lessons, real-world experiences and conservation connections - for every learner, everywhere.</p>
-            <div className="hero-actions"><a className="primary-action" href={teacherRoute()}>Get started free</a><a className="secondary-action" href={teacherRoute("subjects")}>Explore subjects</a></div>
+            <div className="hero-actions"><a className="primary-action" href={signupRoute()}>Get started free</a><a className="secondary-action" href={teacherPreviewRoute()}>Explore subjects</a></div>
             <div className="alignment-list" aria-label="Curriculum alignment">
               <p className="alignment-note"><Icon type="book" className="alignment-icon" />Aligned to NSW and Australian curriculums (Early Stage 1 - Stage 6)</p>
               <p className="alignment-note"><Icon type="blocks" className="alignment-icon" />Aligned to the Early Years Learning Framework (Pre-School)</p>
             </div>
           </div>
           <div className="device-stage" aria-label="Wildly teacher dashboard preview">
-            <div className="laptop"><div className="laptop-screen"><iframe className="teacher-preview" src={teacherRoute()} title="Wildly teacher dashboard preview" tabIndex="-1"></iframe></div><div className="laptop-base"></div></div>
-            <div className="phone"><img src={assets.heroKoala} alt="" /><h3>Adaptations of Australian Animals</h3><p>Ready to assign</p><a href={teacherRoute("resources")}>View resource</a></div>
+            <div className="laptop"><div className="laptop-screen"><iframe className="teacher-preview" src={teacherPreviewRoute()} title="Wildly teacher dashboard preview" tabIndex="-1"></iframe></div><div className="laptop-base"></div></div>
+            <div className="phone"><img src={assets.heroKoala} alt="" /><h3>Adaptations of Australian Animals</h3><p>Ready to assign</p><a href={teacherPreviewRoute()}>View resource</a></div>
           </div>
         </section>
         <section className="feature-row">
@@ -290,9 +568,9 @@ function LandingPage() {
           ].map(([icon, title, copy]) => <article key={title}><Icon type={icon} className="" /><h2>{title}</h2><p>{copy}</p></article>)}
         </section>
         <section className="subjects-section" id="subjects">
-          <div className="section-heading"><h2>Explore by subject</h2><a href={teacherRoute("subjects")}>View all subjects</a></div>
+          <div className="section-heading"><h2>Explore by subject</h2><a href={teacherPreviewRoute()}>View all subjects</a></div>
           <div className="subject-strip">
-            {subjects.map(([label, cls, copy]) => <a className={cls} href={teacherRoute(`subjects/${subjectSlug(label)}`)} key={label}><Icon type={subjectIconType(label)} className="" /><strong>{label}</strong><span>{copy}</span></a>)}
+            {subjects.map(([label, cls, copy]) => <a className={cls} href={teacherPreviewRoute()} key={label}><Icon type={subjectIconType(label)} className="" /><strong>{label}</strong><span>{copy}</span></a>)}
           </div>
         </section>
         <section className="journey-section" id="paths">
@@ -305,14 +583,14 @@ function LandingPage() {
           <article><Icon type="blocks" className="" /><span>Aligned to the Early Years Learning Framework (Pre-School)</span></article>
           <article><Icon type="bookmark" className="" /><span>Secure, reliable teacher resources</span></article>
         </section>
-        <section className="cta-section" id="schools"><img src={assets.heroKoala} alt="Koala with joey" /><div><h2>Bring learning to life through nature</h2><p>Join thousands of educators using Wildly to inspire the next generation to care for nature - together.</p><div className="hero-actions"><a className="primary-action" href={teacherRoute()}>Get started free</a><a className="secondary-action" href={appLinks.demoBooking}>Book a demo</a></div></div></section>
+        <section className="cta-section" id="schools"><img src={assets.heroKoala} alt="Koala with joey" /><div><h2>Bring learning to life through nature</h2><p>Join thousands of educators using Wildly to inspire the next generation to care for nature - together.</p><div className="hero-actions"><a className="primary-action" href={signupRoute()}>Get started free</a><a className="secondary-action" href={appLinks.demoBooking}>Book a demo</a></div></div></section>
         <footer className="site-footer"><div className="footer-links"><a className="staff-login" href={routePath("staff")}>Taronga staff login</a><a className="staff-login" href={appLinks.support}>Support</a><a className="staff-login" href={appLinks.excursions}>Excursions</a><a className="staff-login" href={appLinks.professionalLearning}>Professional Learning</a></div></footer>
       </main>
     </>
   );
 }
 
-function TeacherDashboard({ config, contentItems = defaultContentItems.map(resolveContentItem), page = "dashboard", subject = "", contentId = "" }) {
+function TeacherDashboard({ config, contentItems = defaultContentItems.map(resolveContentItem), page = "dashboard", subject = "", contentId = "", profile = null, onSignOut = null, preview = false }) {
   const [activeSubject, setActiveSubject] = useState(subjectFromSlug(subject));
   const [query, setQuery] = useState("");
   const [notice, setNotice] = useState("");
@@ -430,6 +708,9 @@ function TeacherDashboard({ config, contentItems = defaultContentItems.map(resol
       action: <button type="button" className="secondary-action" onClick={() => setNotice("Calendar sync placeholder. Add Google Calendar, Outlook or school calendar sync here.")}>Connect calendar</button>,
     },
   }[page];
+  const displayName = profile?.name || "Mr. Thompson";
+  const displayRole = profile?.role || "Teacher";
+  const profileInitials = createInitials(displayName);
 
   return (
     <div className="app-shell">
@@ -483,14 +764,15 @@ function TeacherDashboard({ config, contentItems = defaultContentItems.map(resol
             <a className={page === "classes" ? "selected" : ""} href={teacherRoute("classes")}>My Classes</a>
           </nav>
           <div className="top-actions">
+            {!preview && onSignOut ? <button type="button" className="top-text-action" onClick={onSignOut}>Sign out</button> : null}
             <button type="button" className="top-icon-button" aria-label="Notifications" onClick={() => setNotice("Notifications placeholder: upcoming excursions, due tasks and Tracka mission alerts will appear here.")}>
               <Icon type="bell" className="" />
             </button>
             <a className="icon-button help" aria-label="Help" href={appLinks.support}></a>
             <button type="button" className="profile-button" onClick={() => setNotice("Profile placeholder: account settings and class preferences can sit here.")}>
-              <span>JT</span>
-              <strong>Mr. Thompson</strong>
-              <small>Teacher</small>
+              <span>{profileInitials}</span>
+              <strong>{displayName}</strong>
+              <small>{displayRole}</small>
             </button>
           </div>
         </header>
@@ -1035,14 +1317,45 @@ function useDashboardConfig() {
   return { config, status };
 }
 
-function TeacherPage({ page = "dashboard", subject = "", contentId = "" }) {
+function TeacherPage({ page = "dashboard", subject = "", contentId = "", preview = false }) {
   const { config, status } = useDashboardConfig();
   const { items: contentItems, status: contentStatus } = useContentItems();
+  const { status: sessionStatus, user, profile } = useSessionUser();
+
+  async function handleSignOut() {
+    window.localStorage.removeItem(demoSessionKey);
+    if (auth.currentUser) {
+      await signOut(auth);
+    }
+    window.location.hash = "#login";
+  }
+
+  useEffect(() => {
+    if (!preview && sessionStatus === "ready" && !user) {
+      window.location.hash = "#login";
+    }
+    if (!preview && sessionStatus === "ready" && user && !profile && !user.isDemo) {
+      window.location.hash = "#about-you";
+    }
+  }, [preview, sessionStatus, user, profile]);
+
+  if (!preview && sessionStatus === "loading") {
+    return <main className="auth-page"><section className="auth-card"><p>Loading your account...</p></section></main>;
+  }
+
+  if (!preview && sessionStatus === "ready" && !user) {
+    return null;
+  }
+
+  if (!preview && sessionStatus === "ready" && user && !profile && !user.isDemo) {
+    return null;
+  }
+
   return (
     <>
       <FirestoreStatus status={status} />
       <ContentFirestoreStatus status={contentStatus} />
-      <TeacherDashboard config={config} contentItems={contentItems} page={page} subject={subject} contentId={contentId} />
+      <TeacherDashboard config={config} contentItems={contentItems} page={page} subject={subject} contentId={contentId} profile={profile} onSignOut={handleSignOut} preview={preview} />
     </>
   );
 }
@@ -1504,7 +1817,7 @@ function PlaceholderExperiencePage({ eyebrow, title, description, points = [], p
         <nav className="site-nav" aria-label="Main navigation">
           <a href={routePath()}>Home</a><a href={teacherRoute()}>Teacher</a><a href={routePath("staff")}>Staff</a><a href={appLinks.support}>Support</a><a href={appLinks.professionalLearning}>Professional Learning</a>
         </nav>
-        <div className="header-actions"><a className="login-link" href={teacherRoute()}>Teacher login</a><a className="start-link" href={routePath("staff")}>Staff login</a></div>
+        <div className="header-actions"><a className="login-link" href={loginRoute()}>Teacher login</a><a className="start-link" href={routePath("staff")}>Staff login</a></div>
       </header>
       <main>
         <section className="hero-section standalone-page">
@@ -1549,9 +1862,13 @@ function App() {
     };
   }, []);
 
+  if (path === "login") return <AuthScreen mode="login" />;
+  if (path === "get-started") return <AuthScreen mode="signup" />;
+  if (path === "about-you") return <AboutYouPage />;
   if (path === "/teacher" || path === "/teacher.html" || path === "teacher" || path === "teacher.html") return <TeacherPage />;
   if (path.startsWith("teacher/")) {
     const [, section = "dashboard", third = ""] = path.split("/");
+    if (section === "preview") return <TeacherPage preview />;
     if (section === "subjects") return <TeacherPage page="subjects" subject={third} />;
     if (section === "content") return <TeacherPage page="content" contentId={third} />;
     return <TeacherPage page={section || "dashboard"} />;

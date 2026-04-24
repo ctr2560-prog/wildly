@@ -358,6 +358,17 @@ button {
   gap: 14px;
 }
 
+.top-text-action {
+  min-height: 34px;
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  color: var(--green-900);
+  background: #fff;
+  font-size: 12px;
+  font-weight: 900;
+}
+
 .top-icon-button,
 .icon-button,
 .menu-button {
