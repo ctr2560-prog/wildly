@@ -281,7 +281,8 @@ button {
   line-height: 1.35;
 }
 
-.tracka-card button {
+.tracka-card button,
+.tracka-card .inline-action {
   justify-self: start;
   min-width: 112px;
   height: 30px;
@@ -652,7 +653,10 @@ h2 {
   line-height: 1.45;
 }
 
-.subject-card button {
+.subject-card-cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   height: 28px;
   min-width: 76px;
   margin-top: 13px;
@@ -664,7 +668,7 @@ h2 {
   font-weight: 900;
 }
 
-.subject-card button::after {
+.subject-card-cta::after {
   content: " ->";
 }
 
@@ -1062,6 +1066,19 @@ h2 {
   margin-top: 16px;
 }
 
+.inline-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 36px;
+  padding: 0 14px;
+  border-radius: 6px;
+  color: #fff;
+  background: var(--green-900);
+  font-size: 13px;
+  font-weight: 900;
+}
+
 .teacher-card-actions .primary-action,
 .teacher-card-actions .secondary-action {
   min-height: 38px;
@@ -1102,6 +1119,24 @@ h2 {
   height: 100%;
   min-height: 320px;
   object-fit: cover;
+}
+
+.teacher-detail-page {
+  background: transparent;
+  border: 0;
+  padding: 0;
+}
+
+.teacher-detail-page .teacher-panel-header {
+  margin-bottom: 22px;
+}
+
+.page-modal {
+  width: 100%;
+  max-height: none;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  box-shadow: 0 14px 34px rgba(14, 42, 28, 0.08);
 }
 
 .detail-copy {

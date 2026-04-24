@@ -657,6 +657,13 @@ svg {
   padding: 26px 0 8px;
 }
 
+.footer-links {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+}
+
 .staff-login {
   display: inline-flex;
   align-items: center;
@@ -668,6 +675,15 @@ svg {
   background: #fff;
   font-size: 13px;
   font-weight: 900;
+}
+
+.standalone-page {
+  align-items: stretch;
+  min-height: 520px;
+}
+
+.standalone-page .hero-copy {
+  align-self: center;
 }
 
 @media (max-width: 1100px) {
@@ -752,7 +768,8 @@ svg {
   .subject-strip,
   .journey-line,
   .cta-section,
-  .tool-panel {
+  .tool-panel,
+  .standalone-page {
     grid-template-columns: 1fr;
   }
 
@@ -763,5 +780,9 @@ svg {
   .section-heading {
     align-items: start;
     flex-direction: column;
+  }
+
+  .footer-links {
+    width: 100%;
   }
 }
