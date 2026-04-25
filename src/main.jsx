@@ -188,6 +188,7 @@ function createContentDraft(type = "Lesson") {
     lessonPlanUrl: "",
     resourceUrl: "",
     resourceLinks: "",
+    downloadLinks: "",
     learningPathId: "",
     lessonId: "",
     lessonIds: [],
@@ -394,7 +395,7 @@ function parseNamedLinks(value = "") {
 
 function buildContentDownloads(item) {
   const downloads = [
-    ["Teacher admin documents", item.materials?.teacherAdminUrl],
+    ["Teacher admin pack", item.materials?.teacherAdminUrl],
     ["Unit plan", item.materials?.unitPlanUrl],
     ["Lesson plan", item.materials?.lessonPlanUrl],
     ["Teacher guide", item.materials?.teacherGuideUrl],
@@ -406,8 +407,32 @@ function buildContentDownloads(item) {
 
   return [
     ...downloads,
-    ...(item.materials?.resourceLinks || []).map((entry, index) => ({ label: `Download ${index + 1}`, url: entry })),
+    ...(item.materials?.downloadLinks || []),
+    ...(item.materials?.resourceLinks || []).map((entry, index) => ({ label: `Resource link ${index + 1}`, url: entry })),
   ];
+}
+
+function buildProfessionalLearningLinks(item) {
+  return [
+    item.pdfUrl ? { label: "Session PDF", url: item.pdfUrl } : null,
+    item.infoUrl ? { label: "Session information", url: item.infoUrl } : null,
+    ...(item.downloadLinks || []),
+  ].filter(Boolean);
+}
+
+function LinkSection({ title = "Files and links", links = [] }) {
+  if (!links.length) return null;
+
+  return (
+    <div className="detail-list">
+      <h3>{title}</h3>
+      <div className="teacher-card-actions">
+        {links.map((link) => (
+          <a key={`${link.label}-${link.url}`} className="secondary-action" href={link.url} target="_blank" rel="noreferrer">{link.label}</a>
+        ))}
+      </div>
+    </div>
+  );
 }
 
 function contentPrimaryLink(item) {
@@ -807,6 +832,9 @@ function TeacherDashboard({ config, contentItems = defaultContentItems.map(resol
     ["Recommended action", "Publish more Stage 2 resources before the next zoo visit"],
   ];
   const publishedProfessionalLearningItems = professionalLearningItems.filter((item) => item.status !== "Draft");
+  const professionalLearningLinksById = Object.fromEntries(
+    publishedProfessionalLearningItems.map((item) => [item.id, buildProfessionalLearningLinks(item)]),
+  );
   const nextProfessionalLearning = publishedProfessionalLearningItems[0] || null;
   const notificationItems = publishedProfessionalLearningItems.slice(0, 3);
   const showContinue = config.showContinueLearning;
@@ -1334,10 +1362,7 @@ function TeacherDashboard({ config, contentItems = defaultContentItems.map(resol
 
                 {tarongaTvDownloads.length ? (
                   <div className="tv-info-card">
-                    <h3>Downloads</h3>
-                    <div className="teacher-card-actions">
-                      {tarongaTvDownloads.map((download) => <a key={`${download.label}-${download.url}`} className="secondary-action" href={download.url} target="_blank" rel="noreferrer">{download.label}</a>)}
-                    </div>
+                    <LinkSection links={tarongaTvDownloads} />
                   </div>
                 ) : null}
 
@@ -1387,10 +1412,8 @@ function TeacherDashboard({ config, contentItems = defaultContentItems.map(resol
                       <small>{item.date}{item.time ? ` - ${item.time}` : ""}</small>
                       <div className="teacher-card-actions">
                         {item.registrationUrl ? <a className="primary-action" href={item.registrationUrl} target="_blank" rel="noreferrer">Open registration</a> : <button type="button" className="primary-action" onClick={() => setNotice("Add a registration link in the staff portal to activate this button.")}>Registration needed</button>}
-                        {item.pdfUrl ? <a className="secondary-action" href={item.pdfUrl} target="_blank" rel="noreferrer">Open PDF</a> : null}
-                        {item.infoUrl ? <a className="secondary-action" href={item.infoUrl} target="_blank" rel="noreferrer">More info</a> : null}
-                        {(item.downloadLinks || []).map((download) => <a key={`${download.label}-${download.url}`} className="secondary-action" href={download.url} target="_blank" rel="noreferrer">{download.label}</a>)}
                       </div>
+                      <LinkSection links={professionalLearningLinksById[item.id] || []} />
                     </div>
                   </article>
                 )) : (
@@ -1609,7 +1632,7 @@ function TeacherDashboard({ config, contentItems = defaultContentItems.map(resol
                 </div>
                 {contentDetail.description ? <div className="detail-list"><h3>Description</h3><p>{contentDetail.description}</p></div> : null}
                 {contentDetail.outcomeCodes?.length ? <div className="detail-list"><h3>Outcomes</h3><ul>{contentDetail.outcomeCodes.map((outcome) => <li key={outcome}>{outcome}</li>)}</ul></div> : null}
-                {contentDownloads.length ? <div className="detail-list"><h3>Downloads</h3><div className="teacher-card-actions">{contentDownloads.map((download) => <a key={`${download.label}-${download.url}`} className="secondary-action" href={download.url} target="_blank" rel="noreferrer">{download.label}</a>)}</div></div> : null}
+                <LinkSection links={contentDownloads} />
                 {contentDetail.lessonIds?.length ? <div className="detail-list"><h3>Included lessons</h3><ul>{contentDetail.lessonIds.map((lessonId) => <li key={lessonId}>{lessons.find((lesson) => lesson.id === lessonId)?.title || lessonId}</li>)}</ul></div> : null}
                 {contentDetail.resourceIds?.length ? <div className="detail-list"><h3>Attached resources</h3><ul>{contentDetail.resourceIds.map((resourceId) => <li key={resourceId}>{resources.find((resource) => resource.id === resourceId)?.title || resourceId}</li>)}</ul></div> : null}
               </div>
@@ -1995,6 +2018,7 @@ function StaffConsole({ onLock }) {
           lessonPlanUrl: item.lessonPlanUrl?.trim() || "",
           resourceUrl: item.resourceUrl?.trim() || "",
           resourceLinks: Array.isArray(item.resourceLinks) ? item.resourceLinks : listFromText(item.resourceLinks || ""),
+          downloadLinks: Array.isArray(item.downloadLinks) ? item.downloadLinks : parseNamedLinks(item.downloadLinks || ""),
         },
         lessonIds: Array.isArray(item.lessonIds) ? item.lessonIds : [],
         resourceIds: Array.isArray(item.resourceIds) ? item.resourceIds : [],
@@ -2013,6 +2037,7 @@ function StaffConsole({ onLock }) {
       delete contentPayload.lessonPlanUrl;
       delete contentPayload.resourceUrl;
       delete contentPayload.resourceLinks;
+      delete contentPayload.downloadLinks;
       delete contentPayload.customImageUrl;
       delete contentPayload.uploadedImageDataUrl;
 
@@ -2288,6 +2313,7 @@ function ContentPanel({ contentItems, status, saveState, seedContentItems, addCo
       item.materials?.unitPlanUrl,
       item.materials?.lessonPlanUrl,
       item.materials?.resourceUrl,
+      ...(item.materials?.downloadLinks || []).map((entry) => entry.url),
       ...(item.materials?.resourceLinks || []),
     ].filter(Boolean).length;
   }
@@ -2310,6 +2336,7 @@ function ContentPanel({ contentItems, status, saveState, seedContentItems, addCo
       unitPlanUrl: item.materials?.unitPlanUrl || "",
       lessonPlanUrl: item.materials?.lessonPlanUrl || "",
       resourceUrl: item.materials?.resourceUrl || "",
+      downloadLinks: Array.isArray(item.materials?.downloadLinks) ? item.materials.downloadLinks.map((entry) => `${entry.label} | ${entry.url}`).join("\n") : "",
       resourceLinks: Array.isArray(item.materials?.resourceLinks) ? item.materials.resourceLinks.join("\n") : "",
       lessonIds: item.lessonIds || [],
       resourceIds: item.resourceIds || [],
@@ -2527,6 +2554,7 @@ function ContentPanel({ contentItems, status, saveState, seedContentItems, addCo
                     <label className="wide-field">Extra resource links<textarea placeholder="One URL per line" value={draft.resourceLinks} onChange={(event) => updateDraft({ resourceLinks: event.target.value })}></textarea></label>
                   </>
                 ) : null}
+                <label className="wide-field">Download links<textarea placeholder="One per line: Label | URL" value={draft.downloadLinks} onChange={(event) => updateDraft({ downloadLinks: event.target.value })}></textarea></label>
               </div>
             </section>
 
