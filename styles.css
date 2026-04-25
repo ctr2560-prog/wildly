@@ -1378,6 +1378,144 @@ h2 {
   font-size: 13px;
 }
 
+.class-create-form,
+.assignment-modal-grid {
+  display: grid;
+  gap: 14px;
+}
+
+.class-create-form {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin-bottom: 18px;
+}
+
+.assignment-modal-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.class-create-form label,
+.assignment-modal label {
+  display: grid;
+  gap: 8px;
+  color: var(--green-950);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.class-create-form input,
+.class-create-form select,
+.assignment-modal input,
+.assignment-modal select {
+  width: 100%;
+  min-height: 42px;
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: #fff;
+  color: var(--ink);
+}
+
+.class-section-grid,
+.student-card-grid,
+.calendar-event-list,
+.report-detail-grid {
+  display: grid;
+  gap: 16px;
+}
+
+.class-section-grid,
+.student-card-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.class-room-card,
+.student-card,
+.assignment-modal {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: 0 10px 22px rgba(14, 42, 28, 0.05);
+}
+
+.class-room-card,
+.student-card {
+  padding: 18px;
+}
+
+.class-room-header,
+.student-card-head {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.class-room-header h3,
+.student-card-head h3 {
+  margin: 0 0 6px;
+  color: var(--green-950);
+}
+
+.class-room-header p,
+.student-card-head p,
+.mini-empty {
+  margin: 0;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.class-room-body {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+  margin-top: 18px;
+}
+
+.class-room-body h4 {
+  margin: 0 0 10px;
+  color: var(--green-950);
+  font-size: 14px;
+}
+
+.compact-list {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding-left: 18px;
+  color: #47554d;
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.calendar-event-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: 0 10px 22px rgba(14, 42, 28, 0.05);
+}
+
+.calendar-event-card h3 {
+  margin: 10px 0 8px;
+  color: var(--green-950);
+}
+
+.calendar-event-card p,
+.calendar-event-card strong {
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.assignment-modal {
+  width: min(680px, 100%);
+  padding: 24px;
+}
+
 .placeholder-card {
   display: grid;
   place-items: start;
@@ -1494,7 +1632,12 @@ h2 {
   .teacher-summary-grid,
   .tv-library-grid,
   .tv-detail-layout,
-  .tv-feature-card {
+  .tv-feature-card,
+  .class-section-grid,
+  .student-card-grid,
+  .class-room-body,
+  .class-create-form,
+  .assignment-modal-grid {
     grid-template-columns: 1fr;
   }
 
@@ -1595,7 +1738,9 @@ h2 {
   .news-grid,
   .teacher-library-grid,
   .teacher-summary-grid,
-  .tv-library-grid {
+  .tv-library-grid,
+  .class-section-grid,
+  .student-card-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
@@ -1604,6 +1749,13 @@ h2 {
   .notice-banner {
     align-items: stretch;
     flex-direction: column;
+  }
+
+  .calendar-event-card,
+  .class-room-header,
+  .student-card-head {
+    flex-direction: column;
+    align-items: start;
   }
 
   .detail-modal {
@@ -1635,6 +1787,8 @@ h2 {
   .teacher-library-grid,
   .teacher-summary-grid,
   .tv-library-grid,
+  .class-section-grid,
+  .student-card-grid,
   .main-nav,
   .side-section {
     grid-template-columns: 1fr;

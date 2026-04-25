@@ -223,6 +223,51 @@ const defaultTarongaTvVideos = [
   },
 ];
 
+const defaultTeacherStudents = [
+  { id: "stu-ava", name: "Ava Wilson", classId: "year-3-blue", status: "Needs support", focus: "Data interpretation", streak: 4 },
+  { id: "stu-noah", name: "Noah Patel", classId: "year-3-blue", status: "On track", focus: "Scientific explanations", streak: 6 },
+  { id: "stu-mia", name: "Mia Brown", classId: "year-3-blue", status: "Extension ready", focus: "Reflection writing", streak: 8 },
+  { id: "stu-luca", name: "Luca Smith", classId: "year-4-green", status: "On track", focus: "Systems thinking", streak: 5 },
+  { id: "stu-charlotte", name: "Charlotte Lee", classId: "year-4-green", status: "Needs support", focus: "Vocabulary and evidence", streak: 3 },
+  { id: "stu-harper", name: "Harper Jones", classId: "year-4-green", status: "On track", focus: "Inquiry planning", streak: 7 },
+  { id: "stu-ethan", name: "Ethan Nguyen", classId: "stage-3-extension", status: "Extension ready", focus: "Independent investigation", streak: 10 },
+  { id: "stu-grace", name: "Grace Kim", classId: "stage-3-extension", status: "On track", focus: "Argument structure", streak: 6 },
+  { id: "stu-oliver", name: "Oliver White", classId: "stage-3-extension", status: "Needs support", focus: "Completion and organisation", streak: 2 },
+];
+
+const defaultTeacherClasses = [
+  { id: "year-3-blue", title: "Year 3 Blue", stage: "Stage 2", note: "Foundations and observation", studentIds: ["stu-ava", "stu-noah", "stu-mia"] },
+  { id: "year-4-green", title: "Year 4 Green", stage: "Stage 2", note: "Excursion preparation", studentIds: ["stu-luca", "stu-charlotte", "stu-harper"] },
+  { id: "stage-3-extension", title: "Stage 3 Extension", stage: "Stage 3", note: "Inquiry and extension", studentIds: ["stu-ethan", "stu-grace", "stu-oliver"] },
+];
+
+function createDefaultTeacherAssignments() {
+  return [
+    {
+      id: "asg-adaptations-year3",
+      classId: "year-3-blue",
+      contentId: "adaptations-australian-animals",
+      dueDate: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10),
+      assignedAt: new Date().toISOString().slice(0, 10),
+    },
+    {
+      id: "asg-futures-year4",
+      classId: "year-4-green",
+      contentId: "sustainable-futures",
+      dueDate: new Date(Date.now() + 9 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10),
+      assignedAt: new Date().toISOString().slice(0, 10),
+    },
+  ];
+}
+
+function createDefaultTeacherWorkspace() {
+  return {
+    savedItemIds: ["animal-movement-data-patterns"],
+    classes: defaultTeacherClasses,
+    assignments: createDefaultTeacherAssignments(),
+  };
+}
+
 const staffPassword = "admin";
 const staffSessionKey = "wildly-staff-session";
 
@@ -549,6 +594,119 @@ function createInitials(name = "") {
     .join("");
 
   return initials || "WT";
+}
+
+function formatDisplayDate(value) {
+  if (!value) return "";
+  const date = new Date(`${value}T12:00:00`);
+  if (Number.isNaN(date.getTime())) return value;
+  return date.toLocaleDateString("en-AU", { day: "numeric", month: "short", year: "numeric" });
+}
+
+function downloadCalendarInvite(title, date, description = "") {
+  if (!date) return;
+  const start = date.replace(/-/g, "");
+  const endDate = new Date(`${date}T12:00:00`);
+  endDate.setDate(endDate.getDate() + 1);
+  const end = endDate.toISOString().slice(0, 10).replace(/-/g, "");
+  const safeTitle = title.replace(/,/g, "");
+  const safeDescription = description.replace(/\n/g, " ").replace(/,/g, "");
+  const contents = [
+    "BEGIN:VCALENDAR",
+    "VERSION:2.0",
+    "PRODID:-//Wildly by Taronga//EN",
+    "BEGIN:VEVENT",
+    `UID:${Date.now()}@wildly`,
+    `DTSTAMP:${new Date().toISOString().replace(/[-:]/g, "").split(".")[0]}Z`,
+    `DTSTART;VALUE=DATE:${start}`,
+    `DTEND;VALUE=DATE:${end}`,
+    `SUMMARY:${safeTitle}`,
+    `DESCRIPTION:${safeDescription}`,
+    "END:VEVENT",
+    "END:VCALENDAR",
+  ].join("\n");
+  downloadTextFile(`${safeTitle.toLowerCase().replace(/[^a-z0-9]+/g, "-") || "wildly-event"}.ics`, contents, "text/calendar;charset=utf-8");
+}
+
+function teacherWorkspaceStorageKey(user, profile) {
+  const base = profile?.email || user?.email || user?.uid || "guest";
+  return `wildly-teacher-workspace:${base}`;
+}
+
+function useTeacherWorkspace(user, profile) {
+  const storageKey = teacherWorkspaceStorageKey(user, profile);
+  const [workspace, setWorkspace] = useState(createDefaultTeacherWorkspace);
+
+  useEffect(() => {
+    try {
+      const saved = window.localStorage.getItem(storageKey);
+      if (!saved) {
+        setWorkspace(createDefaultTeacherWorkspace());
+        return;
+      }
+
+      const parsed = JSON.parse(saved);
+      setWorkspace({
+        ...createDefaultTeacherWorkspace(),
+        ...parsed,
+        savedItemIds: Array.isArray(parsed.savedItemIds) ? parsed.savedItemIds : [],
+        classes: Array.isArray(parsed.classes) && parsed.classes.length ? parsed.classes : defaultTeacherClasses,
+        assignments: Array.isArray(parsed.assignments) ? parsed.assignments : createDefaultTeacherAssignments(),
+      });
+    } catch {
+      setWorkspace(createDefaultTeacherWorkspace());
+    }
+  }, [storageKey]);
+
+  useEffect(() => {
+    window.localStorage.setItem(storageKey, JSON.stringify(workspace));
+  }, [storageKey, workspace]);
+
+  function toggleSavedItem(itemId) {
+    setWorkspace((current) => ({
+      ...current,
+      savedItemIds: current.savedItemIds.includes(itemId)
+        ? current.savedItemIds.filter((id) => id !== itemId)
+        : [...current.savedItemIds, itemId],
+    }));
+  }
+
+  function assignContentToClass(contentId, classId, dueDate) {
+    setWorkspace((current) => {
+      const existingIndex = current.assignments.findIndex((item) => item.contentId === contentId && item.classId === classId);
+      const nextAssignment = {
+        id: existingIndex >= 0 ? current.assignments[existingIndex].id : `asg-${Date.now()}`,
+        contentId,
+        classId,
+        dueDate,
+        assignedAt: new Date().toISOString().slice(0, 10),
+      };
+
+      const assignments = existingIndex >= 0
+        ? current.assignments.map((item, index) => (index === existingIndex ? nextAssignment : item))
+        : [...current.assignments, nextAssignment];
+
+      return { ...current, assignments };
+    });
+  }
+
+  function createClass(title, stage) {
+    const classId = `${title.toLowerCase().replace(/[^a-z0-9]+/g, "-")}-${Date.now().toString().slice(-4)}`;
+    setWorkspace((current) => ({
+      ...current,
+      classes: [
+        ...current.classes,
+        { id: classId, title, stage, note: "Custom class", studentIds: [] },
+      ],
+    }));
+  }
+
+  return {
+    workspace,
+    toggleSavedItem,
+    assignContentToClass,
+    createClass,
+  };
 }
 
 function useSessionUser() {
@@ -1148,11 +1306,13 @@ function MarketingPage({ page = "about" }) {
   );
 }
 
-function TeacherDashboard({ config, contentItems = defaultContentItems.map(resolveContentItem), professionalLearningItems = defaultProfessionalLearningItems, tarongaTvVideos = defaultTarongaTvVideos.map(resolveTarongaTvVideo), page = "dashboard", subject = "", contentId = "", tvVideoId = "", profile = null, onSignOut = null, preview = false }) {
+function TeacherDashboard({ config, contentItems = defaultContentItems.map(resolveContentItem), professionalLearningItems = defaultProfessionalLearningItems, tarongaTvVideos = defaultTarongaTvVideos.map(resolveTarongaTvVideo), page = "dashboard", subject = "", contentId = "", tvVideoId = "", profile = null, onSignOut = null, preview = false, workspace = createDefaultTeacherWorkspace(), onToggleSaved = () => {}, onAssignContent = () => {}, onCreateClass = () => {} }) {
   const [activeSubject, setActiveSubject] = useState(subjectFromSlug(subject));
   const [activeTvCategory, setActiveTvCategory] = useState("All");
   const [query, setQuery] = useState("");
   const [notice, setNotice] = useState("");
+  const [assignmentDraft, setAssignmentDraft] = useState({ itemId: "", classId: "", dueDate: "" });
+  const [classDraft, setClassDraft] = useState({ title: "", stage: "Stage 2" });
   const routeSubject = subjectFromSlug(subject);
 
   useEffect(() => {
@@ -1186,6 +1346,15 @@ function TeacherDashboard({ config, contentItems = defaultContentItems.map(resol
   const contentDownloads = contentDetail ? buildContentDownloads(contentDetail) : [];
   const tarongaTvDownloads = tarongaTvDetail?.downloadLinks || [];
   const allResourceItems = [...lessons, ...resources];
+  const classes = workspace.classes || defaultTeacherClasses;
+  const assignments = workspace.assignments || [];
+  const savedItemIds = workspace.savedItemIds || [];
+  const classStudents = defaultTeacherStudents.filter((student) => classes.some((classroom) => classroom.id === student.classId));
+  const assignmentsByClass = Object.fromEntries(classes.map((classroom) => [classroom.id, assignments.filter((assignment) => assignment.classId === classroom.id)]));
+  const savedItems = publishedItems.filter((item) => savedItemIds.includes(item.id));
+  const assignedContentIds = new Set(assignments.map((assignment) => assignment.contentId));
+  const assignedItems = publishedItems.filter((item) => assignedContentIds.has(item.id));
+  const contentById = Object.fromEntries(publishedItems.map((item) => [item.id, item]));
   const navItems = [
     ["", "Dashboard", "grid"],
     ["classes", "My Classes", "users"],
@@ -1194,30 +1363,59 @@ function TeacherDashboard({ config, contentItems = defaultContentItems.map(resol
     ["saved", "Saved", "bookmark"],
     ["calendar", "Calendar", "calendar"],
   ];
-  const teacherClasses = [
-    { title: "Year 3 Blue", detail: "26 students · Stage 2 focus", action: "Open students", href: teacherRoute("students") },
-    { title: "Year 4 Green", detail: "24 students · upcoming zoo visit", action: "Open calendar", href: teacherRoute("calendar") },
-    { title: "Stage 3 Extension", detail: "12 students · inquiry project", action: "View reports", href: teacherRoute("reports") },
-  ];
-  const studentSnapshots = [
-    ["Ava Wilson", "Needs support with data interpretation", "Stage 2 science"],
-    ["Noah Patel", "Ready for extension in persuasive writing", "Stage 3 English"],
-    ["Mia Brown", "Completed Tracka mission reflection", "PDHPE / Science"],
-  ];
-  const reportSnapshots = [
-    ["Curriculum coverage", "146 mapped outcomes across live content"],
-    ["Highest engagement", "Science, HSIE and Technology & STEM this month"],
-    ["Recommended action", "Publish more Stage 2 resources before the next zoo visit"],
-  ];
   const publishedProfessionalLearningItems = professionalLearningItems.filter((item) => item.status !== "Draft");
   const professionalLearningLinksById = Object.fromEntries(
     publishedProfessionalLearningItems.map((item) => [item.id, buildProfessionalLearningLinks(item)]),
   );
   const nextProfessionalLearning = publishedProfessionalLearningItems[0] || null;
-  const notificationItems = publishedProfessionalLearningItems.slice(0, 3);
+  const assignmentNotifications = assignments
+    .filter((item) => item.dueDate)
+    .sort((a, b) => (a.dueDate || "").localeCompare(b.dueDate || ""))
+    .slice(0, 3)
+    .map((item) => ({
+      title: `${contentById[item.contentId]?.title || "Assigned content"} due for ${classes.find((classroom) => classroom.id === item.classId)?.title || "class"}`,
+      date: item.dueDate,
+    }));
+  const notificationItems = [...publishedProfessionalLearningItems.slice(0, 2), ...assignmentNotifications].slice(0, 4);
   const showContinue = config.showContinueLearning;
   const showUpcoming = config.showUpcomingPanel;
   const showTracka = config.showTrackaCard;
+  const teacherClasses = classes.map((classroom) => {
+    const studentCount = classStudents.filter((student) => student.classId === classroom.id).length;
+    const assignmentCount = assignmentsByClass[classroom.id]?.length || 0;
+    return {
+      ...classroom,
+      detail: `${studentCount} students · ${classroom.stage}`,
+      assignmentCount,
+    };
+  });
+  const studentSnapshots = classStudents.map((student) => [student.name, student.focus, classes.find((classroom) => classroom.id === student.classId)?.title || "Unassigned", student.status]);
+  const subjectCounts = publishedItems.reduce((accumulator, item) => ({ ...accumulator, [item.subject]: (accumulator[item.subject] || 0) + 1 }), {});
+  const topSubject = Object.entries(subjectCounts).sort((a, b) => b[1] - a[1])[0]?.[0] || "Science";
+  const reportSnapshots = [
+    ["Curriculum coverage", `${publishedItems.length} published items across ${Object.keys(subjectCounts).length} subjects`],
+    ["Assigned this term", `${assignments.length} active assignments across ${classes.length} classes`],
+    ["Most represented subject", topSubject],
+  ];
+  const calendarEvents = [
+    ...assignments.map((assignment) => ({
+      id: assignment.id,
+      date: assignment.dueDate,
+      title: contentById[assignment.contentId]?.title || "Assigned content",
+      detail: `${classes.find((classroom) => classroom.id === assignment.classId)?.title || "Class"} · Due date`,
+      type: "Assignment",
+      href: teacherContentRoute(assignment.contentId),
+    })),
+    ...publishedProfessionalLearningItems.map((item) => ({
+      id: item.id,
+      date: item.date,
+      title: item.title,
+      detail: item.time || "Professional learning",
+      type: "Professional Learning",
+      href: teacherRoute("professional-learning"),
+    })),
+    { id: "excursion", date: "2026-06-08", title: "Taronga Zoo Visit - Biodiversity in Action", detail: "Sydney excursion", type: "Excursion", href: appLinks.excursions },
+  ].filter((item) => item.date).sort((a, b) => a.date.localeCompare(b.date));
 
   function openPrimaryContent(item) {
     const primaryLink = contentPrimaryLink(item);
@@ -1233,6 +1431,63 @@ function TeacherDashboard({ config, contentItems = defaultContentItems.map(resol
     setActiveSubject(null);
     setActiveTvCategory("All");
     setQuery("");
+  }
+
+  function openAssignmentFlow(item) {
+    setAssignmentDraft({
+      itemId: item.id,
+      classId: classes[0]?.id || "",
+      dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10),
+    });
+  }
+
+  function closeAssignmentFlow() {
+    setAssignmentDraft({ itemId: "", classId: "", dueDate: "" });
+  }
+
+  function submitAssignment(event) {
+    event.preventDefault();
+    if (!assignmentDraft.itemId || !assignmentDraft.classId || !assignmentDraft.dueDate) return;
+    onAssignContent(assignmentDraft.itemId, assignmentDraft.classId, assignmentDraft.dueDate);
+    const itemTitle = contentById[assignmentDraft.itemId]?.title || "Content";
+    const classTitle = classes.find((classroom) => classroom.id === assignmentDraft.classId)?.title || "class";
+    setNotice(`${itemTitle} assigned to ${classTitle} for ${formatDisplayDate(assignmentDraft.dueDate)}.`);
+    closeAssignmentFlow();
+  }
+
+  function submitNewClass(event) {
+    event.preventDefault();
+    if (!classDraft.title.trim()) return;
+    onCreateClass(classDraft.title.trim(), classDraft.stage);
+    setNotice(`${classDraft.title.trim()} created and ready for assignments.`);
+    setClassDraft({ title: "", stage: "Stage 2" });
+  }
+
+  function exportStudentsCsv() {
+    const rows = [
+      ["name", "class", "status", "focus", "streak"],
+      ...classStudents.map((student) => [
+        student.name,
+        classes.find((classroom) => classroom.id === student.classId)?.title || "",
+        student.status,
+        student.focus,
+        String(student.streak),
+      ]),
+    ].map((row) => row.join(",")).join("\n");
+    downloadTextFile("wildly-students.csv", rows, "text/csv;charset=utf-8");
+  }
+
+  function exportReportsCsv() {
+    const rows = [
+      ["metric", "value"],
+      ["published_items", String(publishedItems.length)],
+      ["assignments", String(assignments.length)],
+      ["saved_items", String(savedItems.length)],
+      ["classes", String(classes.length)],
+      ["students", String(classStudents.length)],
+      ["top_subject", topSubject],
+    ].map((row) => row.join(",")).join("\n");
+    downloadTextFile("wildly-teacher-report.csv", rows, "text/csv;charset=utf-8");
   }
 
   const pageMeta = {
@@ -1269,32 +1524,32 @@ function TeacherDashboard({ config, contentItems = defaultContentItems.map(resol
     classes: {
       eyebrow: "My Classes",
       title: "Teaching groups",
-      description: "Class planning, assignment and review should live here as a full workflow rather than a dashboard widget.",
-      action: <button type="button" className="secondary-action" onClick={() => setNotice("Class creation placeholder. Add your real class management flow here.")}>Create class</button>,
+      description: "Manage classes, review current assignments and keep upcoming work visible in one place.",
+      action: <a className="secondary-action" href="#create-class">Create class</a>,
     },
     students: {
       eyebrow: "Students",
       title: "Learner overview",
       description: "Track support needs, extension opportunities and completion at a glance.",
-      action: <button type="button" className="secondary-action" onClick={() => setNotice("Student export placeholder. Add CSV export or SIS sync here.")}>Export students</button>,
+      action: <button type="button" className="secondary-action" onClick={exportStudentsCsv}>Export students</button>,
     },
     reports: {
       eyebrow: "Reports",
       title: "Teacher reporting",
       description: "Curriculum coverage, engagement and next-step recommendations should read as a proper reporting page.",
-      action: <button type="button" className="secondary-action" onClick={() => downloadTextFile("wildly-teacher-report.csv", "metric,value\nCurriculum coverage,146\nBelow expected,18%\nAt expected,57%\nAbove expected,25%\n", "text/csv;charset=utf-8")}>Download sample CSV</button>,
+      action: <button type="button" className="secondary-action" onClick={exportReportsCsv}>Download report CSV</button>,
     },
     saved: {
       eyebrow: "Saved",
       title: "Saved for later",
-      description: "This page is ready for bookmarks, pinned lessons and draft assignment collections.",
+      description: "Keep shortlisted lessons, resources and paths in one place while you plan.",
       action: null,
     },
     calendar: {
       eyebrow: "Calendar",
       title: "Upcoming dates",
-      description: "Assignments, excursions and Tracka missions can all surface here as a full planning page.",
-      action: <button type="button" className="secondary-action" onClick={() => setNotice("Calendar sync placeholder. Add Google Calendar, Outlook or school calendar sync here.")}>Connect calendar</button>,
+      description: "Assignments, professional learning and excursion events now sit on one planning page.",
+      action: <a className="secondary-action" href={appLinks.excursions}>Excursion details</a>,
     },
   }[page];
   const displayName = profile?.name || "Mr. Thompson";
@@ -1344,7 +1599,7 @@ function TeacherDashboard({ config, contentItems = defaultContentItems.map(resol
 
       <main className="workspace">
         <header className="topbar">
-          <button className="menu-button" type="button" aria-label="Open navigation" onClick={() => setNotice("Mobile menu placeholder. The sidebar is the main navigation for now.")}></button>
+          <button className="menu-button" type="button" aria-label="Open navigation"></button>
           <nav className="top-links" aria-label="Primary">
             <a className={page === "dashboard" ? "selected" : ""} href={teacherRoute()}>Dashboard</a>
             <a className={page === "resources" ? "selected" : ""} href={teacherRoute("resources")}>Resources</a>
@@ -1357,7 +1612,7 @@ function TeacherDashboard({ config, contentItems = defaultContentItems.map(resol
               <Icon type="bell" className="" />
             </button>
             <a className="icon-button help" aria-label="Help" href={appLinks.support}></a>
-            <button type="button" className="profile-button" onClick={() => setNotice("Profile placeholder: account settings and class preferences can sit here.")}>
+            <button type="button" className="profile-button" onClick={() => { window.location.hash = "#about-you"; }}>
               <span>{profileInitials}</span>
               <strong>{displayName}</strong>
               <small>{displayRole}</small>
@@ -1584,7 +1839,8 @@ function TeacherDashboard({ config, contentItems = defaultContentItems.map(resol
                     <small>{item.subject} - {item.stage}</small>
                     <div className="teacher-card-actions">
                       <a className="primary-action" href={teacherContentRoute(item.id)}>Open</a>
-                      <button type="button" className="secondary-action" onClick={() => setNotice("Assignment placeholder. Connect this to your class assignment flow next.")}>Assign</button>
+                      <button type="button" className="secondary-action" onClick={() => openAssignmentFlow(item)}>Assign</button>
+                      <button type="button" className="secondary-action" onClick={() => onToggleSaved(item.id)}>{savedItemIds.includes(item.id) ? "Saved" : "Save"}</button>
                     </div>
                   </div>
                 </article>
@@ -1611,7 +1867,8 @@ function TeacherDashboard({ config, contentItems = defaultContentItems.map(resol
                     <small>{item.durationWeeks || 0} weeks · {item.lessonIds?.length || 0} lessons</small>
                     <div className="teacher-card-actions">
                       <a className="primary-action" href={teacherContentRoute(item.id)}>Open path</a>
-                      <button type="button" className="secondary-action" onClick={() => setNotice("Assign path placeholder. Connect this to your class assignment workflow next.")}>Assign</button>
+                      <button type="button" className="secondary-action" onClick={() => openAssignmentFlow(item)}>Assign</button>
+                      <button type="button" className="secondary-action" onClick={() => onToggleSaved(item.id)}>{savedItemIds.includes(item.id) ? "Saved" : "Save"}</button>
                     </div>
                   </div>
                 </article>
@@ -1666,9 +1923,9 @@ function TeacherDashboard({ config, contentItems = defaultContentItems.map(resol
                       {video.duration ? <small>{video.duration}</small> : null}
                       {video.outcomeCodes?.length ? <small>{video.outcomeCodes.length} outcomes</small> : null}
                       {video.categories?.length ? <small>{video.categories.join(" · ")}</small> : null}
-                      <div className="teacher-card-actions">
-                        <a className="primary-action" href={teacherTvRoute(video.id)}>Open video</a>
-                        {video.lessonIds?.[0] ? <a className="secondary-action" href={teacherContentRoute(video.lessonIds[0])}>Linked lesson</a> : null}
+                    <div className="teacher-card-actions">
+                      <a className="primary-action" href={teacherTvRoute(video.id)}>Open video</a>
+                      {video.lessonIds?.[0] ? <a className="secondary-action" href={teacherContentRoute(video.lessonIds[0])}>Linked lesson</a> : null}
                       </div>
                     </div>
                   </article>
@@ -1789,7 +2046,7 @@ function TeacherDashboard({ config, contentItems = defaultContentItems.map(resol
                       <p>{item.description || item.summary}</p>
                       <small>{item.date}{item.time ? ` - ${item.time}` : ""}</small>
                       <div className="teacher-card-actions">
-                        {item.registrationUrl ? <a className="primary-action" href={item.registrationUrl} target="_blank" rel="noreferrer">Open registration</a> : <button type="button" className="primary-action" onClick={() => setNotice("Add a registration link in the staff portal to activate this button.")}>Registration needed</button>}
+                        {item.registrationUrl ? <a className="primary-action" href={item.registrationUrl} target="_blank" rel="noreferrer">Open registration</a> : <button type="button" className="primary-action" onClick={() => downloadCalendarInvite(item.title, item.date, item.summary || item.description || "")}>Add to calendar</button>}
                       </div>
                       <LinkSection links={professionalLearningLinksById[item.id] || []} />
                     </div>
@@ -1818,7 +2075,8 @@ function TeacherDashboard({ config, contentItems = defaultContentItems.map(resol
                     <small>{item.subject} - {item.stage}</small>
                     <div className="teacher-card-actions">
                       <a className="primary-action" href={teacherContentRoute(item.id)}>Open</a>
-                      <button type="button" className="secondary-action" onClick={() => setNotice("Assign resource placeholder. Hook this up to class assignment when you are ready.")}>Assign</button>
+                      <button type="button" className="secondary-action" onClick={() => openAssignmentFlow(item)}>Assign</button>
+                      <button type="button" className="secondary-action" onClick={() => onToggleSaved(item.id)}>{savedItemIds.includes(item.id) ? "Saved" : "Save"}</button>
                     </div>
                   </div>
                 </article>
@@ -1839,30 +2097,54 @@ function TeacherDashboard({ config, contentItems = defaultContentItems.map(resol
                 <article key={classroom.title} className="summary-card">
                   <h3>{classroom.title}</h3>
                   <p>{classroom.detail}</p>
-                  <a className="primary-action" href={classroom.href}>{classroom.action}</a>
+                  <small>{classroom.assignmentCount} active assignments</small>
                 </article>
               ))}
             </section>
             <section className="teacher-panel">
               <div className="teacher-panel-header">
                 <div>
-                  <h2>Class actions</h2>
-                  <p>Assignments, grouping, and class-level resource planning can all grow from this page.</p>
+                  <h2 id="create-class">Class setup and planning</h2>
+                  <p>Create classes, review assigned content and keep due work visible by teaching group.</p>
                 </div>
               </div>
-              <div className="teacher-summary-grid">
-                <article className="summary-card">
-                  <h3>Upcoming assignment</h3>
-                  <p>Sustainable Futures sequence scheduled for Year 4 Green next week.</p>
-                </article>
-                <article className="summary-card">
-                  <h3>Needs review</h3>
-                  <p>Stage 3 Extension has 3 students with incomplete reflection tasks.</p>
-                </article>
-                <article className="summary-card">
-                  <h3>Ready to assign</h3>
-                  <p>Animal Movement and Data Patterns is ready for Year 3 Blue.</p>
-                </article>
+              <form className="class-create-form" onSubmit={submitNewClass}>
+                <label>Class name<input type="text" value={classDraft.title} onChange={(event) => setClassDraft((current) => ({ ...current, title: event.target.value }))} placeholder="Year 5 Red" /></label>
+                <label>Stage<select value={classDraft.stage} onChange={(event) => setClassDraft((current) => ({ ...current, stage: event.target.value }))}>{["Early Years", "Early Stage 1", "Stage 1", "Stage 2", "Stage 3", "Stage 4", "Stage 5", "Stage 6"].map((stage) => <option key={stage} value={stage}>{stage}</option>)}</select></label>
+                <button type="submit" className="primary-action">Create class</button>
+              </form>
+              <div className="class-section-grid">
+                {teacherClasses.map((classroom) => (
+                  <article className="class-room-card" key={classroom.id}>
+                    <div className="class-room-header">
+                      <div>
+                        <h3>{classroom.title}</h3>
+                        <p>{classroom.stage} · {classroom.note}</p>
+                      </div>
+                      <span className="pill">{classroom.assignmentCount} assignments</span>
+                    </div>
+                    <div className="class-room-body">
+                      <div>
+                        <h4>Students</h4>
+                        <ul className="compact-list">
+                          {classStudents.filter((student) => student.classId === classroom.id).map((student) => <li key={student.id}>{student.name} · {student.status}</li>)}
+                        </ul>
+                      </div>
+                      <div>
+                        <h4>Assigned content</h4>
+                        {assignmentsByClass[classroom.id]?.length ? (
+                          <ul className="compact-list">
+                            {assignmentsByClass[classroom.id].map((assignment) => (
+                              <li key={assignment.id}>
+                                <a href={teacherContentRoute(assignment.contentId)}>{contentById[assignment.contentId]?.title || "Content item"}</a> · due {formatDisplayDate(assignment.dueDate)}
+                              </li>
+                            ))}
+                          </ul>
+                        ) : <p className="mini-empty">No assignments yet.</p>}
+                      </div>
+                    </div>
+                  </article>
+                ))}
               </div>
             </section>
           </>
@@ -1871,11 +2153,12 @@ function TeacherDashboard({ config, contentItems = defaultContentItems.map(resol
         {page === "students" && (
           <>
             <section className="teacher-summary-grid page-summary-grid">
-              {studentSnapshots.map(([name, note, group]) => (
+              {studentSnapshots.slice(0, 3).map(([name, note, group, status]) => (
                 <article key={name} className="summary-card">
                   <h3>{name}</h3>
                   <p>{note}</p>
                   <small>{group}</small>
+                  <small>{status}</small>
                 </article>
               ))}
             </section>
@@ -1883,22 +2166,30 @@ function TeacherDashboard({ config, contentItems = defaultContentItems.map(resol
               <div className="teacher-panel-header">
                 <div>
                   <h2>Support and extension</h2>
-                  <p>This page should become the operational student list, not just a dashboard fragment.</p>
+                  <p>Track learner needs, class grouping and readiness using the assignments already in the platform.</p>
                 </div>
               </div>
-              <div className="teacher-summary-grid">
-                <article className="summary-card">
-                  <h3>Below expected</h3>
-                  <p>5 students need extra support with evidence-based responses.</p>
-                </article>
-                <article className="summary-card">
-                  <h3>At expected</h3>
-                  <p>18 students are on track across their current assigned lessons.</p>
-                </article>
-                <article className="summary-card">
-                  <h3>Above expected</h3>
-                  <p>4 students are ready for extension via Tracka-linked investigation tasks.</p>
-                </article>
+              <div className="student-card-grid">
+                {classStudents.map((student) => {
+                  const classroom = classes.find((item) => item.id === student.classId);
+                  const assignedCount = assignmentsByClass[student.classId]?.length || 0;
+                  return (
+                    <article className="student-card" key={student.id}>
+                      <div className="student-card-head">
+                        <div>
+                          <h3>{student.name}</h3>
+                          <p>{classroom?.title || "Class"} · {classroom?.stage || ""}</p>
+                        </div>
+                        <span className="pill">{student.status}</span>
+                      </div>
+                      <p>{student.focus}</p>
+                      <div className="detail-meta">
+                        <small>{assignedCount} assigned items</small>
+                        <small>{student.streak} day streak</small>
+                      </div>
+                    </article>
+                  );
+                })}
               </div>
             </section>
           </>
@@ -1909,15 +2200,15 @@ function TeacherDashboard({ config, contentItems = defaultContentItems.map(resol
             <section className="teacher-summary-grid report-stat-grid">
               <article className="summary-card">
                 <h3>Curriculum coverage</h3>
-                <p>146 mapped outcomes across Science, HSIE, English and STEM.</p>
+                <p>{publishedItems.length} published items across {Object.keys(subjectCounts).length} subject areas.</p>
               </article>
               <article className="summary-card">
                 <h3>Engagement trend</h3>
-                <p>Science and HSIE are driving the strongest completion this month.</p>
+                <p>{savedItems.length} saved items and {assignments.length} live assignments are shaping current teacher activity.</p>
               </article>
               <article className="summary-card">
                 <h3>Recommended next step</h3>
-                <p>Publish more Stage 2 resources before the next zoo visit window.</p>
+                <p>{nextProfessionalLearning ? `Promote ${nextProfessionalLearning.title} before ${formatDisplayDate(nextProfessionalLearning.date)}.` : "Build the next learning path and assign it into a class."}</p>
               </article>
             </section>
             <section className="teacher-panel">
@@ -1935,47 +2226,75 @@ function TeacherDashboard({ config, contentItems = defaultContentItems.map(resol
                   </article>
                 ))}
               </div>
+              <div className="teacher-summary-grid report-detail-grid">
+                <article className="summary-card">
+                  <h3>Saved for later</h3>
+                  <p>{savedItems.length} items bookmarked for planning and future assignment.</p>
+                </article>
+                <article className="summary-card">
+                  <h3>Classes active</h3>
+                  <p>{classes.length} teaching groups currently set up in the workspace.</p>
+                </article>
+                <article className="summary-card">
+                  <h3>Upcoming due dates</h3>
+                  <p>{calendarEvents.filter((event) => event.type === "Assignment").length} assignment milestones currently visible in the planner.</p>
+                </article>
+              </div>
             </section>
           </>
         )}
 
         {page === "saved" && (
           <section className="teacher-panel">
-            <article className="placeholder-card">
-              <h3>No saved items yet</h3>
-              <p>Bookmarking is the next obvious feature here. For now, use the resource library and learning paths directly.</p>
-            </article>
+            <div className="teacher-library-grid">
+              {savedItems.length ? savedItems.map((item) => (
+                <article className="teacher-library-card" key={item.id}>
+                  <img src={item.image} alt="" />
+                  <div>
+                    <span className="pill">{item.type}</span>
+                    <h3>{item.title}</h3>
+                    <p>{item.summary || item.description}</p>
+                    <small>{item.subject} · {item.stage}</small>
+                    <div className="teacher-card-actions">
+                      <a className="primary-action" href={teacherContentRoute(item.id)}>Open</a>
+                      <button type="button" className="secondary-action" onClick={() => openAssignmentFlow(item)}>Assign</button>
+                      <button type="button" className="secondary-action" onClick={() => onToggleSaved(item.id)}>Remove</button>
+                    </div>
+                  </div>
+                </article>
+              )) : (
+                <article className="placeholder-card">
+                  <h3>No saved items yet</h3>
+                  <p>Use the Save button on lessons, resources and learning paths to build a short list for planning.</p>
+                </article>
+              )}
+            </div>
           </section>
         )}
 
         {page === "calendar" && (
           <>
             <section className="teacher-summary-grid page-summary-grid">
-              <article className="summary-card"><h3>Tue 8 Jun</h3><p>Taronga Zoo Visit - Biodiversity in Action</p></article>
-              <article className="summary-card"><h3>Fri 21 Jun</h3><p>Tracka Mission - Citizen Science Challenge</p></article>
-              <article className="summary-card"><h3>Mon 24 Jun</h3><p>Creative Writing: Inspired by Nature due</p></article>
-              {publishedProfessionalLearningItems.slice(0, 2).map((item) => <article key={item.id} className="summary-card"><h3>{item.date}</h3><p>{item.title}</p></article>)}
+              {calendarEvents.slice(0, 4).map((event) => <article key={event.id} className="summary-card"><h3>{formatDisplayDate(event.date)}</h3><p>{event.title}</p><small>{event.type}</small></article>)}
             </section>
             <section className="teacher-panel">
               <div className="teacher-panel-header">
                 <div>
                   <h2>Planning calendar</h2>
-                  <p>Excursions, due dates and mission windows should all live here as a proper planner page.</p>
+                  <p>Assignments, professional learning and excursions are now visible together so teachers can plan from one page.</p>
                 </div>
               </div>
-              <div className="teacher-summary-grid">
-                <article className="summary-card">
-                  <h3>Excursion prep</h3>
-                  <p>Send pre-visit lesson pack to Year 4 Green by Friday.</p>
-                </article>
-                <article className="summary-card">
-                  <h3>Tracka sync</h3>
-                  <p>Citizen science mission opens immediately after the zoo visit.</p>
-                </article>
-                <article className="summary-card">
-                  <h3>Assessment checkpoint</h3>
-                  <p>Stage 2 persuasive writing reflections due next Monday.</p>
-                </article>
+              <div className="calendar-event-list">
+                {calendarEvents.map((event) => (
+                  <a className="calendar-event-card" href={event.href} key={event.id}>
+                    <div>
+                      <span className="pill">{event.type}</span>
+                      <h3>{event.title}</h3>
+                      <p>{event.detail}</p>
+                    </div>
+                    <strong>{formatDisplayDate(event.date)}</strong>
+                  </a>
+                ))}
               </div>
             </section>
           </>
@@ -2006,7 +2325,8 @@ function TeacherDashboard({ config, contentItems = defaultContentItems.map(resol
                   ) : (
                     <button type="button" className="primary-action" onClick={() => setNotice("Add the main lesson/resource URL in staff content to activate this button.")}>Main link needed</button>
                   )}
-                  <button type="button" className="secondary-action" onClick={() => setNotice("Assignment placeholder. Connect this detail page to your class assignment flow next.")}>Assign</button>
+                  <button type="button" className="secondary-action" onClick={() => openAssignmentFlow(contentDetail)}>Assign</button>
+                  <button type="button" className="secondary-action" onClick={() => onToggleSaved(contentDetail.id)}>{savedItemIds.includes(contentDetail.id) ? "Saved" : "Save"}</button>
                 </div>
                 {contentDetail.description ? <div className="detail-list"><h3>Description</h3><p>{contentDetail.description}</p></div> : null}
                 {contentDetail.outcomeCodes?.length ? <div className="detail-list"><h3>Outcomes</h3><ul>{contentDetail.outcomeCodes.map((outcome) => <li key={outcome}>{outcome}</li>)}</ul></div> : null}
@@ -2017,6 +2337,39 @@ function TeacherDashboard({ config, contentItems = defaultContentItems.map(resol
             </div>
           </section>
         )}
+
+        {assignmentDraft.itemId ? (
+          <div className="detail-overlay" role="dialog" aria-modal="true">
+            <form className="assignment-modal" onSubmit={submitAssignment}>
+              <div className="teacher-panel-header">
+                <div>
+                  <span className="content-type">Assign content</span>
+                  <h2>{contentById[assignmentDraft.itemId]?.title || "Assign content"}</h2>
+                  <p>Choose a class and due date to add this item to your teaching workflow.</p>
+                </div>
+                <button type="button" className="secondary-action" onClick={closeAssignmentFlow}>Close</button>
+              </div>
+              <div className="assignment-modal-grid">
+                <label>
+                  Class
+                  <select value={assignmentDraft.classId} onChange={(event) => setAssignmentDraft((current) => ({ ...current, classId: event.target.value }))}>
+                    {classes.map((classroom) => <option key={classroom.id} value={classroom.id}>{classroom.title}</option>)}
+                  </select>
+                </label>
+                <label>
+                  Due date
+                  <input type="date" value={assignmentDraft.dueDate} onChange={(event) => setAssignmentDraft((current) => ({ ...current, dueDate: event.target.value }))} />
+                </label>
+              </div>
+              <div className="teacher-card-actions">
+                <button type="submit" className="primary-action">Save assignment</button>
+                <button type="button" className="secondary-action" onClick={() => onToggleSaved(assignmentDraft.itemId)}>
+                  {savedItemIds.includes(assignmentDraft.itemId) ? "Saved" : "Save while assigning"}
+                </button>
+              </div>
+            </form>
+          </div>
+        ) : null}
       </main>
     </div>
   );
@@ -2210,6 +2563,7 @@ function TeacherPage({ page = "dashboard", subject = "", contentId = "", tvVideo
   const { items: professionalLearningItems } = useProfessionalLearningItems();
   const { items: tarongaTvVideos } = useTarongaTvVideos();
   const { status: sessionStatus, user, profile } = useSessionUser();
+  const { workspace, toggleSavedItem, assignContentToClass, createClass } = useTeacherWorkspace(user, profile);
 
   async function handleSignOut() {
     window.localStorage.removeItem(demoSessionKey);
@@ -2244,7 +2598,7 @@ function TeacherPage({ page = "dashboard", subject = "", contentId = "", tvVideo
     <>
       <FirestoreStatus status={status} />
       <ContentFirestoreStatus status={contentStatus} />
-      <TeacherDashboard config={config} contentItems={contentItems} professionalLearningItems={professionalLearningItems} tarongaTvVideos={tarongaTvVideos} page={page} subject={subject} contentId={contentId} tvVideoId={tvVideoId} profile={profile} onSignOut={handleSignOut} preview={preview} />
+      <TeacherDashboard config={config} contentItems={contentItems} professionalLearningItems={professionalLearningItems} tarongaTvVideos={tarongaTvVideos} page={page} subject={subject} contentId={contentId} tvVideoId={tvVideoId} profile={profile} onSignOut={handleSignOut} preview={preview} workspace={workspace} onToggleSaved={toggleSavedItem} onAssignContent={assignContentToClass} onCreateClass={createClass} />
     </>
   );
 }
