@@ -61,7 +61,7 @@ a {
   justify-content: center;
   gap: 28px;
   color: #33413a;
-  font-size: 13px;
+  font-size: 16px;
   font-weight: 800;
 }
 
@@ -79,22 +79,22 @@ a {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 38px;
+  min-height: 46px;
   border-radius: 6px;
-  font-size: 13px;
+  font-size: 16px;
   font-weight: 900;
 }
 
 .login-link,
 .secondary-action {
-  padding: 0 18px;
+  padding: 0 22px;
   border: 1px solid var(--line);
   background: #fff;
 }
 
 .start-link,
 .primary-action {
-  padding: 0 20px;
+  padding: 0 24px;
   color: #fff;
   background: var(--green-900);
 }
