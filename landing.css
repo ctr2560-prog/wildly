@@ -38,10 +38,10 @@ a {
   top: 0;
   z-index: 10;
   display: grid;
-  grid-template-columns: 240px 1fr auto;
+  grid-template-columns: 360px 1fr auto;
   align-items: center;
   gap: 24px;
-  height: 74px;
+  height: 104px;
   padding: 0 clamp(18px, 5vw, 72px);
   background: rgba(255, 255, 255, 0.94);
   border-bottom: 1px solid var(--line);
@@ -50,8 +50,8 @@ a {
 
 .site-logo img {
   display: block;
-  width: 170px;
-  height: 54px;
+  width: 320px;
+  height: 86px;
   object-fit: contain;
   object-position: left center;
 }
@@ -109,8 +109,8 @@ main {
   grid-template-columns: 0.75fr 1.25fr;
   align-items: center;
   gap: clamp(30px, 5vw, 72px);
-  min-height: 740px;
-  padding: 84px 0 66px;
+  min-height: 700px;
+  padding: 42px 0 40px;
 }
 
 .audience-pill {
