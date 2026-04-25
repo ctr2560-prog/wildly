@@ -790,16 +790,32 @@ function AboutYouPage() {
   );
 }
 
+function SiteHeader({ active = "" }) {
+  const navItems = [
+    ["about", "About"],
+    ["subjects", "Subjects"],
+    ["learning-paths", "Learning Paths"],
+    ["tracka", "Tracka"],
+    ["schools", "Schools"],
+  ];
+
+  return (
+    <header className="site-header">
+      <a className="site-logo" href={routePath()} aria-label="Wildly by Taronga home"><img src={assets.wildlyLogo} alt="Wildly by Taronga" /></a>
+      <nav className="site-nav" aria-label="Main navigation">
+        {navItems.map(([path, label]) => (
+          <a key={path} className={active === path ? "selected" : ""} href={routePath(path)}>{label}</a>
+        ))}
+      </nav>
+      <div className="header-actions"><a className="login-link" href={loginRoute()}>Log in</a><a className="start-link" href={signupRoute()}>Get started</a></div>
+    </header>
+  );
+}
+
 function LandingPage() {
   return (
     <>
-      <header className="site-header">
-        <a className="site-logo" href={routePath()} aria-label="Wildly by Taronga home"><img src={assets.wildlyLogo} alt="Wildly by Taronga" /></a>
-        <nav className="site-nav" aria-label="Main navigation">
-          <a href="#about">About</a><a href="#subjects">Subjects</a><a href="#paths">Learning Paths</a><a href="#tracka">Tracka</a><a href="#schools">Schools</a>
-        </nav>
-        <div className="header-actions"><a className="login-link" href={loginRoute()}>Log in</a><a className="start-link" href={signupRoute()}>Get started</a></div>
-      </header>
+      <SiteHeader />
       <main>
         <section className="hero-section" id="about">
           <div className="hero-copy">
@@ -842,6 +858,290 @@ function LandingPage() {
           <article><Icon type="bookmark" className="" /><span>Secure, reliable teacher resources</span></article>
         </section>
         <section className="cta-section" id="schools"><img src={assets.heroKoala} alt="Koala with joey" /><div><h2>Bring learning to life through nature</h2><p>Join thousands of educators using Wildly to inspire the next generation to care for nature - together.</p><div className="hero-actions"><a className="primary-action" href={signupRoute()}>Get started free</a><a className="secondary-action" href={appLinks.demoBooking}>Book a demo</a></div></div></section>
+        <footer className="site-footer"><div className="footer-links"><a className="staff-login" href={routePath("staff")}>TARONGA STAFF LOGIN</a></div></footer>
+      </main>
+    </>
+  );
+}
+
+function MarketingPage({ page = "about" }) {
+  const pageConfig = {
+    about: {
+      eyebrow: "About Wildly",
+      title: "A learning platform built around nature, curriculum and action.",
+      subtitle: "Wildly helps teachers move from inspiration to structured classroom learning.",
+      description: "It brings curriculum-aligned resources, learning sequences, Taronga-connected experiences and adaptive pathways into one place so schools can teach with clarity and relevance.",
+      image: assets.gorilla,
+      imageAlt: "Gorilla habitat",
+      primaryLabel: "Get started free",
+      primaryHref: signupRoute(),
+      secondaryLabel: "View teacher preview",
+      secondaryHref: teacherPreviewRoute(),
+      stats: [
+        ["Curriculum-aligned", "NSW, Australian Curriculum and Early Years support"],
+        ["Teacher-ready", "Units, lessons, videos and downloadable resources"],
+        ["Real-world", "Connected to Taronga experiences and Tracka data"],
+      ],
+      bands: [
+        {
+          title: "What Wildly does",
+          copy: "Wildly is designed as both a teacher resource library and a long-term learning engine. It supports classroom planning now, and can grow into personalised student pathways as your data and content model mature.",
+          cards: [
+            ["Resource library", "Teachers can browse by subject, stage and format, then open or assign content."],
+            ["Planning support", "Learning paths, lesson groupings and linked outcomes reduce manual setup."],
+            ["Connected experiences", "Excursions, Tracka missions, Taronga TV and professional learning all sit inside the same ecosystem."],
+          ],
+        },
+        {
+          title: "Why the model matters",
+          copy: "This is not just a static repository. The product structure already supports progression from content access to assignment, reporting and adaptive recommendations.",
+          split: {
+            image: assets.binturong,
+            points: [
+              "Teacher-first interface for planning, scanning and assigning.",
+              "Staff-side publishing tools for content, video and professional learning.",
+              "A platform structure that can expand cleanly into student workflows later.",
+            ],
+          },
+        },
+      ],
+    },
+    subjects: {
+      eyebrow: "Subjects",
+      title: "Explore curriculum areas designed for real classrooms.",
+      subtitle: "Subject pages can later become deep browse destinations. For now, this gives you a strong editable scaffold.",
+      description: "Wildly supports discipline-based and cross-curricular teaching. Teachers can move from broad subject browsing into lessons, resources, videos and learning pathways.",
+      image: assets.heroKoala,
+      imageAlt: "Koala with joey",
+      primaryLabel: "Open teacher resources",
+      primaryHref: teacherRoute("resources"),
+      secondaryLabel: "Teacher preview",
+      secondaryHref: teacherPreviewRoute(),
+      stats: [
+        ["9 subject areas", "Including Early Years and Literacy & Numeracy"],
+        ["Cross-curricular", "Content can connect outcomes across multiple areas"],
+        ["Stage-based", "Ready for filtering by year level and progression"],
+      ],
+      bands: [
+        {
+          title: "Subject library",
+          copy: "Each subject can become its own browse experience with teacher language, filters and highlighted content collections.",
+          subjectCards: true,
+        },
+        {
+          title: "Built for breadth",
+          copy: "The subject model supports both traditional classroom areas and Taronga-specific delivery modes like excursions, nature-based literacy, and early years engagement.",
+          cards: [
+            ["Science and HSIE", "Strong fit for conservation, ecosystems, habitats and real-world inquiry."],
+            ["Literacy, numeracy and English", "Useful for writing, speaking, data interpretation and evidence-based thinking."],
+            ["Early Years and PDHPE", "Supports play-based, wellbeing-led and sensory learning experiences."],
+          ],
+        },
+      ],
+    },
+    "learning-paths": {
+      eyebrow: "Learning Paths",
+      title: "Build full teaching sequences, not just isolated resources.",
+      subtitle: "A learning path acts as the unit structure that connects lessons, resources and outcomes.",
+      description: "This gives teachers a clean way to move from long-term planning into week-by-week delivery. Staff can publish the full sequence, then teachers can open, assign and adapt it.",
+      image: assets.giraffe,
+      imageAlt: "Giraffe",
+      primaryLabel: "View learning paths",
+      primaryHref: teacherRoute("paths"),
+      secondaryLabel: "Open resources",
+      secondaryHref: teacherRoute("resources"),
+      stats: [
+        ["Unit-based", "Duration, outcomes and linked lessons in one place"],
+        ["Teacher-friendly", "Designed for scanning, assigning and adapting"],
+        ["Expandable", "Ready for future student-facing pathways and progress tracking"],
+      ],
+      bands: [
+        {
+          title: "How the flow works",
+          copy: "The content architecture is intentionally simple: Learning Path -> Lesson -> Resource. Teachers can open the whole sequence or jump straight to the specific lesson or download they need.",
+          cards: [
+            ["Learning Path", "Holds the sequence, duration, outcomes and administration materials."],
+            ["Lesson", "Defines the actual teaching block that can sit inside a path or stand alone."],
+            ["Resource", "Carries the specific file, link, worksheet, guide, video or embed teachers use."],
+          ],
+        },
+        {
+          title: "Classroom use",
+          copy: "This structure works for explicit teaching, inquiry units, excursion preparation and post-visit consolidation.",
+          split: {
+            image: assets.river,
+            points: [
+              "Week-by-week sequencing for teachers.",
+              "Direct lesson access when time is tight.",
+              "Download links and support files kept close to the content.",
+            ],
+          },
+        },
+      ],
+    },
+    tracka: {
+      eyebrow: "Taronga Tracka",
+      title: "Connect classroom learning with live data and citizen science.",
+      subtitle: "Tracka can sit underneath Wildly as the experience and data layer.",
+      description: "This page can evolve into a stronger product explanation later. For now it frames Tracka as the real-world extension of classroom learning, fieldwork and observation.",
+      image: assets.trackaLogo,
+      imageAlt: "Taronga Tracka logo",
+      primaryLabel: "Open Taronga Tracka",
+      primaryHref: appLinks.tracka,
+      secondaryLabel: "Excursion information",
+      secondaryHref: appLinks.excursions,
+      stats: [
+        ["Excursion-ready", "Supports pre-visit, on-site and post-visit learning"],
+        ["Data-connected", "Observation and response data can feed future analytics"],
+        ["Action-oriented", "Moves students from encounter to inquiry to reflection"],
+      ],
+      bands: [
+        {
+          title: "Where Tracka fits",
+          copy: "Tracka is the bridge between Taronga experiences and Wildly learning design. It can extend the classroom into observation, mission-based learning and post-visit evidence gathering.",
+          cards: [
+            ["Pre-visit", "Introduce concepts, language and observation protocols before the excursion."],
+            ["On-site", "Capture responses, prompts and mission activity during the experience."],
+            ["Post-visit", "Bring evidence back into lessons, reports and next-step learning."],
+          ],
+        },
+        {
+          title: "A cleaner long-term model",
+          copy: "The strategic value is not just the external link. It is the ability to use Tracka as the experience source while Wildly becomes the classroom-facing planning and delivery layer.",
+          split: {
+            image: assets.rhino,
+            points: [
+              "Tracka as the field and mission environment.",
+              "Wildly as the teacher planning and content environment.",
+              "Future analytics linking the two products into one stronger system.",
+            ],
+          },
+        },
+      ],
+    },
+    schools: {
+      eyebrow: "Schools",
+      title: "Designed for classroom teachers, school leaders and system rollout.",
+      subtitle: "Wildly is structured to work for one teacher, one school, or a larger network.",
+      description: "This page can become your school-facing conversion and onboarding layer. For now it presents the product as a practical implementation tool, not just a content showcase.",
+      image: assets.koala,
+      imageAlt: "Koala portrait",
+      primaryLabel: "Book a demo",
+      primaryHref: appLinks.demoBooking,
+      secondaryLabel: "Get started free",
+      secondaryHref: signupRoute(),
+      stats: [
+        ["Teacher adoption", "Fast entry through a familiar resource-library model"],
+        ["Leadership value", "Reporting, curriculum coverage and content consistency"],
+        ["Scalable rollout", "Cloud-based architecture for wider deployment"],
+      ],
+      bands: [
+        {
+          title: "Who this helps",
+          copy: "The product is useful at different levels of a school. Teachers need fast access and assignable resources. Leaders need visibility, alignment and implementation confidence.",
+          cards: [
+            ["Teachers", "Open, assign and adapt high-quality curriculum-aligned content quickly."],
+            ["School leaders", "See how content and professional learning align with teaching priorities."],
+            ["Education teams", "Publish, manage and refine content centrally through the staff console."],
+          ],
+        },
+        {
+          title: "Implementation shape",
+          copy: "A strong school rollout can start small with teacher resource access, then move into professional learning, excursion links, Tracka connection and eventually student-facing pathways.",
+          split: {
+            image: assets.heroKoala,
+            points: [
+              "Low-friction teacher entry point.",
+              "Centralised content operations for staff.",
+              "A platform that can deepen over time without changing direction.",
+            ],
+          },
+        },
+      ],
+    },
+  }[page];
+
+  if (!pageConfig) return <LandingPage />;
+
+  return (
+    <>
+      <SiteHeader active={page} />
+      <main className="marketing-page">
+        <section className="marketing-hero">
+          <div className="marketing-hero-copy">
+            <span className="audience-pill">{pageConfig.eyebrow}</span>
+            <h1>{pageConfig.title}</h1>
+            <p className="hero-subtitle">{pageConfig.subtitle}</p>
+            <p>{pageConfig.description}</p>
+            <div className="hero-actions">
+              <a className="primary-action" href={pageConfig.primaryHref}>{pageConfig.primaryLabel}</a>
+              <a className="secondary-action" href={pageConfig.secondaryHref}>{pageConfig.secondaryLabel}</a>
+            </div>
+          </div>
+          <div className="marketing-hero-visual">
+            <img src={pageConfig.image} alt={pageConfig.imageAlt} />
+          </div>
+        </section>
+
+        <section className="marketing-stat-grid">
+          {pageConfig.stats.map(([title, copy]) => (
+            <article className="marketing-stat-card" key={title}>
+              <h2>{title}</h2>
+              <p>{copy}</p>
+            </article>
+          ))}
+        </section>
+
+        {pageConfig.bands.map((band) => (
+          <section className="marketing-band" key={band.title}>
+            <div className="section-heading">
+              <div>
+                <h2>{band.title}</h2>
+                <p>{band.copy}</p>
+              </div>
+            </div>
+
+            {band.subjectCards ? (
+              <div className="subject-strip">
+                {subjects.map(([label, cls, copy]) => <a className={cls} href={teacherPreviewRoute()} key={label}><Icon type={subjectIconType(label)} className="" /><strong>{label}</strong><span>{copy}</span></a>)}
+              </div>
+            ) : null}
+
+            {band.cards ? (
+              <div className="marketing-card-grid">
+                {band.cards.map(([title, copy]) => (
+                  <article className="marketing-card" key={title}>
+                    <h3>{title}</h3>
+                    <p>{copy}</p>
+                  </article>
+                ))}
+              </div>
+            ) : null}
+
+            {band.split ? (
+              <div className="marketing-split">
+                <img className="marketing-split-image" src={band.split.image} alt="" />
+                <div className="marketing-split-copy">
+                  <ul className="marketing-list">
+                    {band.split.points.map((point) => <li key={point}>{point}</li>)}
+                  </ul>
+                </div>
+              </div>
+            ) : null}
+          </section>
+        ))}
+
+        <section className="marketing-cta-band">
+          <div>
+            <h2>Ready to shape this page further?</h2>
+            <p>This is now a proper destination page with editable structure, content bands and visuals. You can refine copy, replace imagery and add real school-facing detail later.</p>
+          </div>
+          <div className="hero-actions">
+            <a className="primary-action" href={signupRoute()}>Get started</a>
+            <a className="secondary-action" href={appLinks.demoBooking}>Book a demo</a>
+          </div>
+        </section>
+
         <footer className="site-footer"><div className="footer-links"><a className="staff-login" href={routePath("staff")}>TARONGA STAFF LOGIN</a></div></footer>
       </main>
     </>
@@ -3324,13 +3624,7 @@ function ContentFirestoreStatus({
 function PlaceholderExperiencePage({ eyebrow, title, description, points = [], primaryLabel, primaryHref, secondaryLabel, secondaryHref }) {
   return (
     <>
-      <header className="site-header">
-        <a className="site-logo" href={routePath()} aria-label="Wildly by Taronga home"><img src={assets.wildlyLogo} alt="Wildly by Taronga" /></a>
-        <nav className="site-nav" aria-label="Main navigation">
-          <a href={routePath()}>Home</a><a href={teacherRoute()}>Teacher</a><a href={routePath("staff")}>Staff</a><a href={appLinks.support}>Support</a><a href={appLinks.professionalLearning}>Professional Learning</a>
-        </nav>
-        <div className="header-actions"><a className="login-link" href={loginRoute()}>Teacher login</a><a className="start-link" href={routePath("staff")}>Staff login</a></div>
-      </header>
+      <SiteHeader />
       <main>
         <section className="hero-section standalone-page">
           <div className="hero-copy">
@@ -3392,6 +3686,11 @@ function App() {
   if (path === "demo-booking") return <PlaceholderExperiencePage eyebrow="Demo Booking" title="Book a Wildly demo" description="This page is ready for your real demo booking workflow. Use it for school enquiries, implementation calls and onboarding sessions." points={["Demo request form or embedded scheduler", "School details and contact intake", "Implementation readiness checklist"]} primaryLabel="Teacher Dashboard" primaryHref={teacherRoute()} secondaryLabel="Support" secondaryHref={appLinks.support} />;
   if (path === "support") return <PlaceholderExperiencePage eyebrow="Support" title="Wildly support" description="This is the right place for help content, onboarding docs, support contact details and troubleshooting guidance." points={["Teacher help centre or FAQs", "Support email, form or live chat", "Technical setup and Firestore guidance"]} primaryLabel="Teacher Dashboard" primaryHref={teacherRoute()} secondaryLabel="Professional Learning" secondaryHref={appLinks.professionalLearning} />;
   if (path === "excursions") return <PlaceholderExperiencePage eyebrow="Excursions" title="Excursions and zoo links" description="Use this space for visit planning, excursion bookings, pre-visit resources and Tracka-connected field learning." points={["Excursion booking links", "Pre-visit teacher packs", "On-site learning workflows and Tracka links"]} primaryLabel="Teacher Dashboard" primaryHref={teacherRoute("calendar")} secondaryLabel="Home" secondaryHref={routePath()} />;
+  if (path === "about") return <MarketingPage page="about" />;
+  if (path === "subjects") return <MarketingPage page="subjects" />;
+  if (path === "learning-paths") return <MarketingPage page="learning-paths" />;
+  if (path === "tracka") return <MarketingPage page="tracka" />;
+  if (path === "schools") return <MarketingPage page="schools" />;
   if (path === "professional-learning") return <TeacherPage page="professional-learning" />;
   return <LandingPage />;
 }
