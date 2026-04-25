@@ -64,6 +64,13 @@ const subjects = [
   ["Technology & STEM", "stem", "Design, innovate and solve real-world challenges."],
 ];
 
+const tarongaTvCategories = [
+  "Early Years",
+  "Science",
+  "Excursions",
+  "Teacher PD",
+];
+
 const defaultContentItems = [
   { id: "adaptations-australian-animals", title: "Adaptations of Australian Animals", type: "Lesson", subject: "Science", stage: "Stage 2", progress: 65, imageKey: "river", summary: "Stage 2 science lesson with teacher guide and student prompts.", description: "Explore animal adaptations through observation, vocabulary and evidence-based explanation.", status: "Published", order: 1 },
   { id: "first-nations-cultures-country", title: "First Nations Cultures and Country", type: "Resource", subject: "HSIE", stage: "Stage 3", progress: 40, imageKey: "rhino", summary: "First Nations perspectives for Stage 3 inquiry.", description: "Support respectful inquiry into Country, culture and conservation connections.", status: "Published", order: 2 },
@@ -111,6 +118,7 @@ const defaultTarongaTvVideos = [
     embedUrl: "https://www.youtube.com/embed/jNQXAC9IVRw",
     duration: "6 min",
     status: "Published",
+    categories: ["Science"],
     outcomeCodes: ["ST2-4LW-S", "ST2-1WS-S"],
     lessonIds: ["adaptations-australian-animals"],
     learningPathIds: ["sustainable-futures"],
@@ -132,6 +140,7 @@ const defaultTarongaTvVideos = [
     embedUrl: "https://www.youtube.com/embed/jNQXAC9IVRw",
     duration: "8 min",
     status: "Published",
+    categories: ["Excursions"],
     outcomeCodes: ["HT3-1", "GE3-2"],
     lessonIds: [],
     learningPathIds: [],
@@ -200,6 +209,7 @@ function createTarongaTvDraft() {
     customImageUrl: "",
     uploadedImageDataUrl: "",
     embedUrl: "",
+    categories: [],
     outcomeCodes: "",
     lessonIds: [],
     learningPathIds: [],
@@ -207,6 +217,28 @@ function createTarongaTvDraft() {
       { time: "", prompt: "" },
     ],
   };
+}
+
+function normalizeYouTubeEmbedUrl(value = "") {
+  const raw = value.trim();
+  if (!raw) return "";
+  if (raw.includes("/embed/")) return raw;
+
+  try {
+    const url = new URL(raw);
+    if (url.hostname === "youtu.be") {
+      const id = url.pathname.replace("/", "");
+      return id ? `https://www.youtube.com/embed/${id}` : raw;
+    }
+    if (url.hostname.includes("youtube.com")) {
+      const id = url.searchParams.get("v");
+      if (id) return `https://www.youtube.com/embed/${id}`;
+    }
+  } catch {
+    return raw;
+  }
+
+  return raw;
 }
 
 function resizeImageFile(file) {
@@ -676,6 +708,7 @@ function LandingPage() {
 
 function TeacherDashboard({ config, contentItems = defaultContentItems.map(resolveContentItem), professionalLearningItems = defaultProfessionalLearningItems, tarongaTvVideos = defaultTarongaTvVideos.map(resolveTarongaTvVideo), page = "dashboard", subject = "", contentId = "", tvVideoId = "", profile = null, onSignOut = null, preview = false }) {
   const [activeSubject, setActiveSubject] = useState(subjectFromSlug(subject));
+  const [activeTvCategory, setActiveTvCategory] = useState("All");
   const [query, setQuery] = useState("");
   const [notice, setNotice] = useState("");
   const routeSubject = subjectFromSlug(subject);
@@ -702,9 +735,10 @@ function TeacherDashboard({ config, contentItems = defaultContentItems.map(resol
   const publishedTarongaTvVideos = useMemo(() => tarongaTvVideos.filter((item) => item.status === "Published"), [tarongaTvVideos]);
   const filteredTarongaTvVideos = useMemo(() => publishedTarongaTvVideos.filter((item) => {
     const matchesSubject = !activeSubject || item.subject === activeSubject;
+    const matchesCategory = activeTvCategory === "All" || (item.categories || []).includes(activeTvCategory);
     const haystack = `${item.title} ${item.subject} ${item.stage} ${item.summary} ${item.description} ${(item.outcomeCodes || []).join(" ")}`.toLowerCase();
-    return matchesSubject && haystack.includes(query.toLowerCase());
-  }), [activeSubject, publishedTarongaTvVideos, query]);
+    return matchesSubject && matchesCategory && haystack.includes(query.toLowerCase());
+  }), [activeSubject, activeTvCategory, publishedTarongaTvVideos, query]);
   const featuredTarongaTvVideo = filteredTarongaTvVideos[0] || publishedTarongaTvVideos[0] || null;
   const tarongaTvDetail = publishedTarongaTvVideos.find((item) => item.id === tvVideoId) || null;
   const allResourceItems = [...lessons, ...resources];
@@ -750,6 +784,7 @@ function TeacherDashboard({ config, contentItems = defaultContentItems.map(resol
 
   function resetFilters() {
     setActiveSubject(null);
+    setActiveTvCategory("All");
     setQuery("");
   }
 
@@ -1074,6 +1109,16 @@ function TeacherDashboard({ config, contentItems = defaultContentItems.map(resol
                     </>
                   )}
                 </div>
+                {page === "taronga-tv" ? (
+                  <div className="page-chip-row">
+                    <button type="button" className={`page-chip ${activeTvCategory === "All" ? "selected" : ""}`} onClick={() => setActiveTvCategory("All")}>All playlists</button>
+                    {tarongaTvCategories.map((category) => (
+                      <button type="button" className={`page-chip ${activeTvCategory === category ? "selected" : ""}`} key={category} onClick={() => setActiveTvCategory(category)}>
+                        {category}
+                      </button>
+                    ))}
+                  </div>
+                ) : null}
               </div>
             )}
           </section>
@@ -1147,6 +1192,7 @@ function TeacherDashboard({ config, contentItems = defaultContentItems.map(resol
                       <small>{featuredTarongaTvVideo.subject}</small>
                       <small>{featuredTarongaTvVideo.stage}</small>
                       {featuredTarongaTvVideo.duration ? <small>{featuredTarongaTvVideo.duration}</small> : null}
+                      {featuredTarongaTvVideo.categories?.map((category) => <small key={category}>{category}</small>)}
                     </div>
                     <div className="teacher-card-actions">
                       <a className="primary-action" href={teacherTvRoute(featuredTarongaTvVideo.id)}>Watch and teach</a>
@@ -1172,6 +1218,7 @@ function TeacherDashboard({ config, contentItems = defaultContentItems.map(resol
                       <small>{video.stage}</small>
                       {video.duration ? <small>{video.duration}</small> : null}
                       {video.outcomeCodes?.length ? <small>{video.outcomeCodes.length} outcomes</small> : null}
+                      {video.categories?.length ? <small>{video.categories.join(" · ")}</small> : null}
                       <div className="teacher-card-actions">
                         <a className="primary-action" href={teacherTvRoute(video.id)}>Open video</a>
                         {video.lessonIds?.[0] ? <a className="secondary-action" href={teacherContentRoute(video.lessonIds[0])}>Linked lesson</a> : null}
@@ -1230,6 +1277,7 @@ function TeacherDashboard({ config, contentItems = defaultContentItems.map(resol
                     <small>{tarongaTvDetail.subject}</small>
                     <small>{tarongaTvDetail.stage}</small>
                     {tarongaTvDetail.duration ? <small>{tarongaTvDetail.duration}</small> : null}
+                    {tarongaTvDetail.categories?.map((category) => <small key={category}>{category}</small>)}
                   </div>
                   {tarongaTvDetail.summary ? <p>{tarongaTvDetail.summary}</p> : null}
                 </div>
@@ -1578,11 +1626,13 @@ function resolveTarongaTvVideo(video = {}) {
     stage: "Stage 2",
     status: "Draft",
     duration: "",
+    categories: [],
     outcomeCodes: [],
     lessonIds: [],
     learningPathIds: [],
     discussionPoints: [],
     ...video,
+    embedUrl: normalizeYouTubeEmbedUrl(video.embedUrl || ""),
     thumbnail: video.thumbnail || video.thumbnailUrl || video.image || assets[video.imageKey] || assets.heroKoala,
   };
 }
@@ -2024,9 +2074,10 @@ function StaffConsole({ onLock }) {
         stage: item.stage || "Stage 2",
         status: item.status || "Draft",
         duration: item.duration || "",
-        embedUrl: item.embedUrl || "",
+        embedUrl: normalizeYouTubeEmbedUrl(item.embedUrl || ""),
         imageKey: item.imageKey || "",
         thumbnailUrl: item.uploadedImageDataUrl || item.customImageUrl?.trim() || item.thumbnailUrl || item.image || assets[item.imageKey] || assets.heroKoala,
+        categories: Array.isArray(item.categories) ? item.categories : [],
         outcomeCodes: Array.isArray(item.outcomeCodes) ? item.outcomeCodes : listFromText(item.outcomeCodes || ""),
         lessonIds: Array.isArray(item.lessonIds) ? item.lessonIds : [],
         learningPathIds: Array.isArray(item.learningPathIds) ? item.learningPathIds : [],
@@ -2568,6 +2619,7 @@ function TarongaTvPanel({ items, contentItems, status, saveState, saveVideo, del
         customImageUrl: selectedItem.imageKey ? "" : (selectedItem.thumbnailUrl || ""),
         uploadedImageDataUrl: "",
         outcomeCodes: Array.isArray(selectedItem.outcomeCodes) ? selectedItem.outcomeCodes.join("\n") : (selectedItem.outcomeCodes || ""),
+        categories: selectedItem.categories || [],
         lessonIds: selectedItem.lessonIds || [],
         learningPathIds: selectedItem.learningPathIds || [],
         discussionPoints: selectedItem.discussionPoints?.length ? selectedItem.discussionPoints : [{ time: "", prompt: "" }],
@@ -2711,9 +2763,13 @@ function TarongaTvPanel({ items, contentItems, status, saveState, saveVideo, del
                 <label>Subject<select value={draft.subject} onChange={(event) => updateDraft({ subject: event.target.value })}>{subjects.map(([label]) => <option key={label}>{label}</option>)}</select></label>
                 <label>Stage<input type="text" value={draft.stage} onChange={(event) => updateDraft({ stage: event.target.value })} /></label>
                 <label>Duration<input type="text" value={draft.duration} onChange={(event) => updateDraft({ duration: event.target.value })} placeholder="6 min" /></label>
-                <label>Embed URL<input type="url" value={draft.embedUrl} onChange={(event) => updateDraft({ embedUrl: event.target.value })} placeholder="https://www.youtube.com/embed/..." /></label>
+                <label>Embed or YouTube URL<input type="url" value={draft.embedUrl} onChange={(event) => updateDraft({ embedUrl: event.target.value })} placeholder="https://www.youtube.com/watch?v=... or embed URL" /></label>
                 <label className="wide-field">Summary<input type="text" required value={draft.summary} onChange={(event) => updateDraft({ summary: event.target.value })} /></label>
                 <label className="wide-field">Description<textarea value={draft.description} onChange={(event) => updateDraft({ description: event.target.value })}></textarea></label>
+                <fieldset className="lesson-picker wide-field">
+                  <legend>Categories / playlists</legend>
+                  {tarongaTvCategories.map((category) => <label key={category}><input type="checkbox" checked={draft.categories.includes(category)} onChange={() => toggleRelation("categories", category)} />{category}</label>)}
+                </fieldset>
               </div>
             </section>
 
@@ -2813,6 +2869,7 @@ function TarongaTvPanel({ items, contentItems, status, saveState, saveVideo, del
                     <span>Linked lessons and paths</span>
                   </div>
                   <div className="content-form-actions">
+                    {selectedItem ? <a className="secondary-button slim-button" href={teacherTvRoute(selectedItem.id)} target="_blank" rel="noreferrer">Preview teacher page</a> : null}
                     {selectedItem ? <button type="button" className="delete-button editor-delete-button" onClick={handleDelete}>Delete</button> : null}
                     <button type="button" className="secondary-button" onClick={startNew}>Clear form</button>
                     <button type="submit" disabled={saveState === "saving"}>{saveState === "saving" ? "Saving..." : selectedItem ? "Update video" : "Save video"}</button>
@@ -2842,6 +2899,7 @@ function TarongaTvPanel({ items, contentItems, status, saveState, saveVideo, del
                   <p>{item.summary}</p>
                   <small>{item.subject} - {item.stage}</small>
                   {item.duration ? <small>{item.duration}</small> : null}
+                  {item.categories?.length ? <small>{item.categories.join(" · ")}</small> : null}
                   {item.discussionPoints?.length ? <small>{item.discussionPoints.length} discussion points</small> : null}
                 </div>
               </article>
