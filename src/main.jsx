@@ -695,6 +695,12 @@ function TeacherDashboard({ config, contentItems = defaultContentItems.map(resol
       description: "Upcoming professional learning sessions, registrations, supporting information and downloadable PDFs all live here.",
       action: <a className="secondary-action" href={teacherRoute("calendar")}>Open calendar</a>,
     },
+    "taronga-tv": {
+      eyebrow: "Taronga TV",
+      title: "Video learning and classroom viewing",
+      description: "This placeholder page is ready for Taronga TV videos, playlists, embedded media and teacher-facing viewing notes.",
+      action: <button type="button" className="secondary-action" onClick={() => setNotice("Taronga TV placeholder. Add your video library, playlists and embeds here.")}>Preview layout</button>,
+    },
     resources: {
       eyebrow: "Resources",
       title: "Lessons and downloadable resources",
@@ -782,10 +788,9 @@ function TeacherDashboard({ config, contentItems = defaultContentItems.map(resol
           <button className="menu-button" type="button" aria-label="Open navigation" onClick={() => setNotice("Mobile menu placeholder. The sidebar is the main navigation for now.")}></button>
           <nav className="top-links" aria-label="Primary">
             <a className={page === "dashboard" ? "selected" : ""} href={teacherRoute()}>Dashboard</a>
-            <a className={page === "subjects" ? "selected" : ""} href={teacherRoute("subjects")}>Subjects</a>
-            <a className={page === "professional-learning" ? "selected" : ""} href={teacherRoute("professional-learning")}>Professional Learning</a>
             <a className={page === "resources" ? "selected" : ""} href={teacherRoute("resources")}>Resources</a>
-            <a className={page === "classes" ? "selected" : ""} href={teacherRoute("classes")}>My Classes</a>
+            <a className={page === "taronga-tv" ? "selected" : ""} href={teacherRoute("taronga-tv")}>Taronga TV</a>
+            <a className={page === "professional-learning" ? "selected" : ""} href={teacherRoute("professional-learning")}>Professional Learning</a>
           </nav>
           <div className="top-actions">
             {!preview && onSignOut ? <button type="button" className="top-text-action" onClick={onSignOut}>Sign out</button> : null}
@@ -1035,6 +1040,19 @@ function TeacherDashboard({ config, contentItems = defaultContentItems.map(resol
                 </article>
               )}
             </div>
+          </section>
+        )}
+
+        {page === "taronga-tv" && (
+          <section className="teacher-panel">
+            <article className="placeholder-card">
+              <h3>Taronga TV is ready for content</h3>
+              <p>Add your video catalogue, age or stage filters, playlists, episode notes and embedded classroom viewing links here.</p>
+              <div className="teacher-card-actions">
+                <button type="button" className="primary-action" onClick={() => setNotice("Taronga TV placeholder. Connect this page to your video library when the content is ready.")}>Open placeholder</button>
+                <a className="secondary-action" href={teacherRoute("resources")}>Back to resources</a>
+              </div>
+            </article>
           </section>
         )}
 
