@@ -210,10 +210,10 @@ function subjectIconType(label) {
 }
 
 const appLinks = {
-  tracka: "",
+  tracka: "https://tarongatracka.com.au",
   demoBooking: routePath("demo-booking"),
   support: routePath("support"),
-  excursions: routePath("excursions"),
+  excursions: "https://taronga.org.au/education/sydney-excursions",
   professionalLearning: teacherRoute("professional-learning"),
 };
 
