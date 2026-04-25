@@ -371,6 +371,45 @@ function openConfiguredLink(url, setNotice, label) {
   setNotice(`${label} is still a placeholder. Add the real URL in the app config when you have it.`);
 }
 
+function parseNamedLinks(value = "") {
+  return value
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .map((line, index) => {
+      const [labelPart, ...urlParts] = line.split("|");
+      if (urlParts.length) {
+        return {
+          label: labelPart.trim() || `Download ${index + 1}`,
+          url: urlParts.join("|").trim(),
+        };
+      }
+      return {
+        label: `Download ${index + 1}`,
+        url: line,
+      };
+    })
+    .filter((item) => item.url);
+}
+
+function buildContentDownloads(item) {
+  const downloads = [
+    ["Teacher admin documents", item.materials?.teacherAdminUrl],
+    ["Unit plan", item.materials?.unitPlanUrl],
+    ["Lesson plan", item.materials?.lessonPlanUrl],
+    ["Teacher guide", item.materials?.teacherGuideUrl],
+    ["Student worksheet", item.materials?.studentWorksheetUrl],
+    ["Resource file", item.materials?.resourceUrl],
+  ]
+    .filter(([, url]) => Boolean(url))
+    .map(([label, url]) => ({ label, url }));
+
+  return [
+    ...downloads,
+    ...(item.materials?.resourceLinks || []).map((entry, index) => ({ label: `Download ${index + 1}`, url: entry })),
+  ];
+}
+
 function contentPrimaryLink(item) {
   return (
     item.materials?.resourceUrl
@@ -741,6 +780,8 @@ function TeacherDashboard({ config, contentItems = defaultContentItems.map(resol
   }), [activeSubject, activeTvCategory, publishedTarongaTvVideos, query]);
   const featuredTarongaTvVideo = filteredTarongaTvVideos[0] || publishedTarongaTvVideos[0] || null;
   const tarongaTvDetail = publishedTarongaTvVideos.find((item) => item.id === tvVideoId) || null;
+  const contentDownloads = contentDetail ? buildContentDownloads(contentDetail) : [];
+  const tarongaTvDownloads = tarongaTvDetail?.downloadLinks || [];
   const allResourceItems = [...lessons, ...resources];
   const navItems = [
     ["", "Dashboard", "grid"],
@@ -1291,6 +1332,15 @@ function TeacherDashboard({ config, contentItems = defaultContentItems.map(resol
                   </div>
                 ) : null}
 
+                {tarongaTvDownloads.length ? (
+                  <div className="tv-info-card">
+                    <h3>Downloads</h3>
+                    <div className="teacher-card-actions">
+                      {tarongaTvDownloads.map((download) => <a key={`${download.label}-${download.url}`} className="secondary-action" href={download.url} target="_blank" rel="noreferrer">{download.label}</a>)}
+                    </div>
+                  </div>
+                ) : null}
+
                 {tarongaTvDetail.discussionPoints?.length ? (
                   <div className="tv-info-card">
                     <h3>Discussion points</h3>
@@ -1339,6 +1389,7 @@ function TeacherDashboard({ config, contentItems = defaultContentItems.map(resol
                         {item.registrationUrl ? <a className="primary-action" href={item.registrationUrl} target="_blank" rel="noreferrer">Open registration</a> : <button type="button" className="primary-action" onClick={() => setNotice("Add a registration link in the staff portal to activate this button.")}>Registration needed</button>}
                         {item.pdfUrl ? <a className="secondary-action" href={item.pdfUrl} target="_blank" rel="noreferrer">Open PDF</a> : null}
                         {item.infoUrl ? <a className="secondary-action" href={item.infoUrl} target="_blank" rel="noreferrer">More info</a> : null}
+                        {(item.downloadLinks || []).map((download) => <a key={`${download.label}-${download.url}`} className="secondary-action" href={download.url} target="_blank" rel="noreferrer">{download.label}</a>)}
                       </div>
                     </div>
                   </article>
@@ -1558,6 +1609,7 @@ function TeacherDashboard({ config, contentItems = defaultContentItems.map(resol
                 </div>
                 {contentDetail.description ? <div className="detail-list"><h3>Description</h3><p>{contentDetail.description}</p></div> : null}
                 {contentDetail.outcomeCodes?.length ? <div className="detail-list"><h3>Outcomes</h3><ul>{contentDetail.outcomeCodes.map((outcome) => <li key={outcome}>{outcome}</li>)}</ul></div> : null}
+                {contentDownloads.length ? <div className="detail-list"><h3>Downloads</h3><div className="teacher-card-actions">{contentDownloads.map((download) => <a key={`${download.label}-${download.url}`} className="secondary-action" href={download.url} target="_blank" rel="noreferrer">{download.label}</a>)}</div></div> : null}
                 {contentDetail.lessonIds?.length ? <div className="detail-list"><h3>Included lessons</h3><ul>{contentDetail.lessonIds.map((lessonId) => <li key={lessonId}>{lessons.find((lesson) => lesson.id === lessonId)?.title || lessonId}</li>)}</ul></div> : null}
                 {contentDetail.resourceIds?.length ? <div className="detail-list"><h3>Attached resources</h3><ul>{contentDetail.resourceIds.map((resourceId) => <li key={resourceId}>{resources.find((resource) => resource.id === resourceId)?.title || resourceId}</li>)}</ul></div> : null}
               </div>
@@ -1631,6 +1683,7 @@ function resolveTarongaTvVideo(video = {}) {
     lessonIds: [],
     learningPathIds: [],
     discussionPoints: [],
+    downloadLinks: [],
     ...video,
     embedUrl: normalizeYouTubeEmbedUrl(video.embedUrl || ""),
     thumbnail: video.thumbnail || video.thumbnailUrl || video.image || assets[video.imageKey] || assets.heroKoala,
@@ -2030,6 +2083,7 @@ function StaffConsole({ onLock }) {
         registrationUrl: item.registrationUrl || "",
         pdfUrl: item.pdfUrl || "",
         infoUrl: item.infoUrl || "",
+        downloadLinks: Array.isArray(item.downloadLinks) ? item.downloadLinks : parseNamedLinks(item.downloadLinks || ""),
         status: item.status || "Draft",
         updatedAt: serverTimestamp(),
       };
@@ -2081,6 +2135,7 @@ function StaffConsole({ onLock }) {
         outcomeCodes: Array.isArray(item.outcomeCodes) ? item.outcomeCodes : listFromText(item.outcomeCodes || ""),
         lessonIds: Array.isArray(item.lessonIds) ? item.lessonIds : [],
         learningPathIds: Array.isArray(item.learningPathIds) ? item.learningPathIds : [],
+        downloadLinks: Array.isArray(item.downloadLinks) ? item.downloadLinks : parseNamedLinks(item.downloadLinks || ""),
         discussionPoints: (item.discussionPoints || []).filter((point) => point.time || point.prompt).map((point) => ({
           time: point.time || "",
           prompt: point.prompt || "",
@@ -2613,6 +2668,7 @@ function TarongaTvPanel({ items, contentItems, status, saveState, saveVideo, del
         categories: selectedItem.categories || [],
         lessonIds: selectedItem.lessonIds || [],
         learningPathIds: selectedItem.learningPathIds || [],
+        downloadLinks: Array.isArray(selectedItem.downloadLinks) ? selectedItem.downloadLinks.map((item) => `${item.label} | ${item.url}`).join("\n") : "",
         discussionPoints: selectedItem.discussionPoints?.length ? selectedItem.discussionPoints : [{ time: "", prompt: "" }],
       });
       setImageError("");
@@ -2752,6 +2808,7 @@ function TarongaTvPanel({ items, contentItems, status, saveState, saveVideo, del
                   <legend>Categories / playlists</legend>
                   {tarongaTvCategories.map((category) => <label key={category}><input type="checkbox" checked={draft.categories.includes(category)} onChange={() => toggleRelation("categories", category)} />{category}</label>)}
                 </fieldset>
+                <label className="wide-field">Download links<textarea placeholder="One per line: Label | URL" value={draft.downloadLinks} onChange={(event) => updateDraft({ downloadLinks: event.target.value })}></textarea></label>
               </div>
             </section>
 
@@ -2927,6 +2984,7 @@ function ProfessionalLearningPanel({ items, status, saveState, saveItem, deleteI
         registrationUrl: selectedItem.registrationUrl || "",
         pdfUrl: selectedItem.pdfUrl || "",
         infoUrl: selectedItem.infoUrl || "",
+        downloadLinks: Array.isArray(selectedItem.downloadLinks) ? selectedItem.downloadLinks.map((item) => `${item.label} | ${item.url}`).join("\n") : "",
         status: selectedItem.status || "Draft",
       });
       return;
@@ -2941,6 +2999,7 @@ function ProfessionalLearningPanel({ items, status, saveState, saveItem, deleteI
       registrationUrl: "",
       pdfUrl: "",
       infoUrl: "",
+      downloadLinks: "",
       status: "Draft",
     });
   }, [selectedItem]);
@@ -3018,6 +3077,7 @@ function ProfessionalLearningPanel({ items, status, saveState, saveItem, deleteI
                 <label>Registration link<input type="url" value={draft.registrationUrl} onChange={(event) => setDraft((current) => ({ ...current, registrationUrl: event.target.value }))} placeholder="https://..." /></label>
                 <label>Information link<input type="url" value={draft.infoUrl} onChange={(event) => setDraft((current) => ({ ...current, infoUrl: event.target.value }))} placeholder="https://..." /></label>
                 <label className="wide-field">PDF link<input type="url" value={draft.pdfUrl} onChange={(event) => setDraft((current) => ({ ...current, pdfUrl: event.target.value }))} placeholder="https://..." /></label>
+                <label className="wide-field">Download links<textarea placeholder="One per line: Label | URL" value={draft.downloadLinks} onChange={(event) => setDraft((current) => ({ ...current, downloadLinks: event.target.value }))}></textarea></label>
               </div>
             </section>
 
