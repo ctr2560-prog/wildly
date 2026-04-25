@@ -38,10 +38,10 @@ a {
   top: 0;
   z-index: 10;
   display: grid;
-  grid-template-columns: 220px 1fr auto;
+  grid-template-columns: 240px 1fr auto;
   align-items: center;
   gap: 24px;
-  height: 68px;
+  height: 74px;
   padding: 0 clamp(18px, 5vw, 72px);
   background: rgba(255, 255, 255, 0.94);
   border-bottom: 1px solid var(--line);
@@ -50,8 +50,8 @@ a {
 
 .site-logo img {
   display: block;
-  width: 152px;
-  height: 48px;
+  width: 170px;
+  height: 54px;
   object-fit: contain;
   object-position: left center;
 }
@@ -109,8 +109,8 @@ main {
   grid-template-columns: 0.75fr 1.25fr;
   align-items: center;
   gap: clamp(30px, 5vw, 72px);
-  min-height: 660px;
-  padding: 68px 0 52px;
+  min-height: 740px;
+  padding: 84px 0 66px;
 }
 
 .audience-pill {
@@ -126,31 +126,31 @@ main {
 }
 
 .hero-copy h1 {
-  max-width: 440px;
-  margin: 30px 0 10px;
+  max-width: 520px;
+  margin: 34px 0 12px;
   color: var(--green-900);
-  font-size: clamp(48px, 6vw, 78px);
+  font-size: clamp(56px, 6.6vw, 92px);
   line-height: 0.95;
   letter-spacing: 0;
 }
 
 .hero-subtitle {
-  margin: 0 0 12px;
+  margin: 0 0 14px;
   color: #203128;
-  font-size: clamp(22px, 2.4vw, 34px);
+  font-size: clamp(24px, 2.6vw, 38px);
   font-weight: 800;
 }
 
 .hero-copy p:not(.hero-subtitle):not(.alignment-note) {
-  max-width: 430px;
+  max-width: 500px;
   margin: 0;
   color: #4d5c55;
-  font-size: 17px;
+  font-size: 19px;
   line-height: 1.6;
 }
 
 .hero-actions {
-  margin-top: 28px;
+  margin-top: 32px;
 }
 
 .alignment-list {
@@ -185,19 +185,19 @@ main {
 
 .device-stage {
   position: relative;
-  min-height: 540px;
+  min-height: 620px;
 }
 
 .laptop {
   position: absolute;
-  left: 4%;
-  right: 8%;
-  top: 10px;
+  left: 2%;
+  right: 4%;
+  top: 0;
 }
 
 .laptop-screen {
   position: relative;
-  min-height: 404px;
+  min-height: 460px;
   overflow: hidden;
   border: 10px solid #1c201d;
   border-radius: 14px 14px 8px 8px;
@@ -220,7 +220,7 @@ main {
   width: 1440px;
   height: 900px;
   border: 0;
-  transform: scale(0.6);
+  transform: scale(0.68);
   transform-origin: top left;
   pointer-events: none;
 }
@@ -228,8 +228,8 @@ main {
 .phone {
   position: absolute;
   right: 0;
-  bottom: 12px;
-  width: 200px;
+  bottom: 8px;
+  width: 214px;
   min-height: 302px;
   padding: 9px;
   border: 5px solid #20251f;
