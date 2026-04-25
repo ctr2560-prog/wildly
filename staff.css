@@ -1096,6 +1096,33 @@ td {
   font-weight: 800;
 }
 
+.discussion-points-editor {
+  display: grid;
+  gap: 12px;
+}
+
+.discussion-point-row {
+  display: grid;
+  grid-template-columns: 120px minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: end;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+}
+
+.discussion-point-row textarea {
+  min-height: 84px;
+  padding: 10px 12px;
+  resize: vertical;
+}
+
+.slim-button {
+  min-height: 40px;
+  padding: 0 14px;
+}
+
 .materials-header {
   margin-top: 8px;
   padding-top: 14px;
@@ -1837,7 +1864,8 @@ td {
   .content-editor-fields,
   .content-review-grid,
   .content-review-preview,
-  .content-type-selector {
+  .content-type-selector,
+  .discussion-point-row {
     grid-template-columns: 1fr;
   }
 

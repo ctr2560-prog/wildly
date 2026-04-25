@@ -12,6 +12,7 @@ const routePath = (path = "") => `${basePath}#${path}`;
 const assetPath = (path) => `${basePath}${path}`;
 const teacherRoute = (path = "") => routePath(path ? `teacher/${path}` : "teacher");
 const teacherContentRoute = (id) => teacherRoute(`content/${id}`);
+const teacherTvRoute = (id = "") => teacherRoute(id ? `taronga-tv/${id}` : "taronga-tv");
 const teacherPreviewRoute = () => teacherRoute("preview");
 const loginRoute = () => routePath("login");
 const signupRoute = () => routePath("get-started");
@@ -97,6 +98,50 @@ const defaultProfessionalLearningItems = [
   },
 ];
 
+const defaultTarongaTvVideos = [
+  {
+    id: "koala-adaptations-stage-2",
+    title: "Koala Adaptations",
+    summary: "A short classroom-ready video exploring how koalas survive in Australian habitats.",
+    description: "Use this video to introduce structural and behavioural adaptations, habitat needs and evidence-based classroom discussion.",
+    subject: "Science",
+    stage: "Stage 2",
+    imageKey: "heroKoala",
+    thumbnailUrl: "",
+    embedUrl: "https://www.youtube.com/embed/jNQXAC9IVRw",
+    duration: "6 min",
+    status: "Published",
+    outcomeCodes: ["ST2-4LW-S", "ST2-1WS-S"],
+    lessonIds: ["adaptations-australian-animals"],
+    learningPathIds: ["sustainable-futures"],
+    discussionPoints: [
+      { time: "00:45", prompt: "What body features help the koala survive in trees?" },
+      { time: "02:10", prompt: "Pause and collect evidence of behavioural adaptations." },
+      { time: "04:20", prompt: "How does habitat change affect this species?" },
+    ],
+  },
+  {
+    id: "voices-for-country-taronga-tv",
+    title: "Voices for Country",
+    summary: "A reflective video connecting Country, culture and conservation.",
+    description: "Use this video to support respectful inquiry, discussion and linked writing or observation tasks.",
+    subject: "HSIE",
+    stage: "Stage 3",
+    imageKey: "rhino",
+    thumbnailUrl: "",
+    embedUrl: "https://www.youtube.com/embed/jNQXAC9IVRw",
+    duration: "8 min",
+    status: "Published",
+    outcomeCodes: ["HT3-1", "GE3-2"],
+    lessonIds: [],
+    learningPathIds: [],
+    discussionPoints: [
+      { time: "01:20", prompt: "What viewpoints are being shared here?" },
+      { time: "05:00", prompt: "How can students connect this to local place and responsibility?" },
+    ],
+  },
+];
+
 const staffPassword = "admin";
 const staffSessionKey = "wildly-staff-session";
 
@@ -138,6 +183,29 @@ function createContentDraft(type = "Lesson") {
     lessonId: "",
     lessonIds: [],
     resourceIds: [],
+  };
+}
+
+function createTarongaTvDraft() {
+  return {
+    title: "",
+    summary: "",
+    description: "",
+    subject: "Science",
+    stage: "Stage 2",
+    status: "Draft",
+    duration: "",
+    imageKey: "heroKoala",
+    image: "",
+    customImageUrl: "",
+    uploadedImageDataUrl: "",
+    embedUrl: "",
+    outcomeCodes: "",
+    lessonIds: [],
+    learningPathIds: [],
+    discussionPoints: [
+      { time: "", prompt: "" },
+    ],
   };
 }
 
@@ -192,6 +260,7 @@ function Icon({ type, className = "nav-svg" }) {
     target: <><circle cx="12" cy="12" r="8" /><circle cx="12" cy="12" r="4" /><path d="M12 2v4" /><path d="M12 18v4" /><path d="M2 12h4" /><path d="M18 12h4" /></>,
     bell: <><path d="M18 9.5a6 6 0 0 0-12 0c0 5-2 6.5-2 6.5h16s-2-1.5-2-6.5Z" /><path d="M10 19a2 2 0 0 0 4 0" /></>,
     monitor: <><rect x="4" y="5" width="16" height="12" rx="2" /><path d="M8 21h8" /><path d="M12 17v4" /><path d="M8 9h4" /><path d="M8 13h8" /></>,
+    play: <><rect x="4" y="5" width="16" height="14" rx="2" /><path d="m10 9 5 3.5-5 3.5Z" /></>,
     plus: <><path d="M12 5v14" /><path d="M5 12h14" /></>,
   };
   return <svg className={className} viewBox="0 0 24 24" aria-hidden="true">{icons[type]}</svg>;
@@ -605,7 +674,7 @@ function LandingPage() {
   );
 }
 
-function TeacherDashboard({ config, contentItems = defaultContentItems.map(resolveContentItem), professionalLearningItems = defaultProfessionalLearningItems, page = "dashboard", subject = "", contentId = "", profile = null, onSignOut = null, preview = false }) {
+function TeacherDashboard({ config, contentItems = defaultContentItems.map(resolveContentItem), professionalLearningItems = defaultProfessionalLearningItems, tarongaTvVideos = defaultTarongaTvVideos.map(resolveTarongaTvVideo), page = "dashboard", subject = "", contentId = "", tvVideoId = "", profile = null, onSignOut = null, preview = false }) {
   const [activeSubject, setActiveSubject] = useState(subjectFromSlug(subject));
   const [query, setQuery] = useState("");
   const [notice, setNotice] = useState("");
@@ -630,6 +699,14 @@ function TeacherDashboard({ config, contentItems = defaultContentItems.map(resol
     return matchesSubject && haystack.includes(query.toLowerCase());
   }).slice(0, 3), [activeSubject, publishedItems, query]);
   const contentDetail = publishedItems.find((item) => item.id === contentId) || null;
+  const publishedTarongaTvVideos = useMemo(() => tarongaTvVideos.filter((item) => item.status === "Published"), [tarongaTvVideos]);
+  const filteredTarongaTvVideos = useMemo(() => publishedTarongaTvVideos.filter((item) => {
+    const matchesSubject = !activeSubject || item.subject === activeSubject;
+    const haystack = `${item.title} ${item.subject} ${item.stage} ${item.summary} ${item.description} ${(item.outcomeCodes || []).join(" ")}`.toLowerCase();
+    return matchesSubject && haystack.includes(query.toLowerCase());
+  }), [activeSubject, publishedTarongaTvVideos, query]);
+  const featuredTarongaTvVideo = filteredTarongaTvVideos[0] || publishedTarongaTvVideos[0] || null;
+  const tarongaTvDetail = publishedTarongaTvVideos.find((item) => item.id === tvVideoId) || null;
   const allResourceItems = [...lessons, ...resources];
   const navItems = [
     ["", "Dashboard", "grid"],
@@ -697,9 +774,9 @@ function TeacherDashboard({ config, contentItems = defaultContentItems.map(resol
     },
     "taronga-tv": {
       eyebrow: "Taronga TV",
-      title: "Video learning and classroom viewing",
-      description: "This placeholder page is ready for Taronga TV videos, playlists, embedded media and teacher-facing viewing notes.",
-      action: <button type="button" className="secondary-action" onClick={() => setNotice("Taronga TV placeholder. Add your video library, playlists and embeds here.")}>Preview layout</button>,
+      title: tarongaTvDetail ? tarongaTvDetail.title : "Video learning and classroom viewing",
+      description: tarongaTvDetail ? (tarongaTvDetail.summary || tarongaTvDetail.description) : "Curriculum-aligned videos with linked outcomes, lessons, learning paths and timed discussion prompts for teachers.",
+      action: tarongaTvDetail ? <a className="secondary-action" href={teacherTvRoute()}>Back to Taronga TV</a> : <button type="button" className="secondary-action" onClick={resetFilters}>Clear filters</button>,
     },
     resources: {
       eyebrow: "Resources",
@@ -970,19 +1047,32 @@ function TeacherDashboard({ config, contentItems = defaultContentItems.map(resol
               <div className="workspace-page-actions">{pageMeta.action}</div>
             </div>
 
-            {(page === "subjects" || page === "resources") && (
+            {(page === "subjects" || page === "resources" || page === "taronga-tv") && !tarongaTvDetail && (
               <div className="workspace-page-toolbar">
                 <label className="search-box">
                   <span></span>
-                  <input value={query} onChange={(event) => setQuery(event.target.value)} type="search" placeholder="Search resources" />
+                  <input value={query} onChange={(event) => setQuery(event.target.value)} type="search" placeholder={page === "taronga-tv" ? "Search videos" : "Search resources"} />
                 </label>
                 <div className="page-chip-row">
-                  <a className={`page-chip ${!activeSubject ? "selected" : ""}`} href={teacherRoute("subjects")}>All</a>
-                  {subjects.map(([label]) => (
-                    <a className={`page-chip ${activeSubject === label ? "selected" : ""}`} key={label} href={teacherRoute(`subjects/${subjectSlug(label)}`)}>
-                      {label}
-                    </a>
-                  ))}
+                  {page === "taronga-tv" ? (
+                    <>
+                      <button type="button" className={`page-chip ${!activeSubject ? "selected" : ""}`} onClick={() => setActiveSubject(null)}>All</button>
+                      {subjects.map(([label]) => (
+                        <button type="button" className={`page-chip ${activeSubject === label ? "selected" : ""}`} key={label} onClick={() => setActiveSubject(label)}>
+                          {label}
+                        </button>
+                      ))}
+                    </>
+                  ) : (
+                    <>
+                      <a className={`page-chip ${!activeSubject ? "selected" : ""}`} href={teacherRoute("subjects")}>All</a>
+                      {subjects.map(([label]) => (
+                        <a className={`page-chip ${activeSubject === label ? "selected" : ""}`} key={label} href={teacherRoute(`subjects/${subjectSlug(label)}`)}>
+                          {label}
+                        </a>
+                      ))}
+                    </>
+                  )}
                 </div>
               </div>
             )}
@@ -1043,16 +1133,131 @@ function TeacherDashboard({ config, contentItems = defaultContentItems.map(resol
           </section>
         )}
 
-        {page === "taronga-tv" && (
-          <section className="teacher-panel">
-            <article className="placeholder-card">
-              <h3>Taronga TV is ready for content</h3>
-              <p>Add your video catalogue, age or stage filters, playlists, episode notes and embedded classroom viewing links here.</p>
-              <div className="teacher-card-actions">
-                <button type="button" className="primary-action" onClick={() => setNotice("Taronga TV placeholder. Connect this page to your video library when the content is ready.")}>Open placeholder</button>
-                <a className="secondary-action" href={teacherRoute("resources")}>Back to resources</a>
+        {page === "taronga-tv" && !tarongaTvDetail && (
+          <>
+            {featuredTarongaTvVideo ? (
+              <section className="teacher-panel tv-feature-panel">
+                <article className="tv-feature-card">
+                  <img src={featuredTarongaTvVideo.thumbnail} alt="" />
+                  <div className="tv-feature-copy">
+                    <span className="pill">Featured video</span>
+                    <h2>{featuredTarongaTvVideo.title}</h2>
+                    <p>{featuredTarongaTvVideo.description || featuredTarongaTvVideo.summary}</p>
+                    <div className="tv-meta-row">
+                      <small>{featuredTarongaTvVideo.subject}</small>
+                      <small>{featuredTarongaTvVideo.stage}</small>
+                      {featuredTarongaTvVideo.duration ? <small>{featuredTarongaTvVideo.duration}</small> : null}
+                    </div>
+                    <div className="teacher-card-actions">
+                      <a className="primary-action" href={teacherTvRoute(featuredTarongaTvVideo.id)}>Watch and teach</a>
+                      {featuredTarongaTvVideo.lessonIds?.[0] ? <a className="secondary-action" href={teacherContentRoute(featuredTarongaTvVideo.lessonIds[0])}>Open linked lesson</a> : null}
+                    </div>
+                  </div>
+                </article>
+              </section>
+            ) : null}
+
+            <section className="teacher-panel">
+              <div className="teacher-library-grid tv-library-grid">
+                {filteredTarongaTvVideos.length ? filteredTarongaTvVideos.map((video) => (
+                  <article className="teacher-library-card tv-library-card" key={video.id || video.title}>
+                    <div className="tv-thumb-wrap">
+                      <img src={video.thumbnail} alt="" />
+                      <span className="tv-play-chip"><Icon type="play" className="" /></span>
+                    </div>
+                    <div>
+                      <span className="pill">{video.subject}</span>
+                      <h3>{video.title}</h3>
+                      <p>{video.summary}</p>
+                      <small>{video.stage}</small>
+                      {video.duration ? <small>{video.duration}</small> : null}
+                      {video.outcomeCodes?.length ? <small>{video.outcomeCodes.length} outcomes</small> : null}
+                      <div className="teacher-card-actions">
+                        <a className="primary-action" href={teacherTvRoute(video.id)}>Open video</a>
+                        {video.lessonIds?.[0] ? <a className="secondary-action" href={teacherContentRoute(video.lessonIds[0])}>Linked lesson</a> : null}
+                      </div>
+                    </div>
+                  </article>
+                )) : (
+                  <article className="placeholder-card">
+                    <h3>No Taronga TV videos match this filter yet</h3>
+                    <p>Try another subject, clear the search, or publish videos from the staff console.</p>
+                  </article>
+                )}
               </div>
-            </article>
+            </section>
+          </>
+        )}
+
+        {page === "taronga-tv" && tarongaTvDetail && (
+          <section className="teacher-panel teacher-detail-page tv-detail-page">
+            <div className="teacher-panel-header">
+              <div>
+                <span className="content-type">Taronga TV</span>
+                <h2>{tarongaTvDetail.title}</h2>
+                <p>{tarongaTvDetail.description || tarongaTvDetail.summary}</p>
+              </div>
+              <a className="secondary-action" href={teacherTvRoute()}>Back to Taronga TV</a>
+            </div>
+
+            <div className="tv-detail-layout">
+              <article className="tv-player-card">
+                <div className="tv-embed-shell">
+                  {tarongaTvDetail.embedUrl ? (
+                    <iframe
+                      src={tarongaTvDetail.embedUrl}
+                      title={tarongaTvDetail.title}
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowFullScreen
+                    ></iframe>
+                  ) : (
+                    <div className="tv-embed-placeholder">
+                      <Icon type="play" className="" />
+                      <p>Add an embed URL in the staff console to display the video here.</p>
+                    </div>
+                  )}
+                </div>
+                <div className="tv-detail-actions">
+                  {tarongaTvDetail.lessonIds?.[0] ? <a className="secondary-action" href={teacherContentRoute(tarongaTvDetail.lessonIds[0])}>Open linked lesson</a> : null}
+                  {tarongaTvDetail.learningPathIds?.[0] ? <a className="secondary-action" href={teacherContentRoute(tarongaTvDetail.learningPathIds[0])}>Open learning path</a> : null}
+                </div>
+              </article>
+
+              <aside className="tv-side-panel">
+                <div className="tv-info-card">
+                  <h3>Video details</h3>
+                  <div className="detail-meta">
+                    <small>{tarongaTvDetail.subject}</small>
+                    <small>{tarongaTvDetail.stage}</small>
+                    {tarongaTvDetail.duration ? <small>{tarongaTvDetail.duration}</small> : null}
+                  </div>
+                  {tarongaTvDetail.summary ? <p>{tarongaTvDetail.summary}</p> : null}
+                </div>
+
+                {tarongaTvDetail.outcomeCodes?.length ? (
+                  <div className="tv-info-card">
+                    <h3>Linked outcomes</h3>
+                    <ul className="tv-list">
+                      {tarongaTvDetail.outcomeCodes.map((outcome) => <li key={outcome}>{outcome}</li>)}
+                    </ul>
+                  </div>
+                ) : null}
+
+                {tarongaTvDetail.discussionPoints?.length ? (
+                  <div className="tv-info-card">
+                    <h3>Discussion points</h3>
+                    <ul className="tv-discussion-list">
+                      {tarongaTvDetail.discussionPoints.map((point, index) => (
+                        <li key={`${point.time}-${index}`}>
+                          <strong>{point.time || "Pause point"}</strong>
+                          <p>{point.prompt}</p>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ) : null}
+              </aside>
+            </div>
           </section>
         )}
 
@@ -1329,6 +1534,7 @@ const defaultDashboardConfig = {
 const dashboardConfigRef = doc(db, "dashboardConfig", "main");
 const contentItemsCollection = collection(db, "contentItems");
 const professionalLearningCollection = collection(db, "professionalLearning");
+const tarongaTvCollection = collection(db, "tarongaTvVideos");
 
 function collectionForContentType(type) {
   return {
@@ -1364,6 +1570,25 @@ function sortContentItems(items) {
 
 function sortProfessionalLearningItems(items) {
   return [...items].sort((a, b) => `${a.date || ""}${a.time || ""}`.localeCompare(`${b.date || ""}${b.time || ""}`));
+}
+
+function resolveTarongaTvVideo(video = {}) {
+  return {
+    subject: "Science",
+    stage: "Stage 2",
+    status: "Draft",
+    duration: "",
+    outcomeCodes: [],
+    lessonIds: [],
+    learningPathIds: [],
+    discussionPoints: [],
+    ...video,
+    thumbnail: video.thumbnail || video.thumbnailUrl || video.image || assets[video.imageKey] || assets.heroKoala,
+  };
+}
+
+function sortTarongaTvVideos(items) {
+  return [...items].sort((a, b) => a.title.localeCompare(b.title));
 }
 
 function useContentItems() {
@@ -1422,6 +1647,34 @@ function useProfessionalLearningItems() {
   return { items, status };
 }
 
+function useTarongaTvVideos() {
+  const [items, setItems] = useState(defaultTarongaTvVideos.map(resolveTarongaTvVideo));
+  const [status, setStatus] = useState("loading");
+
+  useEffect(() => {
+    return onSnapshot(
+      tarongaTvCollection,
+      (snapshot) => {
+        if (snapshot.empty) {
+          setItems(defaultTarongaTvVideos.map(resolveTarongaTvVideo));
+          setStatus("missing");
+          return;
+        }
+
+        setItems(sortTarongaTvVideos(snapshot.docs.map((snapshotDoc) => resolveTarongaTvVideo({ id: snapshotDoc.id, ...snapshotDoc.data() }))));
+        setStatus("live");
+      },
+      (error) => {
+        console.error("Unable to load tarongaTvVideos", error);
+        setItems(defaultTarongaTvVideos.map(resolveTarongaTvVideo));
+        setStatus("error");
+      },
+    );
+  }, []);
+
+  return { items, status };
+}
+
 function withDefaultDashboardConfig(config = {}) {
   return { ...defaultDashboardConfig, ...config };
 }
@@ -1447,10 +1700,11 @@ function useDashboardConfig() {
   return { config, status };
 }
 
-function TeacherPage({ page = "dashboard", subject = "", contentId = "", preview = false }) {
+function TeacherPage({ page = "dashboard", subject = "", contentId = "", tvVideoId = "", preview = false }) {
   const { config, status } = useDashboardConfig();
   const { items: contentItems, status: contentStatus } = useContentItems();
   const { items: professionalLearningItems } = useProfessionalLearningItems();
+  const { items: tarongaTvVideos } = useTarongaTvVideos();
   const { status: sessionStatus, user, profile } = useSessionUser();
 
   async function handleSignOut() {
@@ -1486,7 +1740,7 @@ function TeacherPage({ page = "dashboard", subject = "", contentId = "", preview
     <>
       <FirestoreStatus status={status} />
       <ContentFirestoreStatus status={contentStatus} />
-      <TeacherDashboard config={config} contentItems={contentItems} professionalLearningItems={professionalLearningItems} page={page} subject={subject} contentId={contentId} profile={profile} onSignOut={handleSignOut} preview={preview} />
+      <TeacherDashboard config={config} contentItems={contentItems} professionalLearningItems={professionalLearningItems} tarongaTvVideos={tarongaTvVideos} page={page} subject={subject} contentId={contentId} tvVideoId={tvVideoId} profile={profile} onSignOut={handleSignOut} preview={preview} />
     </>
   );
 }
@@ -1548,11 +1802,13 @@ function StaffConsole({ onLock }) {
   const { config: savedConfig, status } = useDashboardConfig();
   const { items: contentItems, status: contentStatus } = useContentItems();
   const { items: professionalLearningItems, status: professionalLearningStatus } = useProfessionalLearningItems();
+  const { items: tarongaTvVideos, status: tarongaTvStatus } = useTarongaTvVideos();
   const [config, setConfig] = useState(defaultDashboardConfig);
   const [previewKey, setPreviewKey] = useState(0);
   const [saveState, setSaveState] = useState("idle");
   const [contentSaveState, setContentSaveState] = useState("idle");
   const [professionalLearningSaveState, setProfessionalLearningSaveState] = useState("idle");
+  const [tarongaTvSaveState, setTarongaTvSaveState] = useState("idle");
   const [notice, setNotice] = useState("");
 
   useEffect(() => {
@@ -1757,6 +2013,59 @@ function StaffConsole({ onLock }) {
     }
   }
 
+  async function saveTarongaTvVideo(item) {
+    setTarongaTvSaveState("saving");
+    try {
+      const payload = {
+        title: item.title || "",
+        summary: item.summary || "",
+        description: item.description || "",
+        subject: item.subject || "Science",
+        stage: item.stage || "Stage 2",
+        status: item.status || "Draft",
+        duration: item.duration || "",
+        embedUrl: item.embedUrl || "",
+        imageKey: item.imageKey || "",
+        thumbnailUrl: item.uploadedImageDataUrl || item.customImageUrl?.trim() || item.thumbnailUrl || item.image || assets[item.imageKey] || assets.heroKoala,
+        outcomeCodes: Array.isArray(item.outcomeCodes) ? item.outcomeCodes : listFromText(item.outcomeCodes || ""),
+        lessonIds: Array.isArray(item.lessonIds) ? item.lessonIds : [],
+        learningPathIds: Array.isArray(item.learningPathIds) ? item.learningPathIds : [],
+        discussionPoints: (item.discussionPoints || []).filter((point) => point.time || point.prompt).map((point) => ({
+          time: point.time || "",
+          prompt: point.prompt || "",
+        })),
+        updatedAt: serverTimestamp(),
+      };
+
+      if (item.id) {
+        await setDoc(doc(db, "tarongaTvVideos", item.id), payload, { merge: true });
+      } else {
+        await addDoc(tarongaTvCollection, {
+          ...payload,
+          createdAt: serverTimestamp(),
+        });
+      }
+
+      setTarongaTvSaveState("saved");
+    } catch (error) {
+      console.error("Unable to save Taronga TV video", error);
+      setTarongaTvSaveState("error");
+    }
+  }
+
+  async function deleteTarongaTvVideo(item) {
+    if (!item?.id) return;
+
+    setTarongaTvSaveState("saving");
+    try {
+      await deleteDoc(doc(db, "tarongaTvVideos", item.id));
+      setTarongaTvSaveState("saved");
+    } catch (error) {
+      console.error("Unable to delete Taronga TV video", error);
+      setTarongaTvSaveState("error");
+    }
+  }
+
   return (
     <div className="staff-shell">
       <aside className="staff-sidebar">
@@ -1767,6 +2076,7 @@ function StaffConsole({ onLock }) {
             ["users", "users", "Users"],
             ["analytics", "report", "Analytics"],
             ["content", "report", "Content"],
+            ["taronga-tv", "play", "Taronga TV"],
             ["professional-learning", "book", "Professional Learning"],
             ["dashboard", "monitor", "Edit Dashboard"],
           ].map(([id, icon, label]) => <button className={panel === id ? "active" : ""} type="button" data-panel={id} key={id} onClick={() => setPanel(id)}><Icon type={icon} className="" />{label}</button>)}
@@ -1780,6 +2090,7 @@ function StaffConsole({ onLock }) {
         {panel === "users" && <UsersPanel onPlaceholder={(message) => setNotice(message)} />}
         {panel === "analytics" && <AnalyticsPanel onPlaceholder={(message) => setNotice(message)} />}
         {panel === "content" && <ContentPanel contentItems={contentItems} status={contentStatus} saveState={contentSaveState} seedContentItems={seedContentItems} addContentItem={addContentItem} deleteContentItem={deleteContentItem} />}
+        {panel === "taronga-tv" && <TarongaTvPanel items={tarongaTvVideos} contentItems={contentItems} status={tarongaTvStatus} saveState={tarongaTvSaveState} saveVideo={saveTarongaTvVideo} deleteVideo={deleteTarongaTvVideo} />}
         {panel === "professional-learning" && <ProfessionalLearningPanel items={professionalLearningItems} status={professionalLearningStatus} saveState={professionalLearningSaveState} saveItem={saveProfessionalLearningItem} deleteItem={deleteProfessionalLearningItem} />}
         {panel === "dashboard" && <DashboardEditor config={config} contentItems={contentItems} updateConfig={updateConfig} reset={() => { setConfig(defaultDashboardConfig); setPreviewKey((key) => key + 1); }} previewKey={previewKey} publish={publishDashboardConfig} status={status} saveState={saveState} />}
       </main>
@@ -2002,7 +2313,7 @@ function ContentPanel({ contentItems, status, saveState, seedContentItems, addCo
           <button type="button" onClick={seedContentItems}>Seed Firestore content</button>
         </div>
       </div>
-      <ContentFirestoreStatus status={status} saveState={saveState} />
+      <ContentFirestoreStatus status={status} saveState={saveState} collectionLabel="Taronga TV library" collectionName="tarongaTvVideos" loadingLabel="Loading Taronga TV library..." emptyLabel="Firestore tarongaTvVideos is empty. Showing fallback videos until you add your own." savingLabel="Writing Taronga TV video to Firestore..." savedLabel="Taronga TV video saved to Firestore." errorLabel="Taronga TV videos could not load. Check rules allow access to tarongaTvVideos." />
 
       <div className="content-flow-shell">
         <div className="content-flow-stepper" aria-label="Content workflow">
@@ -2237,6 +2548,317 @@ function ContentPanel({ contentItems, status, saveState, seedContentItems, addCo
   );
 }
 
+function TarongaTvPanel({ items, contentItems, status, saveState, saveVideo, deleteVideo }) {
+  const [selectedId, setSelectedId] = useState("");
+  const [draft, setDraft] = useState(createTarongaTvDraft());
+  const [imageError, setImageError] = useState("");
+  const selectedItem = items.find((item) => item.id === selectedId) || null;
+  const lessonOptions = contentItems.filter((item) => item.type === "Lesson");
+  const learningPathOptions = contentItems.filter((item) => item.type === "Learning Path");
+  const selectedImage = draft.uploadedImageDataUrl || draft.customImageUrl || draft.thumbnailUrl || draft.image || assets[draft.imageKey] || assets.heroKoala;
+  const selectedStockImage = stockImages.find((image) => (image.key && image.key === draft.imageKey) || (!draft.imageKey && !draft.uploadedImageDataUrl && !draft.customImageUrl && image.src === draft.thumbnailUrl));
+
+  useEffect(() => {
+    if (selectedItem) {
+      setDraft({
+        ...createTarongaTvDraft(),
+        ...selectedItem,
+        imageKey: selectedItem.imageKey || "",
+        thumbnailUrl: selectedItem.thumbnailUrl || "",
+        customImageUrl: selectedItem.imageKey ? "" : (selectedItem.thumbnailUrl || ""),
+        uploadedImageDataUrl: "",
+        outcomeCodes: Array.isArray(selectedItem.outcomeCodes) ? selectedItem.outcomeCodes.join("\n") : (selectedItem.outcomeCodes || ""),
+        lessonIds: selectedItem.lessonIds || [],
+        learningPathIds: selectedItem.learningPathIds || [],
+        discussionPoints: selectedItem.discussionPoints?.length ? selectedItem.discussionPoints : [{ time: "", prompt: "" }],
+      });
+      setImageError("");
+      return;
+    }
+
+    setDraft(createTarongaTvDraft());
+    setImageError("");
+  }, [selectedItem]);
+
+  function updateDraft(patch) {
+    setDraft((current) => ({ ...current, ...patch }));
+  }
+
+  function startNew() {
+    setSelectedId("");
+    setDraft(createTarongaTvDraft());
+    setImageError("");
+  }
+
+  async function uploadCardImage(event) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    try {
+      const dataUrl = await resizeImageFile(file);
+      updateDraft({ uploadedImageDataUrl: dataUrl, customImageUrl: "", thumbnailUrl: dataUrl, imageKey: "" });
+      setImageError("");
+    } catch (error) {
+      setImageError(error.message);
+    }
+  }
+
+  function chooseStockImage(value) {
+    const stockImage = stockImages.find((image) => image.src === value || image.key === value);
+    updateDraft({
+      imageKey: stockImage?.key || "",
+      thumbnailUrl: stockImage?.key ? "" : (stockImage?.src || value),
+      customImageUrl: "",
+      uploadedImageDataUrl: "",
+    });
+  }
+
+  function toggleRelation(field, itemId) {
+    setDraft((current) => {
+      const currentList = current[field] || [];
+      return {
+        ...current,
+        [field]: currentList.includes(itemId) ? currentList.filter((id) => id !== itemId) : [...currentList, itemId],
+      };
+    });
+  }
+
+  function updateDiscussionPoint(index, patch) {
+    setDraft((current) => ({
+      ...current,
+      discussionPoints: current.discussionPoints.map((point, pointIndex) => pointIndex === index ? { ...point, ...patch } : point),
+    }));
+  }
+
+  function addDiscussionPoint() {
+    setDraft((current) => ({
+      ...current,
+      discussionPoints: [...current.discussionPoints, { time: "", prompt: "" }],
+    }));
+  }
+
+  function removeDiscussionPoint(index) {
+    setDraft((current) => ({
+      ...current,
+      discussionPoints: current.discussionPoints.length === 1 ? [{ time: "", prompt: "" }] : current.discussionPoints.filter((_, pointIndex) => pointIndex !== index),
+    }));
+  }
+
+  async function handleSubmit(event) {
+    event.preventDefault();
+    await saveVideo(draft);
+    setSelectedId("");
+  }
+
+  async function handleDelete() {
+    if (!selectedItem) return;
+    if (!window.confirm(`Delete Taronga TV video "${selectedItem.title}"?`)) return;
+    await deleteVideo(selectedItem);
+    setSelectedId("");
+  }
+
+  return (
+    <section className="staff-section staff-panel active">
+      <div className="section-heading">
+        <div>
+          <h2>Taronga TV</h2>
+          <p>Create curriculum-aligned videos with linked lessons, learning paths, outcomes and timed discussion points.</p>
+        </div>
+      </div>
+      <ContentFirestoreStatus status={status} saveState={saveState} />
+
+      <div className="content-flow-shell">
+        <div className="content-flow-stepper" aria-label="Taronga TV workflow">
+          {["Video details", "Thumbnail and embed", "Links and outcomes", "Talking points", "Publish"].map((step, index) => (
+            <div className="content-flow-step" key={step}>
+              <span>{index + 1}</span>
+              <strong>{step}</strong>
+            </div>
+          ))}
+        </div>
+
+        <form className="content-form content-flow-form" onSubmit={handleSubmit}>
+          <div className="content-flow-toolbar">
+            <div>
+              <span className="content-type">{selectedId ? "Editing video" : "New video"}</span>
+              <h3>{selectedId ? draft.title || "Edit Taronga TV video" : "Create Taronga TV video"}</h3>
+              <p>Keep the workflow simple: add the classroom-facing summary, paste the embed link, connect curriculum and then drop in pause-point prompts.</p>
+            </div>
+            <div className="content-flow-toolbar-actions">
+              <label className="content-quick-select">
+                Continue editing
+                <select value={selectedId} onChange={(event) => setSelectedId(event.target.value)}>
+                  <option value="">Start a new video</option>
+                  {items.map((item) => <option key={item.id} value={item.id}>{item.title}</option>)}
+                </select>
+              </label>
+              <button type="button" className="secondary-button" onClick={startNew}>New video</button>
+            </div>
+          </div>
+
+          <div className="content-flow-main">
+            <section className="content-step-card">
+              <div className="content-step-header">
+                <span className="content-step-badge">1</span>
+                <div>
+                  <h4>Video details</h4>
+                  <p>Add the essential teacher-facing information first.</p>
+                </div>
+              </div>
+              <div className="content-editor-fields">
+                <label>Title<input type="text" required value={draft.title} onChange={(event) => updateDraft({ title: event.target.value })} /></label>
+                <label>Status<select value={draft.status} onChange={(event) => updateDraft({ status: event.target.value })}><option>Draft</option><option>Published</option></select></label>
+                <label>Subject<select value={draft.subject} onChange={(event) => updateDraft({ subject: event.target.value })}>{subjects.map(([label]) => <option key={label}>{label}</option>)}</select></label>
+                <label>Stage<input type="text" value={draft.stage} onChange={(event) => updateDraft({ stage: event.target.value })} /></label>
+                <label>Duration<input type="text" value={draft.duration} onChange={(event) => updateDraft({ duration: event.target.value })} placeholder="6 min" /></label>
+                <label>Embed URL<input type="url" value={draft.embedUrl} onChange={(event) => updateDraft({ embedUrl: event.target.value })} placeholder="https://www.youtube.com/embed/..." /></label>
+                <label className="wide-field">Summary<input type="text" required value={draft.summary} onChange={(event) => updateDraft({ summary: event.target.value })} /></label>
+                <label className="wide-field">Description<textarea value={draft.description} onChange={(event) => updateDraft({ description: event.target.value })}></textarea></label>
+              </div>
+            </section>
+
+            <section className="content-step-card">
+              <div className="content-step-header">
+                <span className="content-step-badge">2</span>
+                <div>
+                  <h4>Thumbnail and preview</h4>
+                  <p>Use a stock image, your own upload, or a direct thumbnail URL.</p>
+                </div>
+              </div>
+              <div className="simple-image-picker">
+                <img src={selectedImage} alt="" />
+                <div>
+                  <label>
+                    Stock image
+                    <select value={selectedStockImage ? (selectedStockImage.key || selectedStockImage.src) : ""} onChange={(event) => chooseStockImage(event.target.value)}>
+                      <option value="">Choose a stock image</option>
+                      {stockImages.map((stockImage) => <option value={stockImage.key || stockImage.src} key={`${stockImage.label}-${stockImage.src}`}>{stockImage.label}</option>)}
+                    </select>
+                  </label>
+                  <label>Thumbnail URL<input type="url" value={draft.customImageUrl} onChange={(event) => updateDraft({ customImageUrl: event.target.value, uploadedImageDataUrl: "", thumbnailUrl: event.target.value, imageKey: "" })} placeholder="https://..." /></label>
+                  <label>Upload thumbnail<input type="file" accept="image/*" onChange={uploadCardImage} /></label>
+                  {imageError ? <p className="auth-error">{imageError}</p> : null}
+                </div>
+              </div>
+            </section>
+
+            <section className="content-step-card">
+              <div className="content-step-header">
+                <span className="content-step-badge">3</span>
+                <div>
+                  <h4>Curriculum and linked content</h4>
+                  <p>Connect the video to outcomes, lessons and learning paths teachers can open next.</p>
+                </div>
+              </div>
+              <div className="content-editor-fields">
+                <label className="wide-field">Outcomes<textarea placeholder="One outcome per line" value={draft.outcomeCodes} onChange={(event) => updateDraft({ outcomeCodes: event.target.value })}></textarea></label>
+                <fieldset className="lesson-picker wide-field">
+                  <legend>Linked lessons</legend>
+                  {lessonOptions.length ? lessonOptions.map((lesson) => <label key={lesson.id || lesson.title}><input type="checkbox" checked={draft.lessonIds.includes(lesson.id)} onChange={() => toggleRelation("lessonIds", lesson.id)} />{lesson.title}<small>{lesson.subject} - {lesson.stage}</small></label>) : <p>Create lessons first, then attach them here.</p>}
+                </fieldset>
+                <fieldset className="lesson-picker wide-field">
+                  <legend>Linked learning paths</legend>
+                  {learningPathOptions.length ? learningPathOptions.map((path) => <label key={path.id || path.title}><input type="checkbox" checked={draft.learningPathIds.includes(path.id)} onChange={() => toggleRelation("learningPathIds", path.id)} />{path.title}<small>{path.subject} - {path.stage}</small></label>) : <p>Create learning paths first, then attach them here.</p>}
+                </fieldset>
+              </div>
+            </section>
+
+            <section className="content-step-card">
+              <div className="content-step-header">
+                <span className="content-step-badge">4</span>
+                <div>
+                  <h4>Timed discussion points</h4>
+                  <p>Add the pause moments and teacher prompts that make the video immediately usable in class.</p>
+                </div>
+              </div>
+              <div className="discussion-points-editor">
+                {draft.discussionPoints.map((point, index) => (
+                  <div className="discussion-point-row" key={`discussion-${index}`}>
+                    <label>Time<input type="text" value={point.time} onChange={(event) => updateDiscussionPoint(index, { time: event.target.value })} placeholder="02:15" /></label>
+                    <label>Talking point<textarea value={point.prompt} onChange={(event) => updateDiscussionPoint(index, { prompt: event.target.value })} placeholder="Pause and ask..." /></label>
+                    <button type="button" className="secondary-button slim-button" onClick={() => removeDiscussionPoint(index)}>Remove</button>
+                  </div>
+                ))}
+                <button type="button" className="secondary-button" onClick={addDiscussionPoint}>Add discussion point</button>
+              </div>
+            </section>
+
+            <section className="content-step-card review-card">
+              <div className="content-step-header">
+                <span className="content-step-badge">5</span>
+                <div>
+                  <h4>Review and publish</h4>
+                  <p>Teachers will see this in Taronga TV and can open the linked learning from the video page.</p>
+                </div>
+              </div>
+              <div className="content-review-grid">
+                <div className="content-review-preview">
+                  <img className="content-thumb" src={selectedImage} alt="" />
+                  <div>
+                    <span className="content-type">{draft.status}</span>
+                    <h5>{draft.title || "Untitled Taronga TV video"}</h5>
+                    <p>{draft.summary || "Add a short summary so teachers can scan the purpose of the video."}</p>
+                    <div className="material-tags">
+                      <span>{draft.subject}</span>
+                      <span>{draft.stage}</span>
+                      {draft.duration ? <span>{draft.duration}</span> : null}
+                    </div>
+                  </div>
+                </div>
+                <div className="content-review-meta">
+                  <h5>Teacher experience</h5>
+                  <div className="editor-meta-list">
+                    <span>Taronga TV library</span>
+                    <span>Video detail page</span>
+                    <span>Linked lessons and paths</span>
+                  </div>
+                  <div className="content-form-actions">
+                    {selectedItem ? <button type="button" className="delete-button editor-delete-button" onClick={handleDelete}>Delete</button> : null}
+                    <button type="button" className="secondary-button" onClick={startNew}>Clear form</button>
+                    <button type="submit" disabled={saveState === "saving"}>{saveState === "saving" ? "Saving..." : selectedItem ? "Update video" : "Save video"}</button>
+                  </div>
+                </div>
+              </div>
+            </section>
+          </div>
+        </form>
+
+        <section className="content-library-section">
+          <div className="content-library-section-header">
+            <div>
+              <span className="content-type">Taronga TV</span>
+              <h3>Existing videos</h3>
+              <p>Choose a video to edit, or stay in the flow above to create a new one.</p>
+            </div>
+            <button type="button" className="secondary-button" onClick={startNew}>New video</button>
+          </div>
+          <div className="content-library-grid">
+            {items.length ? items.map((item) => (
+              <article className={`content-mini-card ${selectedId === item.id ? "selected" : ""}`} key={item.id} onClick={() => setSelectedId(item.id)}>
+                <img className="content-thumb" src={item.thumbnail} alt="" />
+                <div>
+                  <span className="content-type">{item.status}</span>
+                  <h4>{item.title}</h4>
+                  <p>{item.summary}</p>
+                  <small>{item.subject} - {item.stage}</small>
+                  {item.duration ? <small>{item.duration}</small> : null}
+                  {item.discussionPoints?.length ? <small>{item.discussionPoints.length} discussion points</small> : null}
+                </div>
+              </article>
+            )) : (
+              <article className="empty-content-card">
+                <Icon type="play" className="" />
+                <h4>No videos yet</h4>
+                <p>Create the first Taronga TV video using the steps above.</p>
+              </article>
+            )}
+          </div>
+        </section>
+      </div>
+    </section>
+  );
+}
+
 function ProfessionalLearningPanel({ items, status, saveState, saveItem, deleteItem }) {
   const [selectedId, setSelectedId] = useState("");
   const [draft, setDraft] = useState({
@@ -2406,15 +3028,25 @@ function FirestoreStatus({ status, saveState }) {
   return <p className={`firestore-status ${statusKey}`}>{messages[statusKey]}</p>;
 }
 
-function ContentFirestoreStatus({ status, saveState }) {
+function ContentFirestoreStatus({
+  status,
+  saveState,
+  collectionLabel = "content library",
+  collectionName = "contentItems",
+  loadingLabel,
+  emptyLabel,
+  errorLabel,
+  savingLabel,
+  savedLabel,
+}) {
   if (status === "live" && !saveState) return null;
 
   const messages = {
-    loading: "Loading Firestore content library...",
-    missing: "Firestore contentItems is empty. Showing fallback content until you seed or add content.",
-    error: "Firestore content could not load. Check rules allow access to contentItems.",
-    saving: "Writing content to Firestore...",
-    saved: "Content saved to Firestore.",
+    loading: loadingLabel || `Loading Firestore ${collectionLabel}...`,
+    missing: emptyLabel || `Firestore ${collectionName} is empty. Showing fallback content until you seed or add content.`,
+    error: errorLabel || `Firestore ${collectionLabel} could not load. Check rules allow access to ${collectionName}.`,
+    saving: savingLabel || "Writing content to Firestore...",
+    saved: savedLabel || "Content saved to Firestore.",
   };
 
   const statusKey = saveState && saveState !== "idle" ? saveState : status;
@@ -2483,6 +3115,7 @@ function App() {
     if (section === "preview") return <TeacherPage preview />;
     if (section === "subjects") return <TeacherPage page="subjects" subject={third} />;
     if (section === "content") return <TeacherPage page="content" contentId={third} />;
+    if (section === "taronga-tv") return <TeacherPage page="taronga-tv" tvVideoId={third} />;
     if (section === "professional-learning") return <TeacherPage page="professional-learning" />;
     return <TeacherPage page={section || "dashboard"} />;
   }
