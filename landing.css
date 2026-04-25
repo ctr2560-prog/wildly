@@ -406,6 +406,11 @@ svg {
   background: #eef5ff;
 }
 
+.litnum {
+  color: #1f4e8c;
+  background: #edf4ff;
+}
+
 .maths {
   color: var(--purple);
   background: #f1ecfb;
@@ -429,6 +434,11 @@ svg {
 .stem {
   color: var(--teal);
   background: #eaf8f5;
+}
+
+.earlyyears {
+  color: #8c4a1f;
+  background: #fff0e7;
 }
 
 .journey-section {

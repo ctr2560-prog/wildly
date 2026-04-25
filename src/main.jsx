@@ -127,11 +127,13 @@ const stockImages = [
 const subjects = [
   ["Science", "science", "Discover the living world and our place in it."],
   ["English", "english", "Communicate, create and explore ideas that matter."],
+  ["Literacy & Numeracy", "litnum", "Build core literacy and numeracy capability through real-world, nature-based learning."],
   ["Mathematics", "maths", "Make sense of patterns, numbers and the world around you."],
   ["HSIE", "hsie", "Understand people, places, histories and how we shape society."],
   ["PDHPE", "pdhpe", "Build wellbeing, strong relationships and healthy communities."],
   ["CAPA", "capa", "Imagine, express and connect through creativity."],
   ["Technology & STEM", "stem", "Design, innovate and solve real-world challenges."],
+  ["Early Years", "earlyyears", "Play-based, story-led and sensory learning for pre-school and Early Stage 1."],
 ];
 
 const tarongaTvCategories = [
@@ -373,11 +375,13 @@ function subjectIconType(label) {
   return {
     Science: "leaf",
     English: "speech",
+    "Literacy & Numeracy": "book",
     Mathematics: "calc",
     HSIE: "globe",
     PDHPE: "heart",
     CAPA: "palette",
     "Technology & STEM": "code",
+    "Early Years": "blocks",
   }[label];
 }
 
@@ -393,11 +397,13 @@ function subjectSlug(label) {
   return {
     Science: "science",
     English: "english",
+    "Literacy & Numeracy": "literacy-numeracy",
     Mathematics: "mathematics",
     HSIE: "hsie",
     PDHPE: "pdhpe",
     CAPA: "capa",
     "Technology & STEM": "technology-stem",
+    "Early Years": "early-years",
   }[label] || "";
 }
 
@@ -405,11 +411,13 @@ function subjectFromSlug(slug) {
   return {
     science: "Science",
     english: "English",
+    "literacy-numeracy": "Literacy & Numeracy",
     mathematics: "Mathematics",
     hsie: "HSIE",
     pdhpe: "PDHPE",
     capa: "CAPA",
     "technology-stem": "Technology & STEM",
+    "early-years": "Early Years",
   }[slug] || null;
 }
 
