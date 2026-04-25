@@ -2367,15 +2367,6 @@ function ContentPanel({ contentItems, status, saveState, seedContentItems, addCo
       <ContentFirestoreStatus status={status} saveState={saveState} collectionLabel="Taronga TV library" collectionName="tarongaTvVideos" loadingLabel="Loading Taronga TV library..." emptyLabel="Firestore tarongaTvVideos is empty. Showing fallback videos until you add your own." savingLabel="Writing Taronga TV video to Firestore..." savedLabel="Taronga TV video saved to Firestore." errorLabel="Taronga TV videos could not load. Check rules allow access to tarongaTvVideos." />
 
       <div className="content-flow-shell">
-        <div className="content-flow-stepper" aria-label="Content workflow">
-          {["Choose type", "Add details", "Attach files", "Link content", "Publish"].map((step, index) => (
-            <div className="content-flow-step" key={step}>
-              <span>{index + 1}</span>
-              <strong>{step}</strong>
-            </div>
-          ))}
-        </div>
-
         <div className="content-type-selector" aria-label="Content types">
           {["Learning Path", "Lesson", "Resource"].map((type) => (
             <button key={type} type="button" className={`content-type-card ${activeType === type ? "active" : ""}`} onClick={() => startNew(type)}>
@@ -2720,15 +2711,6 @@ function TarongaTvPanel({ items, contentItems, status, saveState, saveVideo, del
       <ContentFirestoreStatus status={status} saveState={saveState} />
 
       <div className="content-flow-shell">
-        <div className="content-flow-stepper" aria-label="Taronga TV workflow">
-          {["Video details", "Thumbnail and embed", "Links and outcomes", "Talking points", "Publish"].map((step, index) => (
-            <div className="content-flow-step" key={step}>
-              <span>{index + 1}</span>
-              <strong>{step}</strong>
-            </div>
-          ))}
-        </div>
-
         <form className="content-form content-flow-form" onSubmit={handleSubmit}>
           <div className="content-flow-toolbar">
             <div>
@@ -2986,15 +2968,6 @@ function ProfessionalLearningPanel({ items, status, saveState, saveItem, deleteI
       </div>
       <ContentFirestoreStatus status={status} saveState={saveState} />
       <div className="content-flow-shell">
-        <div className="content-flow-stepper" aria-label="Professional learning workflow">
-          {["Session details", "Links and files", "Teacher experience", "Review", "Publish"].map((step, index) => (
-            <div className="content-flow-step" key={step}>
-              <span>{index + 1}</span>
-              <strong>{step}</strong>
-            </div>
-          ))}
-        </div>
-
         <form className="content-form content-flow-form" onSubmit={handleSubmit}>
           <div className="content-flow-toolbar">
             <div>
