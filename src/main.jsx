@@ -764,7 +764,7 @@ function LandingPage() {
           <article><Icon type="bookmark" className="" /><span>Secure, reliable teacher resources</span></article>
         </section>
         <section className="cta-section" id="schools"><img src={assets.heroKoala} alt="Koala with joey" /><div><h2>Bring learning to life through nature</h2><p>Join thousands of educators using Wildly to inspire the next generation to care for nature - together.</p><div className="hero-actions"><a className="primary-action" href={signupRoute()}>Get started free</a><a className="secondary-action" href={appLinks.demoBooking}>Book a demo</a></div></div></section>
-        <footer className="site-footer"><div className="footer-links"><a className="staff-login" href={routePath("staff")}>Taronga staff login</a><a className="staff-login" href={appLinks.support}>Support</a><a className="staff-login" href={appLinks.excursions}>Excursions</a><a className="staff-login" href={appLinks.professionalLearning}>Professional Learning</a></div></footer>
+        <footer className="site-footer"><div className="footer-links"><a className="staff-login" href={routePath("staff")}>TARONGA STAFF LOGIN</a></div></footer>
       </main>
     </>
   );
