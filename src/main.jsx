@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { createUserWithEmailAndPassword, onAuthStateChanged, signInWithEmailAndPassword, signOut } from "firebase/auth";
-import { addDoc, collection, deleteDoc, doc, getDoc, onSnapshot, serverTimestamp, setDoc } from "firebase/firestore";
+import { addDoc, collection, deleteDoc, doc, getDoc, onSnapshot, orderBy, query, serverTimestamp, setDoc, updateDoc, where } from "firebase/firestore";
 import { auth, db } from "./firebase";
 import "../landing.css";
 import "../styles.css";
@@ -14,6 +14,7 @@ const teacherRoute = (path = "") => routePath(path ? `teacher/${path}` : "teache
 const teacherContentRoute = (id) => teacherRoute(`content/${id}`);
 const teacherTvRoute = (id = "") => teacherRoute(id ? `taronga-tv/${id}` : "taronga-tv");
 const teacherPreviewRoute = () => teacherRoute("preview");
+const studentRoute = (path = "") => routePath(path ? `student/${path}` : "student");
 const loginRoute = () => routePath("login");
 const signupRoute = () => routePath("get-started");
 const aboutYouRoute = () => routePath("about-you");
@@ -268,6 +269,75 @@ function createDefaultTeacherWorkspace() {
   };
 }
 
+const defaultLiveActivityBlocks = [
+  {
+    id: "intro-slide",
+    type: "slide",
+    title: "Welcome",
+    prompt: "Introduce the lesson, frame the learning intention, and get students ready to respond.",
+    notes: "Teacher framing and discussion prompt.",
+    options: [],
+  },
+  {
+    id: "check-for-understanding",
+    type: "quiz",
+    title: "Quick check",
+    prompt: "Which idea best matches the main concept from this part of the lesson?",
+    notes: "",
+    options: ["Option A", "Option B", "Option C", "Option D"],
+    answer: "Option A",
+  },
+  {
+    id: "extended-response",
+    type: "extended-response",
+    title: "Reflect and explain",
+    prompt: "Explain your thinking using evidence from the lesson.",
+    notes: "Use this for written reasoning or exit-ticket style reflection.",
+    options: [],
+  },
+];
+
+function createActivityBlock(type = "slide") {
+  return {
+    id: `block-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+    type,
+    title: type === "slide" ? "Content slide" : type === "quiz" ? "Quiz question" : type === "poll" ? "Poll" : "Extended response",
+    prompt: "",
+    notes: "",
+    options: type === "slide" || type === "extended-response" ? [] : ["Option 1", "Option 2"],
+    answer: "",
+  };
+}
+
+function normalizeActivityBlocks(blocks = []) {
+  return blocks
+    .map((block, index) => ({
+      id: block.id || `step-${index + 1}`,
+      type: block.type || "slide",
+      title: block.title?.trim() || `Step ${index + 1}`,
+      prompt: block.prompt?.trim() || "",
+      notes: block.notes?.trim() || "",
+      options: Array.isArray(block.options) ? block.options.map((option) => option.trim()).filter(Boolean) : [],
+      answer: block.answer?.trim() || "",
+    }))
+    .filter((block) => block.prompt || block.notes || block.options.length || block.type === "slide");
+}
+
+function buildLessonActivityBlocks(item) {
+  const savedBlocks = normalizeActivityBlocks(item.materials?.activityBlocks || []);
+  if (savedBlocks.length) return savedBlocks;
+  return defaultLiveActivityBlocks.map((block, index) => ({
+    ...block,
+    id: `${item.id || "content"}-${index + 1}`,
+    title: index === 0 ? item.title : block.title,
+    prompt: index === 0 ? (item.summary || item.description || block.prompt) : block.prompt,
+  }));
+}
+
+function generateSessionCode() {
+  return Math.random().toString(36).slice(2, 8).toUpperCase();
+}
+
 const staffPassword = "admin";
 const staffSessionKey = "wildly-staff-session";
 
@@ -306,6 +376,7 @@ function createContentDraft(type = "Lesson") {
     resourceUrl: "",
     resourceLinks: "",
     downloadLinks: "",
+    activityBlocks: type === "Lesson" ? defaultLiveActivityBlocks.map((block) => ({ ...block })) : [],
     learningPathId: "",
     lessonId: "",
     lessonIds: [],
@@ -999,6 +1070,25 @@ function LandingPage() {
             ["target", "Linked with Taronga Tracka", "Extend inquiry beyond the classroom and turn citizen science data into next steps."],
           ].map(([icon, title, copy]) => <article key={title}><Icon type={icon} className="" /><h2>{title}</h2><p>{copy}</p></article>)}
         </section>
+        <section className="marketing-band">
+          <div className="section-heading">
+            <div>
+              <h2>Live student learning</h2>
+              <p>Wildly now supports teacher-led presentation, live join-code lessons, and student-paced responses. Teachers create the class, launch the session, and students join on their own device with a code.</p>
+            </div>
+          </div>
+          <div className="marketing-split">
+            <div className="marketing-split-copy">
+              <ul className="marketing-list">
+                <li>Teachers can present content front-of-class without students joining.</li>
+                <li>Teachers can launch a live session so students respond in real time.</li>
+                <li>Lessons can include slides, quizzes, polls and extended response questions.</li>
+                <li>Responses flow back into analytics for session review and future reporting.</li>
+              </ul>
+            </div>
+            <StudentJoinCard />
+          </div>
+        </section>
         <section className="subjects-section" id="subjects">
           <div className="section-heading"><h2>Explore by subject</h2><a href={teacherPreviewRoute()}>View all subjects</a></div>
           <div className="subject-strip">
@@ -1313,6 +1403,7 @@ function TeacherDashboard({ config, contentItems = defaultContentItems.map(resol
   const [notice, setNotice] = useState("");
   const [assignmentDraft, setAssignmentDraft] = useState({ itemId: "", classId: "", dueDate: "" });
   const [classDraft, setClassDraft] = useState({ title: "", stage: "Stage 2" });
+  const [launchDraft, setLaunchDraft] = useState({ itemId: "", classId: "", mode: "live" });
   const routeSubject = subjectFromSlug(subject);
 
   useEffect(() => {
@@ -1334,6 +1425,7 @@ function TeacherDashboard({ config, contentItems = defaultContentItems.map(resol
     return matchesSubject && haystack.includes(query.toLowerCase());
   }).slice(0, 3), [activeSubject, publishedItems, query]);
   const contentDetail = publishedItems.find((item) => item.id === contentId) || null;
+  const contentActivityBlocks = contentDetail ? buildLessonActivityBlocks(contentDetail) : [];
   const publishedTarongaTvVideos = useMemo(() => tarongaTvVideos.filter((item) => item.status === "Published"), [tarongaTvVideos]);
   const filteredTarongaTvVideos = useMemo(() => publishedTarongaTvVideos.filter((item) => {
     const matchesSubject = !activeSubject || item.subject === activeSubject;
@@ -1461,6 +1553,37 @@ function TeacherDashboard({ config, contentItems = defaultContentItems.map(resol
     onCreateClass(classDraft.title.trim(), classDraft.stage);
     setNotice(`${classDraft.title.trim()} created and ready for assignments.`);
     setClassDraft({ title: "", stage: "Stage 2" });
+  }
+
+  function openLaunchFlow(item, mode = "live") {
+    setLaunchDraft({ itemId: item.id, classId: classes[0]?.id || "", mode });
+  }
+
+  function closeLaunchFlow() {
+    setLaunchDraft({ itemId: "", classId: "", mode: "live" });
+  }
+
+  async function launchSession(event) {
+    event.preventDefault();
+    const item = contentById[launchDraft.itemId];
+    const classroom = classes.find((entry) => entry.id === launchDraft.classId);
+    if (!item || !classroom) return;
+    const code = generateSessionCode();
+    const sessionRef = await addDoc(liveSessionsCollection, {
+      code,
+      state: "active",
+      mode: launchDraft.mode,
+      contentId: item.id,
+      contentTitle: item.title,
+      classId: classroom.id,
+      classTitle: classroom.title,
+      teacherName: displayName,
+      currentStep: 0,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    });
+    closeLaunchFlow();
+    window.location.hash = `#teacher/live/${sessionRef.id}`;
   }
 
   function exportStudentsCsv() {
@@ -2325,10 +2448,14 @@ function TeacherDashboard({ config, contentItems = defaultContentItems.map(resol
                   ) : (
                     <button type="button" className="primary-action" onClick={() => setNotice("Add the main lesson/resource URL in staff content to activate this button.")}>Main link needed</button>
                   )}
+                  {contentActivityBlocks.length ? <a className="secondary-action" href={teacherRoute(`present/${contentDetail.id}`)}>Present</a> : null}
+                  {contentActivityBlocks.length ? <button type="button" className="secondary-action" onClick={() => openLaunchFlow(contentDetail, "live")}>Run live</button> : null}
+                  {contentActivityBlocks.length ? <button type="button" className="secondary-action" onClick={() => openLaunchFlow(contentDetail, "student-paced")}>Student-paced</button> : null}
                   <button type="button" className="secondary-action" onClick={() => openAssignmentFlow(contentDetail)}>Assign</button>
                   <button type="button" className="secondary-action" onClick={() => onToggleSaved(contentDetail.id)}>{savedItemIds.includes(contentDetail.id) ? "Saved" : "Save"}</button>
                 </div>
                 {contentDetail.description ? <div className="detail-list"><h3>Description</h3><p>{contentDetail.description}</p></div> : null}
+                {contentActivityBlocks.length ? <div className="detail-list"><h3>Interactive lesson flow</h3><ul>{contentActivityBlocks.map((block) => <li key={block.id}>{block.title} · {block.type}</li>)}</ul></div> : null}
                 {contentDetail.outcomeCodes?.length ? <div className="detail-list"><h3>Outcomes</h3><ul>{contentDetail.outcomeCodes.map((outcome) => <li key={outcome}>{outcome}</li>)}</ul></div> : null}
                 <LinkSection links={contentDownloads} />
                 {contentDetail.lessonIds?.length ? <div className="detail-list"><h3>Included lessons</h3><ul>{contentDetail.lessonIds.map((lessonId) => <li key={lessonId}>{lessons.find((lesson) => lesson.id === lessonId)?.title || lessonId}</li>)}</ul></div> : null}
@@ -2370,6 +2497,40 @@ function TeacherDashboard({ config, contentItems = defaultContentItems.map(resol
             </form>
           </div>
         ) : null}
+
+        {launchDraft.itemId ? (
+          <div className="detail-overlay" role="dialog" aria-modal="true">
+            <form className="assignment-modal" onSubmit={launchSession}>
+              <div className="teacher-panel-header">
+                <div>
+                  <span className="content-type">Launch lesson</span>
+                  <h2>{contentById[launchDraft.itemId]?.title || "Launch lesson"}</h2>
+                  <p>Create a code-based student session. A class must be selected before students can join.</p>
+                </div>
+                <button type="button" className="secondary-action" onClick={closeLaunchFlow}>Close</button>
+              </div>
+              <div className="assignment-modal-grid">
+                <label>
+                  Delivery mode
+                  <select value={launchDraft.mode} onChange={(event) => setLaunchDraft((current) => ({ ...current, mode: event.target.value }))}>
+                    <option value="live">Live Participation</option>
+                    <option value="student-paced">Student-Paced</option>
+                  </select>
+                </label>
+                <label>
+                  Class
+                  <select value={launchDraft.classId} onChange={(event) => setLaunchDraft((current) => ({ ...current, classId: event.target.value }))}>
+                    {classes.map((classroom) => <option key={classroom.id} value={classroom.id}>{classroom.title}</option>)}
+                  </select>
+                </label>
+              </div>
+              <div className="teacher-card-actions">
+                <button type="submit" className="primary-action">Launch with code</button>
+                <a className="secondary-action" href={teacherRoute(`present/${launchDraft.itemId}`)}>Present only</a>
+              </div>
+            </form>
+          </div>
+        ) : null}
       </main>
     </div>
   );
@@ -2389,6 +2550,8 @@ const dashboardConfigRef = doc(db, "dashboardConfig", "main");
 const contentItemsCollection = collection(db, "contentItems");
 const professionalLearningCollection = collection(db, "professionalLearning");
 const tarongaTvCollection = collection(db, "tarongaTvVideos");
+const liveSessionsCollection = collection(db, "liveSessions");
+const liveResponsesCollection = collection(db, "liveResponses");
 
 function collectionForContentType(type) {
   return {
@@ -2532,6 +2695,141 @@ function useTarongaTvVideos() {
   return { items, status };
 }
 
+function useLiveSessions() {
+  const [items, setItems] = useState([]);
+  const [status, setStatus] = useState("loading");
+
+  useEffect(() => {
+    return onSnapshot(
+      query(liveSessionsCollection, orderBy("createdAt", "desc")),
+      (snapshot) => {
+        setItems(snapshot.docs.map((snapshotDoc) => ({ id: snapshotDoc.id, ...snapshotDoc.data() })));
+        setStatus(snapshot.empty ? "missing" : "live");
+      },
+      (error) => {
+        console.error("Unable to load liveSessions", error);
+        setItems([]);
+        setStatus("error");
+      },
+    );
+  }, []);
+
+  return { items, status };
+}
+
+function useLiveResponses() {
+  const [items, setItems] = useState([]);
+  const [status, setStatus] = useState("loading");
+
+  useEffect(() => {
+    return onSnapshot(
+      query(liveResponsesCollection, orderBy("submittedAt", "desc")),
+      (snapshot) => {
+        setItems(snapshot.docs.map((snapshotDoc) => ({ id: snapshotDoc.id, ...snapshotDoc.data() })));
+        setStatus(snapshot.empty ? "missing" : "live");
+      },
+      (error) => {
+        console.error("Unable to load liveResponses", error);
+        setItems([]);
+        setStatus("error");
+      },
+    );
+  }, []);
+
+  return { items, status };
+}
+
+function useLiveSessionById(sessionId) {
+  const [item, setItem] = useState(null);
+  const [status, setStatus] = useState("loading");
+
+  useEffect(() => {
+    if (!sessionId) {
+      setItem(null);
+      setStatus("missing");
+      return () => {};
+    }
+
+    return onSnapshot(
+      doc(db, "liveSessions", sessionId),
+      (snapshot) => {
+        if (!snapshot.exists()) {
+          setItem(null);
+          setStatus("missing");
+          return;
+        }
+        setItem({ id: snapshot.id, ...snapshot.data() });
+        setStatus("live");
+      },
+      (error) => {
+        console.error("Unable to load live session", error);
+        setItem(null);
+        setStatus("error");
+      },
+    );
+  }, [sessionId]);
+
+  return { item, status };
+}
+
+function useLiveSessionByCode(code) {
+  const [item, setItem] = useState(null);
+  const [status, setStatus] = useState("loading");
+
+  useEffect(() => {
+    if (!code) {
+      setItem(null);
+      setStatus("missing");
+      return () => {};
+    }
+
+    return onSnapshot(
+      query(liveSessionsCollection, where("code", "==", code.toUpperCase())),
+      (snapshot) => {
+        if (snapshot.empty) {
+          setItem(null);
+          setStatus("missing");
+          return;
+        }
+        const sessionDoc = snapshot.docs[0];
+        setItem({ id: sessionDoc.id, ...sessionDoc.data() });
+        setStatus("live");
+      },
+      (error) => {
+        console.error("Unable to load live session by code", error);
+        setItem(null);
+        setStatus("error");
+      },
+    );
+  }, [code]);
+
+  return { item, status };
+}
+
+function useLiveResponsesForSession(sessionId) {
+  const [items, setItems] = useState([]);
+
+  useEffect(() => {
+    if (!sessionId) {
+      setItems([]);
+      return () => {};
+    }
+
+    return onSnapshot(
+      query(liveResponsesCollection, where("sessionId", "==", sessionId)),
+      (snapshot) => {
+        setItems(snapshot.docs.map((snapshotDoc) => ({ id: snapshotDoc.id, ...snapshotDoc.data() })));
+      },
+      (error) => {
+        console.error("Unable to load session responses", error);
+        setItems([]);
+      },
+    );
+  }, [sessionId]);
+
+  return items;
+}
+
 function withDefaultDashboardConfig(config = {}) {
   return { ...defaultDashboardConfig, ...config };
 }
@@ -2661,6 +2959,8 @@ function StaffConsole({ onLock }) {
   const { items: contentItems, status: contentStatus } = useContentItems();
   const { items: professionalLearningItems, status: professionalLearningStatus } = useProfessionalLearningItems();
   const { items: tarongaTvVideos, status: tarongaTvStatus } = useTarongaTvVideos();
+  const { items: liveSessions, status: liveSessionsStatus } = useLiveSessions();
+  const { items: liveResponses, status: liveResponsesStatus } = useLiveResponses();
   const [config, setConfig] = useState(defaultDashboardConfig);
   const [previewKey, setPreviewKey] = useState(0);
   const [saveState, setSaveState] = useState("idle");
@@ -2751,6 +3051,7 @@ function StaffConsole({ onLock }) {
           resourceUrl: item.resourceUrl?.trim() || "",
           resourceLinks: Array.isArray(item.resourceLinks) ? item.resourceLinks : listFromText(item.resourceLinks || ""),
           downloadLinks: Array.isArray(item.downloadLinks) ? item.downloadLinks : parseNamedLinks(item.downloadLinks || ""),
+          activityBlocks: normalizeActivityBlocks(item.activityBlocks || []),
         },
         lessonIds: Array.isArray(item.lessonIds) ? item.lessonIds : [],
         resourceIds: Array.isArray(item.resourceIds) ? item.resourceIds : [],
@@ -2770,6 +3071,7 @@ function StaffConsole({ onLock }) {
       delete contentPayload.resourceUrl;
       delete contentPayload.resourceLinks;
       delete contentPayload.downloadLinks;
+      delete contentPayload.activityBlocks;
       delete contentPayload.customImageUrl;
       delete contentPayload.uploadedImageDataUrl;
 
@@ -2951,7 +3253,7 @@ function StaffConsole({ onLock }) {
         <NoticeBanner notice={notice} onClose={() => setNotice("")} />
         {panel === "overview" && <section className="staff-panel active"><div className="overview-grid">{[["Active users", "4,286", "Teachers, students and Taronga staff this term"], ["Assigned resources", "18,940", "Lessons, learning paths and missions launched"], ["Tracka-linked sessions", "72%", "Activities connected to excursion or citizen science data"], ["Curriculum coverage", "146", "Mapped outcomes across NSW and Australian Curriculum"]].map(([label, value, copy]) => <article key={label}><span>{label}</span><strong>{value}</strong><p>{copy}</p></article>)}</div><div className="overview-snapshot"><article><h2>Current priorities</h2><p>Science and HSIE pathways are seeing the strongest uptake this month, with data interpretation flagged as the highest-value support area.</p></article><article><h2>Next recommended action</h2><p>Review Stage 3 animal adaptations lessons and prepare a Tracka mission bundle for upcoming school visits.</p></article></div></section>}
         {panel === "users" && <UsersPanel onPlaceholder={(message) => setNotice(message)} />}
-        {panel === "analytics" && <AnalyticsPanel onPlaceholder={(message) => setNotice(message)} />}
+        {panel === "analytics" && <AnalyticsPanel liveSessions={liveSessions} liveResponses={liveResponses} liveSessionsStatus={liveSessionsStatus} liveResponsesStatus={liveResponsesStatus} onPlaceholder={(message) => setNotice(message)} />}
         {panel === "content" && <ContentPanel contentItems={contentItems} status={contentStatus} saveState={contentSaveState} seedContentItems={seedContentItems} addContentItem={addContentItem} deleteContentItem={deleteContentItem} />}
         {panel === "taronga-tv" && <TarongaTvPanel items={tarongaTvVideos} contentItems={contentItems} status={tarongaTvStatus} saveState={tarongaTvSaveState} saveVideo={saveTarongaTvVideo} deleteVideo={deleteTarongaTvVideo} />}
         {panel === "professional-learning" && <ProfessionalLearningPanel items={professionalLearningItems} status={professionalLearningStatus} saveState={professionalLearningSaveState} saveItem={saveProfessionalLearningItem} deleteItem={deleteProfessionalLearningItem} />}
@@ -2979,17 +3281,146 @@ function UsersPanel({ onPlaceholder }) {
   return <section className="staff-section staff-panel active"><div className="section-heading"><div><h2>Users</h2><p>Analyse all teachers, students, schools and Taronga staff involved in Wildly.</p></div><button type="button" onClick={() => onPlaceholder("Add user placeholder. Connect this to your user invite or provisioning flow.")}>Add user</button></div><div className="user-layout"><article className="user-breakdown"><h3>User mix</h3><div className="donut" aria-label="User mix chart"></div><ul>{[["teacher", "Teachers", "682"], ["student", "Students", "3,421"], ["staff", "Taronga staff", "74"], ["school", "School admins", "109"]].map(([cls, label, value]) => <li key={label}><span className={cls}></span>{label}<strong>{value}</strong></li>)}</ul></article><article className="user-table-card"><div className="table-toolbar"><label><Icon type="target" className="" /><input type="search" placeholder="Search users, schools or roles" value={search} onChange={(event) => setSearch(event.target.value)} /></label><select aria-label="Filter users" value={roleFilter} onChange={(event) => setRoleFilter(event.target.value)}><option>All roles</option><option>Teacher</option><option>Student</option><option>Taronga staff</option><option>School admin</option></select></div><table><thead><tr><th>User</th><th>Role</th><th>Organisation</th><th>Status</th><th>Last active</th></tr></thead><tbody>{visibleRows.map(([name, role, org, status, active]) => <tr key={name}><td>{name}</td><td>{role}</td><td>{org}</td><td><span className={`status ${status === "Active" ? "active" : "review"}`}>{status}</span></td><td>{active}</td></tr>)}</tbody></table>{visibleRows.length ? null : <p className="empty-table-copy">No users match this filter.</p>}</article></div></section>;
 }
 
-function AnalyticsPanel({ onPlaceholder }) {
+function AnalyticsPanel({ liveSessions = [], liveResponses = [], liveSessionsStatus = "loading", liveResponsesStatus = "loading", onPlaceholder }) {
+  const sessionsWithResponses = liveSessions.map((session) => {
+    const responses = liveResponses.filter((response) => response.sessionId === session.id);
+    const uniqueStudents = new Set(responses.map((response) => response.studentName?.trim()).filter(Boolean));
+    return {
+      ...session,
+      responseCount: responses.length,
+      studentCount: uniqueStudents.size,
+      responses,
+    };
+  });
+
+  const activeSessions = sessionsWithResponses.filter((session) => session.state !== "ended");
+  const totalSessions = sessionsWithResponses.length;
+  const totalResponses = liveResponses.length;
+  const totalStudents = new Set(liveResponses.map((response) => response.studentName?.trim()).filter(Boolean)).size;
+  const avgResponses = totalSessions ? Math.round((totalResponses / totalSessions) * 10) / 10 : 0;
+  const modeCounts = {
+    live: sessionsWithResponses.filter((session) => session.mode === "live").length,
+    "student-paced": sessionsWithResponses.filter((session) => session.mode === "student-paced").length,
+  };
+  const blockTypeCounts = liveResponses.reduce((accumulator, response) => ({
+    ...accumulator,
+    [response.blockType || "slide"]: (accumulator[response.blockType || "slide"] || 0) + 1,
+  }), {});
+  const responseMix = Object.entries(blockTypeCounts)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 4);
+  const weeklyCounts = Array.from({ length: 7 }, (_, index) => {
+    const target = new Date();
+    target.setDate(target.getDate() - (6 - index));
+    const key = target.toISOString().slice(0, 10);
+    return liveResponses.filter((response) => {
+      const submittedAt = response.submittedAt?.toDate?.();
+      return submittedAt && submittedAt.toISOString().slice(0, 10) === key;
+    }).length;
+  });
+  const weeklyMax = Math.max(...weeklyCounts, 1);
+  const recentSessions = [...sessionsWithResponses]
+    .sort((a, b) => {
+      const aTime = a.createdAt?.toDate?.()?.getTime?.() || 0;
+      const bTime = b.createdAt?.toDate?.()?.getTime?.() || 0;
+      return bTime - aTime;
+    })
+    .slice(0, 5);
+
   function exportReport() {
+    const rows = [
+      ["session_title", "class", "mode", "code", "state", "responses", "students"],
+      ...sessionsWithResponses.map((session) => [
+        session.contentTitle || "",
+        session.classTitle || "",
+        session.mode || "",
+        session.code || "",
+        session.state || "",
+        String(session.responseCount || 0),
+        String(session.studentCount || 0),
+      ]),
+    ];
     downloadTextFile(
-      "wildly-analytics-report.csv",
-      "metric,value\nLearning engagement peak,88%\nBelow expected,18%\nAt expected,57%\nAbove expected,25%\nHighest gap,Adaptation vs behaviour\n",
+      "wildly-live-analytics.csv",
+      rows.map((row) => row.map((value) => `"${String(value).replaceAll("\"", "\"\"")}"`).join(",")).join("\n"),
       "text/csv;charset=utf-8",
     );
-    onPlaceholder("Analytics report exported as a sample CSV. Replace this with your real reporting export when ready.");
+    onPlaceholder("Live lesson analytics exported as CSV.");
   }
 
-  return <section className="staff-section staff-panel active"><div className="section-heading"><div><h2>Analytics</h2><p>View engagement, learning progress, curriculum gaps and Tracka-connected outcomes.</p></div><button type="button" onClick={exportReport}>Export report</button></div><div className="analytics-grid"><article className="wide-card"><h3>Learning engagement by week</h3><div className="bar-chart">{[42, 58, 51, 76, 68, 88, 81].map((height) => <span style={{ height: `${height}%` }} key={height}></span>)}</div></article><article><h3>Knowledge gaps</h3>{[["Adaptation vs behaviour", 64], ["Data interpretation", 48], ["Persuasive writing", 37]].map(([label, width]) => <React.Fragment key={label}><p className="metric">{label}</p><div className="meter"><span style={{ width: `${width}%` }}></span></div></React.Fragment>)}</article><article><h3>Results snapshot</h3><ul className="result-list"><li>Below expected <strong>18%</strong></li><li>At expected <strong>57%</strong></li><li>Above expected <strong>25%</strong></li></ul></article></div></section>;
+  const isEmpty = !sessionsWithResponses.length && !liveResponses.length;
+  const loading = liveSessionsStatus === "loading" || liveResponsesStatus === "loading";
+
+  return (
+    <section className="staff-section staff-panel active">
+      <div className="section-heading">
+        <div>
+          <h2>Analytics</h2>
+          <p>View live lesson usage, student participation and response patterns across Wildly.</p>
+        </div>
+        <button type="button" onClick={exportReport}>Export report</button>
+      </div>
+      <div className="overview-grid analytics-summary-grid">
+        {[
+          ["Live sessions", totalSessions, "Teacher-launched lessons with join codes"],
+          ["Active now", activeSessions.length, "Sessions students can still join"],
+          ["Student responses", totalResponses, "Saved quiz, poll and written responses"],
+          ["Avg. responses / session", avgResponses, "Useful for spotting engagement drop-off"],
+        ].map(([label, value, copy]) => (
+          <article key={label}>
+            <span>{label}</span>
+            <strong>{value}</strong>
+            <p>{copy}</p>
+          </article>
+        ))}
+      </div>
+      {loading ? <article className="placeholder-card"><h3>Loading analytics</h3><p>Pulling live lesson session data from Firestore.</p></article> : null}
+      {!loading ? (
+        <div className="analytics-grid">
+          <article className="wide-card">
+            <h3>Student participation this week</h3>
+            <div className="bar-chart">
+              {weeklyCounts.map((count, index) => (
+                <span key={`${index}-${count}`} style={{ height: `${Math.max((count / weeklyMax) * 100, count ? 18 : 8)}%` }}></span>
+              ))}
+            </div>
+            <ul className="result-list compact-results">
+              <li>Unique students <strong>{totalStudents}</strong></li>
+              <li>Live Participation <strong>{modeCounts.live}</strong></li>
+              <li>Student-Paced <strong>{modeCounts["student-paced"]}</strong></li>
+            </ul>
+          </article>
+          <article>
+            <h3>Response mix</h3>
+            {responseMix.length ? responseMix.map(([label, value]) => {
+              const width = Math.max((value / Math.max(...responseMix.map(([, count]) => count), 1)) * 100, 14);
+              return (
+                <React.Fragment key={label}>
+                  <p className="metric">{label}</p>
+                  <div className="meter"><span style={{ width: `${width}%` }}></span></div>
+                </React.Fragment>
+              );
+            }) : <p className="mini-empty">Responses will be grouped here once students start answering live activities.</p>}
+          </article>
+          <article>
+            <h3>Recent sessions</h3>
+            <ul className="result-list analytics-session-list">
+              {recentSessions.length ? recentSessions.map((session) => (
+                <li key={session.id}>
+                  <span>
+                    {session.contentTitle || "Untitled lesson"}
+                    <small>{session.classTitle || "Class"} · {session.code || "Code pending"} · {session.mode === "student-paced" ? "Student-Paced" : "Live"}</small>
+                  </span>
+                  <strong>{session.responseCount}</strong>
+                </li>
+              )) : <li>No live sessions yet</li>}
+            </ul>
+          </article>
+        </div>
+      ) : null}
+      {!loading && isEmpty ? <article className="placeholder-card"><h3>No live lesson data yet</h3><p>Once teachers launch code-based lessons, session and response analytics will appear here automatically.</p></article> : null}
+    </section>
+  );
 }
 
 function ContentPanel({ contentItems, status, saveState, seedContentItems, addContentItem, deleteContentItem }) {
@@ -3070,6 +3501,7 @@ function ContentPanel({ contentItems, status, saveState, seedContentItems, addCo
       resourceUrl: item.materials?.resourceUrl || "",
       downloadLinks: Array.isArray(item.materials?.downloadLinks) ? item.materials.downloadLinks.map((entry) => `${entry.label} | ${entry.url}`).join("\n") : "",
       resourceLinks: Array.isArray(item.materials?.resourceLinks) ? item.materials.resourceLinks.join("\n") : "",
+      activityBlocks: buildLessonActivityBlocks(item),
       lessonIds: item.lessonIds || [],
       resourceIds: item.resourceIds || [],
       learningPathId: item.learningPathId || "",
@@ -3147,6 +3579,29 @@ function ContentPanel({ contentItems, status, saveState, seedContentItems, addCo
       uploadedImageDataUrl: "",
     });
     setImageError("");
+  }
+
+  function updateActivityBlock(blockId, patch) {
+    setDraft((current) => ({
+      ...current,
+      activityBlocks: (current.activityBlocks || []).map((block) => (
+        block.id === blockId ? { ...block, ...patch } : block
+      )),
+    }));
+  }
+
+  function addActivityBlock(type) {
+    setDraft((current) => ({
+      ...current,
+      activityBlocks: [...(current.activityBlocks || []), createActivityBlock(type)],
+    }));
+  }
+
+  function removeActivityBlock(blockId) {
+    setDraft((current) => ({
+      ...current,
+      activityBlocks: (current.activityBlocks || []).filter((block) => block.id !== blockId),
+    }));
   }
 
   async function confirmDelete(item) {
@@ -3290,9 +3745,54 @@ function ContentPanel({ contentItems, status, saveState, seedContentItems, addCo
               </div>
             </section>
 
+            {draft.type !== "Learning Path" ? (
+              <section className="content-step-card">
+                <div className="content-step-header">
+                  <span className="content-step-badge">3</span>
+                  <div>
+                    <h4>Student engagement</h4>
+                    <p>Build live or student-paced lesson steps. These power join-code sessions, teacher-led presentation, and post-session analytics.</p>
+                  </div>
+                </div>
+                <div className="teacher-card-actions">
+                  <button type="button" className="secondary-button slim-button" onClick={() => addActivityBlock("slide")}>Add slide</button>
+                  <button type="button" className="secondary-button slim-button" onClick={() => addActivityBlock("quiz")}>Add quiz</button>
+                  <button type="button" className="secondary-button slim-button" onClick={() => addActivityBlock("poll")}>Add poll</button>
+                  <button type="button" className="secondary-button slim-button" onClick={() => addActivityBlock("extended-response")}>Add extended response</button>
+                </div>
+                <div className="discussion-points-editor">
+                  {(draft.activityBlocks || []).length ? draft.activityBlocks.map((block, index) => (
+                    <article className="discussion-point-row lesson-block-row" key={block.id}>
+                      <label>
+                        Step type
+                        <select value={block.type} onChange={(event) => updateActivityBlock(block.id, { type: event.target.value, options: event.target.value === "slide" || event.target.value === "extended-response" ? [] : (block.options?.length ? block.options : ["Option 1", "Option 2"]) })}>
+                          <option value="slide">Slide</option>
+                          <option value="quiz">Quiz</option>
+                          <option value="poll">Poll</option>
+                          <option value="extended-response">Extended response</option>
+                        </select>
+                      </label>
+                      <div className="content-editor-fields lesson-block-fields">
+                        <label>Step title<input type="text" value={block.title} onChange={(event) => updateActivityBlock(block.id, { title: event.target.value })} placeholder={`Step ${index + 1}`} /></label>
+                        <label className="wide-field">Prompt<textarea value={block.prompt} onChange={(event) => updateActivityBlock(block.id, { prompt: event.target.value })} placeholder="What do students see or respond to?" /></label>
+                        <label className="wide-field">Teacher notes<textarea value={block.notes || ""} onChange={(event) => updateActivityBlock(block.id, { notes: event.target.value })} placeholder="Optional teacher prompt, explanation or transition note." /></label>
+                        {block.type === "quiz" || block.type === "poll" ? (
+                          <>
+                            <label className="wide-field">Options<textarea value={(block.options || []).join("\n")} onChange={(event) => updateActivityBlock(block.id, { options: listFromText(event.target.value) })} placeholder="One option per line" /></label>
+                            {block.type === "quiz" ? <label>Correct answer<input type="text" value={block.answer || ""} onChange={(event) => updateActivityBlock(block.id, { answer: event.target.value })} placeholder="Match one option exactly" /></label> : null}
+                          </>
+                        ) : null}
+                      </div>
+                      <button type="button" className="delete-button" onClick={() => removeActivityBlock(block.id)}>Remove</button>
+                    </article>
+                  )) : <p className="mini-empty">Add at least one slide or question to make this interactive for students.</p>}
+                </div>
+              </section>
+            ) : null}
+
             <section className="content-step-card">
               <div className="content-step-header">
-                <span className="content-step-badge">3</span>
+                <span className="content-step-badge">{draft.type === "Learning Path" ? "3" : "4"}</span>
                 <div>
                   <h4>Structure and relationships</h4>
                   <p>Link this item into the wider content model only where it needs to sit.</p>
@@ -3325,7 +3825,7 @@ function ContentPanel({ contentItems, status, saveState, seedContentItems, addCo
 
             <section className="content-step-card review-card">
               <div className="content-step-header">
-                <span className="content-step-badge">4</span>
+                <span className="content-step-badge">{draft.type === "Learning Path" ? "4" : "5"}</span>
                 <div>
                   <h4>Review and save</h4>
                   <p>Check where this will appear for teachers, then save it to Firestore.</p>
@@ -4004,6 +4504,321 @@ function PlaceholderExperiencePage({ eyebrow, title, description, points = [], p
   );
 }
 
+function StudentJoinCard({ compact = false }) {
+  const [code, setCode] = useState("");
+
+  function handleSubmit(event) {
+    event.preventDefault();
+    if (!code.trim()) return;
+    window.location.hash = `#student/code/${code.trim().toUpperCase()}`;
+  }
+
+  return (
+    <form className={`student-code-card ${compact ? "compact" : ""}`} onSubmit={handleSubmit}>
+      <div>
+        <span className="audience-pill">Students</span>
+        <h3>Join with a lesson code</h3>
+        <p>Enter the code from your teacher to join a live lesson or a student-paced activity.</p>
+      </div>
+      <div className="student-code-row">
+        <input type="text" value={code} onChange={(event) => setCode(event.target.value.toUpperCase())} placeholder="ABC123" maxLength={6} />
+        <button type="submit" className="primary-action">Join</button>
+      </div>
+    </form>
+  );
+}
+
+function StudentExperience({ session, contentItem, studentName }) {
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [responseValue, setResponseValue] = useState("");
+  const blocks = buildLessonActivityBlocks(contentItem);
+  const sessionIndex = Math.min(session.currentStep || 0, Math.max(blocks.length - 1, 0));
+  const activeIndex = session.mode === "student-paced" ? currentIndex : sessionIndex;
+  const block = blocks[activeIndex];
+
+  useEffect(() => {
+    if (session.mode !== "student-paced") {
+      setCurrentIndex(sessionIndex);
+    }
+  }, [session.mode, sessionIndex]);
+
+  useEffect(() => {
+    setResponseValue("");
+  }, [activeIndex, session.id]);
+
+  async function submitResponse(event) {
+    event.preventDefault();
+    if (!block) return;
+
+    const safeStudent = studentName.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-") || "student";
+    await setDoc(doc(db, "liveResponses", `${session.id}_${safeStudent}_${block.id}`), {
+      sessionId: session.id,
+      contentId: contentItem.id,
+      blockId: block.id,
+      blockType: block.type,
+      studentName,
+      response: responseValue,
+      submittedAt: serverTimestamp(),
+    }, { merge: true });
+
+    if (session.mode === "student-paced" && activeIndex < blocks.length - 1) {
+      setCurrentIndex((current) => current + 1);
+    }
+  }
+
+  if (!block) {
+    return <section className="student-shell"><article className="student-panel"><h1>Lesson unavailable</h1><p>This session does not have any student activity blocks yet.</p></article></section>;
+  }
+
+  return (
+    <section className="student-shell">
+      <article className="student-panel">
+        <div className="student-session-meta">
+          <span className="pill">{session.mode === "student-paced" ? "Student-Paced" : "Live lesson"}</span>
+          <small>{contentItem.subject} · {contentItem.stage}</small>
+        </div>
+        <h1>{contentItem.title}</h1>
+        <p>{contentItem.summary || contentItem.description}</p>
+        <div className="student-block-card">
+          <div className="student-block-header">
+            <strong>{block.title}</strong>
+            <small>Step {activeIndex + 1} of {blocks.length}</small>
+          </div>
+          <p>{block.prompt}</p>
+          {block.notes ? <div className="student-teacher-note">{block.notes}</div> : null}
+          {block.type === "slide" ? (
+            <div className="teacher-card-actions">
+              {session.mode === "student-paced" && activeIndex < blocks.length - 1 ? <button type="button" className="primary-action" onClick={() => setCurrentIndex((current) => current + 1)}>Next</button> : null}
+              {session.mode !== "student-paced" ? <p className="mini-empty">Wait for your teacher to move to the next step.</p> : null}
+            </div>
+          ) : (
+            <form className="student-response-form" onSubmit={submitResponse}>
+              {block.type === "extended-response" ? (
+                <textarea value={responseValue} onChange={(event) => setResponseValue(event.target.value)} placeholder="Write your response here" />
+              ) : (
+                <div className="student-options-list">
+                  {(block.options || []).map((option) => (
+                    <label key={option} className="student-option">
+                      <input type="radio" name={`block-${block.id}`} value={option} checked={responseValue === option} onChange={(event) => setResponseValue(event.target.value)} />
+                      <span>{option}</span>
+                    </label>
+                  ))}
+                </div>
+              )}
+              <div className="teacher-card-actions">
+                <button type="submit" className="primary-action">Submit response</button>
+                {session.mode === "student-paced" && activeIndex > 0 ? <button type="button" className="secondary-action" onClick={() => setCurrentIndex((current) => current - 1)}>Back</button> : null}
+              </div>
+            </form>
+          )}
+        </div>
+      </article>
+    </section>
+  );
+}
+
+function StudentPage({ code = "" }) {
+  const [lessonCode, setLessonCode] = useState(code.toUpperCase());
+  const [studentName, setStudentName] = useState("");
+  const [joined, setJoined] = useState(false);
+  const { items: contentItems } = useContentItems();
+  const { item: session, status } = useLiveSessionByCode(lessonCode);
+
+  useEffect(() => {
+    setLessonCode(code.toUpperCase());
+    setJoined(false);
+  }, [code]);
+
+  const contentItem = contentItems.find((item) => item.id === session?.contentId) || null;
+
+  function handleLookup(event) {
+    event.preventDefault();
+    if (!lessonCode.trim()) return;
+    window.location.hash = `#student/code/${lessonCode.trim().toUpperCase()}`;
+  }
+
+  function handleJoin(event) {
+    event.preventDefault();
+    if (!studentName.trim()) return;
+    setJoined(true);
+  }
+
+  if (joined && session && contentItem) {
+    return <StudentExperience session={session} contentItem={contentItem} studentName={studentName.trim()} />;
+  }
+
+  return (
+    <main className="auth-page">
+      <section className="auth-card auth-card-wide student-entry-card">
+        <a className="site-logo auth-logo" href={routePath()} aria-label="Wildly home">
+          <img src={assets.wildlyLogo} alt="Wildly by Taronga" />
+        </a>
+        <span className="audience-pill">Student join</span>
+        <h1>Join a Wildly lesson</h1>
+        <p>Enter your lesson code, then add your name to join the live or student-paced experience on your device.</p>
+        <form className="auth-form" onSubmit={handleLookup}>
+          <label>
+            Lesson code
+            <input type="text" value={lessonCode} onChange={(event) => setLessonCode(event.target.value.toUpperCase())} placeholder="ABC123" maxLength={6} />
+          </label>
+          <button type="submit">Find lesson</button>
+        </form>
+        {status === "missing" && lessonCode ? <p className="auth-error">That code is not active right now.</p> : null}
+        {session && contentItem ? (
+          <form className="auth-form" onSubmit={handleJoin}>
+            <label>
+              Your name
+              <input type="text" value={studentName} onChange={(event) => setStudentName(event.target.value)} placeholder="Enter your first name" />
+            </label>
+            <div className="student-session-summary">
+              <strong>{contentItem.title}</strong>
+              <span>{session.classTitle} · {session.mode === "student-paced" ? "Student-Paced" : "Live lesson"}</span>
+            </div>
+            <button type="submit">Join lesson</button>
+          </form>
+        ) : null}
+      </section>
+    </main>
+  );
+}
+
+function TeacherLiveSessionPage({ sessionId = "" }) {
+  const { item: session, status } = useLiveSessionById(sessionId);
+  const responses = useLiveResponsesForSession(sessionId);
+  const { items: contentItems } = useContentItems();
+  const contentItem = contentItems.find((item) => item.id === session?.contentId) || null;
+  const blocks = contentItem ? buildLessonActivityBlocks(contentItem) : [];
+  const currentIndex = Math.min(session?.currentStep || 0, Math.max(blocks.length - 1, 0));
+  const activeBlock = blocks[currentIndex];
+  const blockResponses = responses.filter((response) => response.blockId === activeBlock?.id);
+
+  async function updateStep(nextStep) {
+    if (!session) return;
+    await updateDoc(doc(db, "liveSessions", session.id), { currentStep: nextStep, updatedAt: serverTimestamp() });
+  }
+
+  async function endSession() {
+    if (!session) return;
+    await updateDoc(doc(db, "liveSessions", session.id), { state: "ended", endedAt: serverTimestamp(), updatedAt: serverTimestamp() });
+  }
+
+  if (status === "loading") {
+    return <main className="auth-page"><section className="auth-card"><p>Loading live session...</p></section></main>;
+  }
+
+  if (!session || !contentItem) {
+    return <main className="auth-page"><section className="auth-card"><p>Live session not found.</p></section></main>;
+  }
+
+  return (
+    <div className="teacher-live-shell">
+      <aside className="teacher-live-sidebar">
+        <span className="content-type">{session.mode === "student-paced" ? "Student-Paced" : "Live lesson"}</span>
+        <h1>{contentItem.title}</h1>
+        <p>{contentItem.summary || contentItem.description}</p>
+        <div className="teacher-live-session-code">
+          <strong>{session.code}</strong>
+          <small>{session.classTitle}</small>
+          <a className="secondary-action" href={studentRoute(`code/${session.code}`)}>Student join page</a>
+        </div>
+        <div className="teacher-live-step-list">
+          {blocks.map((block, index) => (
+            <button type="button" key={block.id} className={`teacher-live-step ${index === currentIndex ? "active" : ""}`} onClick={() => updateStep(index)}>
+              <span>{index + 1}</span>
+              <div>
+                <strong>{block.title}</strong>
+                <small>{block.type}</small>
+              </div>
+            </button>
+          ))}
+        </div>
+        <div className="teacher-card-actions">
+          <button type="button" className="secondary-action" onClick={() => updateStep(Math.max(currentIndex - 1, 0))}>Previous</button>
+          <button type="button" className="primary-action" onClick={() => updateStep(Math.min(currentIndex + 1, blocks.length - 1))}>Next</button>
+          <button type="button" className="secondary-action" onClick={endSession}>End session</button>
+        </div>
+      </aside>
+      <main className="teacher-live-main">
+        <section className="teacher-live-stage">
+          <span className="pill">{activeBlock?.type || "slide"}</span>
+          <h2>{activeBlock?.title}</h2>
+          <p>{activeBlock?.prompt}</p>
+          {activeBlock?.notes ? <div className="student-teacher-note">{activeBlock.notes}</div> : null}
+          {activeBlock?.options?.length ? <ul className="teacher-live-options">{activeBlock.options.map((option) => <li key={option}>{option}</li>)}</ul> : null}
+        </section>
+        <section className="teacher-live-analytics">
+          <div className="teacher-panel-header">
+            <div>
+              <h2>Live responses</h2>
+              <p>{blockResponses.length} students have responded to this step.</p>
+            </div>
+          </div>
+          <div className="student-card-grid">
+            {blockResponses.length ? blockResponses.map((response) => (
+              <article className="student-card" key={response.id}>
+                <div className="student-card-head">
+                  <div>
+                    <h3>{response.studentName}</h3>
+                    <p>{response.blockType}</p>
+                  </div>
+                  <span className="pill">Response</span>
+                </div>
+                <p>{response.response}</p>
+              </article>
+            )) : <article className="placeholder-card"><h3>No responses yet</h3><p>Students will appear here as they submit answers on their devices.</p></article>}
+          </div>
+        </section>
+      </main>
+    </div>
+  );
+}
+
+function TeacherPresenterPage({ contentId = "" }) {
+  const { items: contentItems } = useContentItems();
+  const contentItem = contentItems.find((item) => item.id === contentId) || null;
+  const blocks = contentItem ? buildLessonActivityBlocks(contentItem) : [];
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const block = blocks[currentIndex];
+
+  if (!contentItem) {
+    return <main className="auth-page"><section className="auth-card"><p>Presentation not found.</p></section></main>;
+  }
+
+  return (
+    <div className="teacher-live-shell presenter-shell">
+      <aside className="teacher-live-sidebar">
+        <span className="content-type">Front of class</span>
+        <h1>{contentItem.title}</h1>
+        <p>{contentItem.summary || contentItem.description}</p>
+        <div className="teacher-live-step-list">
+          {blocks.map((entry, index) => (
+            <button type="button" key={entry.id} className={`teacher-live-step ${index === currentIndex ? "active" : ""}`} onClick={() => setCurrentIndex(index)}>
+              <span>{index + 1}</span>
+              <div>
+                <strong>{entry.title}</strong>
+                <small>{entry.type}</small>
+              </div>
+            </button>
+          ))}
+        </div>
+      </aside>
+      <main className="teacher-live-main">
+        <section className="teacher-live-stage">
+          <span className="pill">{block?.type || "slide"}</span>
+          <h2>{block?.title}</h2>
+          <p>{block?.prompt}</p>
+          {block?.notes ? <div className="student-teacher-note">{block.notes}</div> : null}
+          {block?.options?.length ? <ul className="teacher-live-options">{block.options.map((option) => <li key={option}>{option}</li>)}</ul> : null}
+          <div className="teacher-card-actions">
+            <button type="button" className="secondary-action" onClick={() => setCurrentIndex((current) => Math.max(current - 1, 0))}>Previous</button>
+            <button type="button" className="primary-action" onClick={() => setCurrentIndex((current) => Math.min(current + 1, blocks.length - 1))}>Next</button>
+          </div>
+        </section>
+      </main>
+    </div>
+  );
+}
+
 function getRoutePath() {
   const hashPath = window.location.hash.replace(/^#\/?/, "");
   return hashPath || window.location.pathname.replace(basePath, "").replace(/^\//, "").replace(/\/$/, "");
@@ -4025,6 +4840,12 @@ function App() {
   if (path === "login") return <AuthScreen mode="login" />;
   if (path === "get-started") return <AuthScreen mode="signup" />;
   if (path === "about-you") return <AboutYouPage />;
+  if (path === "/student" || path === "student") return <StudentPage />;
+  if (path.startsWith("student/")) {
+    const [, section = "", third = ""] = path.split("/");
+    if (section === "code") return <StudentPage code={third} />;
+    return <StudentPage />;
+  }
   if (path === "/teacher" || path === "/teacher.html" || path === "teacher" || path === "teacher.html") return <TeacherPage />;
   if (path.startsWith("teacher/")) {
     const [, section = "dashboard", third = ""] = path.split("/");
@@ -4032,6 +4853,8 @@ function App() {
     if (section === "subjects") return <TeacherPage page="subjects" subject={third} />;
     if (section === "content") return <TeacherPage page="content" contentId={third} />;
     if (section === "taronga-tv") return <TeacherPage page="taronga-tv" tvVideoId={third} />;
+    if (section === "live") return <TeacherLiveSessionPage sessionId={third} />;
+    if (section === "present") return <TeacherPresenterPage contentId={third} />;
     if (section === "professional-learning") return <TeacherPage page="professional-learning" />;
     return <TeacherPage page={section || "dashboard"} />;
   }

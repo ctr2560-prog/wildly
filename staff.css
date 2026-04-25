@@ -1164,6 +1164,20 @@ td {
   resize: vertical;
 }
 
+.lesson-block-row {
+  grid-template-columns: minmax(160px, 220px) minmax(0, 1fr) auto;
+  align-items: start;
+}
+
+.lesson-block-fields {
+  display: grid;
+  gap: 12px;
+}
+
+.lesson-block-fields textarea {
+  min-height: 92px;
+}
+
 .slim-button {
   min-height: 40px;
   padding: 0 14px;
@@ -1911,7 +1925,8 @@ td {
   .content-review-grid,
   .content-review-preview,
   .content-type-selector,
-  .discussion-point-row {
+  .discussion-point-row,
+  .lesson-block-row {
     grid-template-columns: 1fr;
   }
 
