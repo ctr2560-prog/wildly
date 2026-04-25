@@ -2985,19 +2985,136 @@ function ProfessionalLearningPanel({ items, status, saveState, saveItem, deleteI
         </div>
       </div>
       <ContentFirestoreStatus status={status} saveState={saveState} />
-      <div className="content-studio-layout">
-        <aside className="content-library-panel">
-          <div className="content-library-header">
+      <div className="content-flow-shell">
+        <div className="content-flow-stepper" aria-label="Professional learning workflow">
+          {["Session details", "Links and files", "Teacher experience", "Review", "Publish"].map((step, index) => (
+            <div className="content-flow-step" key={step}>
+              <span>{index + 1}</span>
+              <strong>{step}</strong>
+            </div>
+          ))}
+        </div>
+
+        <form className="content-form content-flow-form" onSubmit={handleSubmit}>
+          <div className="content-flow-toolbar">
+            <div>
+              <span className="content-type">{selectedItem ? "Editing session" : "New session"}</span>
+              <h3>{selectedItem ? draft.title || "Edit professional learning session" : "Create professional learning session"}</h3>
+              <p>Keep the setup simple: add the session basics, paste the registration and information links, then publish it to teachers.</p>
+            </div>
+            <div className="content-flow-toolbar-actions">
+              <label className="content-quick-select">
+                Continue editing
+                <select value={selectedId} onChange={(event) => setSelectedId(event.target.value)}>
+                  <option value="">Start a new session</option>
+                  {items.map((item) => <option key={item.id} value={item.id}>{item.title}</option>)}
+                </select>
+              </label>
+              <button type="button" className="secondary-button" onClick={() => setSelectedId("")}>New session</button>
+            </div>
+          </div>
+
+          <div className="content-flow-main">
+            <section className="content-step-card">
+              <div className="content-step-header">
+                <span className="content-step-badge">1</span>
+                <div>
+                  <h4>Session details</h4>
+                  <p>Add the details teachers need to understand the event at a glance.</p>
+                </div>
+              </div>
+              <div className="content-editor-fields">
+                <label>Title<input type="text" required value={draft.title} onChange={(event) => setDraft((current) => ({ ...current, title: event.target.value }))} /></label>
+                <label>Status<select value={draft.status} onChange={(event) => setDraft((current) => ({ ...current, status: event.target.value }))}><option>Draft</option><option>Published</option></select></label>
+                <label>Date<input type="date" value={draft.date} onChange={(event) => setDraft((current) => ({ ...current, date: event.target.value }))} /></label>
+                <label>Time<input type="text" value={draft.time} onChange={(event) => setDraft((current) => ({ ...current, time: event.target.value }))} placeholder="4:00 PM AEST" /></label>
+                <label className="wide-field">Summary<input type="text" value={draft.summary} onChange={(event) => setDraft((current) => ({ ...current, summary: event.target.value }))} /></label>
+                <label className="wide-field">Description<textarea value={draft.description} onChange={(event) => setDraft((current) => ({ ...current, description: event.target.value }))}></textarea></label>
+              </div>
+            </section>
+
+            <section className="content-step-card">
+              <div className="content-step-header">
+                <span className="content-step-badge">2</span>
+                <div>
+                  <h4>Links and files</h4>
+                  <p>Put everything teachers may need to register or prepare in one place.</p>
+                </div>
+              </div>
+              <div className="content-editor-fields">
+                <label>Registration link<input type="url" value={draft.registrationUrl} onChange={(event) => setDraft((current) => ({ ...current, registrationUrl: event.target.value }))} placeholder="https://..." /></label>
+                <label>Information link<input type="url" value={draft.infoUrl} onChange={(event) => setDraft((current) => ({ ...current, infoUrl: event.target.value }))} placeholder="https://..." /></label>
+                <label className="wide-field">PDF link<input type="url" value={draft.pdfUrl} onChange={(event) => setDraft((current) => ({ ...current, pdfUrl: event.target.value }))} placeholder="https://..." /></label>
+              </div>
+            </section>
+
+            <section className="content-step-card">
+              <div className="content-step-header">
+                <span className="content-step-badge">3</span>
+                <div>
+                  <h4>Teacher experience</h4>
+                  <p>Published sessions will automatically surface in the right teacher-facing places.</p>
+                </div>
+              </div>
+              <div className="editor-meta-list">
+                <span>Professional Learning page</span>
+                <span>Teacher calendar</span>
+                <span>Notification bell</span>
+              </div>
+            </section>
+
+            <section className="content-step-card review-card">
+              <div className="content-step-header">
+                <span className="content-step-badge">4</span>
+                <div>
+                  <h4>Review and publish</h4>
+                  <p>Check the session summary, then save it to Firestore.</p>
+                </div>
+              </div>
+              <div className="content-review-grid">
+                <div className="content-review-preview">
+                  <img className="content-thumb" src={assets.gorilla} alt="" />
+                  <div>
+                    <span className="content-type">{draft.status}</span>
+                    <h5>{draft.title || "Untitled professional learning session"}</h5>
+                    <p>{draft.summary || "Add a short summary so teachers can scan the focus of the session."}</p>
+                    <div className="material-tags">
+                      {draft.date ? <span>{draft.date}</span> : null}
+                      {draft.time ? <span>{draft.time}</span> : null}
+                      <span>{selectedItem ? "Existing session" : "New session"}</span>
+                    </div>
+                  </div>
+                </div>
+                <div className="content-review-meta">
+                  <h5>Teacher visibility</h5>
+                  <div className="editor-meta-list">
+                    <span>Registration CTA</span>
+                    <span>Calendar event</span>
+                    <span>Notification item</span>
+                  </div>
+                  <div className="content-form-actions">
+                    {selectedItem ? <button type="button" className="delete-button editor-delete-button" onClick={handleDelete}>Delete</button> : null}
+                    <button type="button" className="secondary-button" onClick={() => setSelectedId("")}>Clear form</button>
+                    <button type="submit" disabled={saveState === "saving"}>{saveState === "saving" ? "Saving..." : selectedItem ? "Update session" : "Save session"}</button>
+                  </div>
+                </div>
+              </div>
+            </section>
+          </div>
+        </form>
+
+        <section className="content-library-section">
+          <div className="content-library-section-header">
             <div>
               <span className="content-type">Professional Learning</span>
-              <h3>Upcoming sessions</h3>
-              <p>Webinars, workshops and staff-led sessions for teachers.</p>
+              <h3>Existing sessions</h3>
+              <p>Choose a session to edit, or stay in the flow above to create a new one.</p>
             </div>
-            <button type="button" onClick={() => setSelectedId("")}>New session</button>
+            <button type="button" className="secondary-button" onClick={() => setSelectedId("")}>New session</button>
           </div>
-          <div className="content-list content-list-scroll">
+          <div className="content-library-grid">
             {items.length ? items.map((item) => (
-              <article className={`content-item-card selectable ${selectedId === item.id ? "selected" : ""}`} key={item.id} onClick={() => setSelectedId(item.id)}>
+              <article className={`content-mini-card ${selectedId === item.id ? "selected" : ""}`} key={item.id} onClick={() => setSelectedId(item.id)}>
                 <img className="content-thumb" src={assets.gorilla} alt="" />
                 <div>
                   <span className="content-type">{item.status}</span>
@@ -3010,57 +3127,11 @@ function ProfessionalLearningPanel({ items, status, saveState, saveItem, deleteI
               <article className="empty-content-card">
                 <Icon type="plus" className="" />
                 <h4>No sessions yet</h4>
-                <p>Create the first professional learning session here.</p>
+                <p>Create the first professional learning session using the steps above.</p>
               </article>
             )}
           </div>
-        </aside>
-
-        <form className="content-editor-panel" onSubmit={handleSubmit}>
-          <div className="content-form-header">
-            <span className="content-type">{selectedItem ? "Editing" : "Creating"}</span>
-            <h3>{selectedItem ? selectedItem.title : "New professional learning session"}</h3>
-            <p>Add the session date, registration link, information page and PDF. Published sessions will show up for teachers automatically.</p>
-          </div>
-          <div className="content-editor-grid">
-            <div className="content-editor-main">
-              <div className="content-editor-section">
-                <h4>Session details</h4>
-                <div className="content-editor-fields">
-                  <label>Title<input type="text" required value={draft.title} onChange={(event) => setDraft((current) => ({ ...current, title: event.target.value }))} /></label>
-                  <label>Status<select value={draft.status} onChange={(event) => setDraft((current) => ({ ...current, status: event.target.value }))}><option>Draft</option><option>Published</option></select></label>
-                  <label>Date<input type="date" value={draft.date} onChange={(event) => setDraft((current) => ({ ...current, date: event.target.value }))} /></label>
-                  <label>Time<input type="text" value={draft.time} onChange={(event) => setDraft((current) => ({ ...current, time: event.target.value }))} placeholder="4:00 PM AEST" /></label>
-                  <label className="wide-field">Summary<input type="text" value={draft.summary} onChange={(event) => setDraft((current) => ({ ...current, summary: event.target.value }))} /></label>
-                  <label className="wide-field">Description<textarea value={draft.description} onChange={(event) => setDraft((current) => ({ ...current, description: event.target.value }))}></textarea></label>
-                </div>
-              </div>
-              <div className="content-editor-section">
-                <h4>Links and files</h4>
-                <div className="content-editor-fields">
-                  <label>Registration link<input type="url" value={draft.registrationUrl} onChange={(event) => setDraft((current) => ({ ...current, registrationUrl: event.target.value }))} placeholder="https://..." /></label>
-                  <label>Information link<input type="url" value={draft.infoUrl} onChange={(event) => setDraft((current) => ({ ...current, infoUrl: event.target.value }))} placeholder="https://..." /></label>
-                  <label className="wide-field">PDF link<input type="url" value={draft.pdfUrl} onChange={(event) => setDraft((current) => ({ ...current, pdfUrl: event.target.value }))} placeholder="https://..." /></label>
-                </div>
-              </div>
-            </div>
-            <aside className="content-editor-side">
-              <div className="content-editor-section compact">
-                <h4>Teacher experience</h4>
-                <div className="editor-meta-list">
-                  <span>Professional Learning page</span>
-                  <span>Teacher calendar</span>
-                  <span>Notification bell</span>
-                </div>
-              </div>
-            </aside>
-          </div>
-          <div className="content-form-actions">
-            {selectedItem ? <button type="button" className="delete-button editor-delete-button" onClick={handleDelete}>Delete</button> : null}
-            <button type="button" className="secondary-button" onClick={() => setSelectedId("")}>Clear form</button>
-            <button type="submit" disabled={saveState === "saving"}>{saveState === "saving" ? "Saving..." : selectedItem ? "Update session" : "Save session"}</button>
-          </div>
-        </form>
+        </section>
       </div>
     </section>
   );
