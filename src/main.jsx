@@ -1036,32 +1036,47 @@ function SiteHeader({ active = "" }) {
           <a key={path} className={active === path ? "selected" : ""} href={routePath(path)}>{label}</a>
         ))}
       </nav>
-      <div className="header-actions"><a className="login-link" href={loginRoute()}>Log in</a><a className="start-link" href={signupRoute()}>Get started</a></div>
+      <div className="header-actions"><a className="join-action header-join-action" href={studentRoute()}>Join lesson</a><a className="login-link" href={loginRoute()}>Log in</a><a className="start-link" href={signupRoute()}>Get started</a></div>
     </header>
   );
 }
 
-function StudentHeroPhonePreview() {
+function StudentHeroPhonePreview({ variant = "hero" }) {
+  const isHero = variant === "hero";
   return (
-    <div className="phone student-phone">
+    <div className={`phone student-phone ${isHero ? "hero-student-phone" : "live-student-phone"}`}>
       <div className="student-phone-bar">
         <span></span>
         <span></span>
         <span></span>
       </div>
       <div className="student-phone-screen">
-        <span className="student-phone-pill">Live lesson</span>
-        <h3>Adaptations of Australian Animals</h3>
-        <p>Step 2 of 5</p>
-        <div className="student-phone-question">
-          <strong>Which feature helps a koala live in trees?</strong>
-        </div>
-        <div className="student-phone-options">
-          <span>Sharp claws for climbing</span>
-          <span>Bright feathers for display</span>
-          <span>Gills for swimming</span>
-        </div>
-        <a href={studentRoute()} className="student-phone-cta">Join lesson</a>
+        <span className="student-phone-pill">{isHero ? "Live lesson" : "Student-paced"}</span>
+        <h3>{isHero ? "Adaptations of Australian Animals" : "Rainforest Detectives"}</h3>
+        <p>{isHero ? "Step 2 of 5" : "Animal observation task"}</p>
+        {isHero ? (
+          <>
+            <div className="student-phone-question">
+              <strong>Which feature helps a koala live in trees?</strong>
+            </div>
+            <div className="student-phone-options">
+              <span>Sharp claws for climbing</span>
+              <span>Bright feathers for display</span>
+              <span>Gills for swimming</span>
+            </div>
+            <a href={studentRoute()} className="student-phone-cta">Submit</a>
+          </>
+        ) : (
+          <>
+            <div className="student-phone-animal">
+              <img src={assets.koala} alt="Koala" />
+            </div>
+            <div className="student-phone-question">
+              <strong>Watch, pause and note one adaptation you notice.</strong>
+            </div>
+            <a href={studentRoute()} className="student-phone-cta">Join lesson</a>
+          </>
+        )}
       </div>
     </div>
   );
@@ -1110,10 +1125,11 @@ function LandingPage() {
             <h1>Learning through nature</h1>
             <p className="hero-subtitle">Inspire curiosity. Create change.</p>
             <p>Curriculum-aligned lessons, real-world experiences and conservation connections - for every learner, everywhere.</p>
-            <div className="hero-actions"><a className="primary-action" href={signupRoute()}>Get started free</a><a className="secondary-action" href={routePath("subjects")}>Explore subjects</a><a className="join-action" href={studentRoute()}>Join a lesson</a></div>
+            <div className="hero-actions"><a className="primary-action" href={signupRoute()}>Get started free</a><a className="secondary-action" href={routePath("subjects")}>Explore subjects</a></div>
             <div className="alignment-list" aria-label="Curriculum alignment">
               <p className="alignment-note"><Icon type="book" className="alignment-icon" />Aligned to NSW and Australian curriculums (Early Stage 1 - Stage 6)</p>
               <p className="alignment-note"><Icon type="blocks" className="alignment-icon" />Aligned to the Early Years Learning Framework (Pre-School)</p>
+              <p className="alignment-note"><Icon type="leaf" className="alignment-icon" />Quality pedagogy including inquiry-based and student-led learning to support deep understanding.</p>
             </div>
           </div>
           <div className="device-stage" aria-label="Wildly teacher dashboard preview">
@@ -1136,10 +1152,9 @@ function LandingPage() {
                 <li>Presentation mode, live mode and student-paced mode can all sit inside the same lesson.</li>
                 <li>Designed for teacher-led classroom use without adding friction for students.</li>
               </ul>
-              <div className="hero-actions"><a className="join-action" href={studentRoute()}>Join a lesson</a></div>
             </div>
             <div className="student-side-showcase">
-              <StudentHeroPhonePreview />
+              <StudentHeroPhonePreview variant="live" />
               <div className="student-side-copy">
                 <strong>Student experience</strong>
                 <p>Clean, guided lesson screens with prompts, media, quick checks and space for longer thinking.</p>
@@ -1160,6 +1175,43 @@ function LandingPage() {
             ["Fully built learning paths", "Access complete programs with assessments, lesson plans and resources connected to nature to save teacher time."],
             ["Reflection and action", "Bring the learning together through discussion, evidence, action projects and curriculum-aligned assessment."],
           ].map(([title, copy], index) => <article key={title}><span>{String(index + 1).padStart(2, "0")}</span><h3>{title}</h3><p>{copy}</p></article>)}</div>
+        </section>
+        <section className="marketing-band">
+          <div className="marketing-split">
+            <div className="marketing-split-copy">
+              <div className="section-heading compact-heading">
+                <div>
+                  <h2>Taronga TV</h2>
+                  <p>A curriculum-aligned video library for classrooms, built around real animals, habitats, conservation issues and classroom-ready discussion.</p>
+                </div>
+              </div>
+              <ul className="marketing-list">
+                <li>Short-form and lesson-ready videos connected to subject outcomes and stages.</li>
+                <li>Linked talking points, teacher prompts, lessons and learning pathways.</li>
+                <li>Designed to work as a provocation, teaching sequence opener or independent student task.</li>
+              </ul>
+            </div>
+            <img className="marketing-split-image" src={assets.giraffe} alt="Taronga TV classroom-ready wildlife video" />
+          </div>
+        </section>
+        <section className="marketing-band">
+          <div className="marketing-split professional-learning-band">
+            <img className="marketing-split-image" src={assets.gorilla} alt="Professional learning with Wildly by Taronga" />
+            <div className="marketing-split-copy">
+              <div className="section-heading compact-heading">
+                <div>
+                  <h2>Exclusive professional learning opportunities</h2>
+                  <p>Support teachers and leaders with professional learning designed around nature-connected pedagogy, curriculum planning and classroom implementation.</p>
+                </div>
+              </div>
+              <ul className="marketing-list">
+                <li>Virtual sessions for schools and teacher networks.</li>
+                <li>Face-to-face workshops at your school.</li>
+                <li>On-site professional learning opportunities at Taronga Zoo Sydney and Taronga Western Plains Zoo Dubbo.</li>
+                <li>Practical workshops linking classroom planning, Wildly content and Taronga Tracka experiences.</li>
+              </ul>
+            </div>
+          </div>
         </section>
         <section className="cta-section" id="schools"><img src={assets.heroKoala} alt="Koala with joey" /><div><h2>Bring learning to life through nature</h2><p>Join thousands of educators using Wildly to inspire the next generation to care for nature - together.</p><div className="hero-actions"><a className="primary-action" href={signupRoute()}>Get started free</a><a className="secondary-action" href={appLinks.demoBooking}>Book a demo</a></div></div></section>
         <footer className="site-footer"><div className="footer-links"><a className="staff-login" href={routePath("staff")}>TARONGA STAFF LOGIN</a></div></footer>

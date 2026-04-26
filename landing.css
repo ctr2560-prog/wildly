@@ -106,6 +106,12 @@ textarea {
   justify-self: end;
 }
 
+.header-join-action {
+  min-height: 44px;
+  padding-inline: 18px;
+  font-size: 14px;
+}
+
 .login-link,
 .start-link,
 .primary-action,
@@ -425,6 +431,16 @@ main {
   overflow: hidden;
 }
 
+.hero-student-phone {
+  width: 188px;
+  min-height: 324px;
+}
+
+.live-student-phone {
+  width: 208px;
+  min-height: 312px;
+}
+
 .student-phone-bar {
   display: flex;
   gap: 6px;
@@ -496,6 +512,13 @@ main {
   background: #fff;
   font-size: 12px;
   font-weight: 700;
+}
+
+.student-phone-animal img {
+  width: 100%;
+  height: 96px;
+  border-radius: 12px;
+  object-fit: cover;
 }
 
 .student-phone-cta {
@@ -813,7 +836,8 @@ svg {
   position: relative;
   right: auto;
   bottom: auto;
-  width: 240px;
+  width: 192px;
+  min-height: 288px;
 }
 
 .student-side-copy {
@@ -831,6 +855,14 @@ svg {
   color: #55645d;
   font-size: 16px;
   line-height: 1.6;
+}
+
+.compact-heading {
+  margin-bottom: 0;
+}
+
+.professional-learning-band {
+  grid-template-columns: minmax(0, 1.02fr) minmax(0, 0.98fr);
 }
 
 .split-section {
@@ -1217,6 +1249,10 @@ svg {
 
   .header-actions {
     gap: 6px;
+  }
+
+  .header-join-action {
+    display: none;
   }
 
   .login-link,
