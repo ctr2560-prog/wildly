@@ -1182,16 +1182,31 @@ function LandingPage() {
               <div className="section-heading compact-heading">
                 <div>
                   <h2>Taronga TV</h2>
-                  <p>A curriculum-aligned video library for classrooms, built around real animals, habitats, conservation issues and classroom-ready discussion.</p>
+                  <p>A classroom-ready video library blending educational kids shows for preschool and early learning with explanation videos that build understanding across the years.</p>
                 </div>
               </div>
               <ul className="marketing-list">
-                <li>Short-form and lesson-ready videos connected to subject outcomes and stages.</li>
-                <li>Linked talking points, teacher prompts, lessons and learning pathways.</li>
-                <li>Designed to work as a provocation, teaching sequence opener or independent student task.</li>
+                <li>Educational kids shows for preschool and early education that introduce animals, habitats and nature concepts in accessible ways.</li>
+                <li>Explanation videos that support understanding, vocabulary development and deeper classroom discussion.</li>
+                <li>Linked outcomes, talking points, lessons and learning pathways so video becomes part of a real teaching sequence.</li>
               </ul>
             </div>
-            <img className="marketing-split-image" src={assets.giraffe} alt="Taronga TV classroom-ready wildlife video" />
+            <article className="tv-feature-card">
+              <div className="tv-feature-frame">
+                <img className="marketing-split-image" src={assets.koala} alt="Taronga TV classroom-ready wildlife video" />
+                <span className="tv-play-button"><Icon type="play" className="" /></span>
+              </div>
+              <div className="tv-feature-copy">
+                <span className="audience-pill">Taronga TV</span>
+                <h3>Shows, explainers and nature stories</h3>
+                <p>Video content designed for curiosity, explanation and classroom follow-through.</p>
+                <ul className="tv-feature-list">
+                  <li>Preschool and early years episodes</li>
+                  <li>Curriculum-linked explainer videos</li>
+                  <li>Talking points and lesson connections</li>
+                </ul>
+              </div>
+            </article>
           </div>
         </section>
         <section className="marketing-band">
