@@ -437,8 +437,9 @@ main {
 }
 
 .hero-student-phone {
-  width: 142px;
-  min-height: 258px;
+  width: 176px;
+  min-height: 0;
+  aspect-ratio: 0.76;
 }
 
 .live-student-phone {
@@ -461,8 +462,8 @@ main {
 
 .student-phone-screen {
   display: grid;
-  gap: 10px;
-  padding: 10px 12px 14px;
+  gap: 8px;
+  padding: 8px 10px 10px;
 }
 
 .student-phone-pill {
@@ -481,41 +482,41 @@ main {
 .student-phone h3 {
   margin: 0;
   color: var(--green-950);
-  font-size: 15px;
+  font-size: 13px;
   line-height: 1.15;
 }
 
 .student-phone p {
   margin: 0;
   color: var(--muted);
-  font-size: 12px;
+  font-size: 11px;
 }
 
 .student-phone-question {
-  padding: 12px;
+  padding: 10px;
   border-radius: 12px;
   background: #f5f9f4;
 }
 
 .student-phone-question strong {
   color: var(--green-950);
-  font-size: 12px;
+  font-size: 11px;
   line-height: 1.4;
 }
 
 .student-phone-options {
   display: grid;
-  gap: 8px;
+  gap: 6px;
 }
 
 .student-phone-options span {
   display: block;
-  padding: 9px 10px;
+  padding: 8px 9px;
   border: 1px solid var(--line);
   border-radius: 10px;
   color: #33413a;
   background: #fff;
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 700;
 }
 
@@ -530,11 +531,11 @@ main {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 32px;
+  min-height: 28px;
   border-radius: 8px;
   color: #fff;
   background: linear-gradient(180deg, var(--green-900), var(--green-800));
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 900;
 }
 
