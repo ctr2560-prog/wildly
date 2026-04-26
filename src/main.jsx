@@ -1024,7 +1024,7 @@ function SiteHeader({ active = "" }) {
     ["about", "About"],
     ["subjects", "Subjects"],
     ["learning-paths", "Learning Paths"],
-    ["tracka", "Tracka"],
+    ["tracka", "Taronga Tracka"],
     ["schools", "Schools"],
   ];
 
@@ -1041,6 +1041,64 @@ function SiteHeader({ active = "" }) {
   );
 }
 
+function StudentHeroPhonePreview() {
+  return (
+    <div className="phone student-phone">
+      <div className="student-phone-bar">
+        <span></span>
+        <span></span>
+        <span></span>
+      </div>
+      <div className="student-phone-screen">
+        <span className="student-phone-pill">Live lesson</span>
+        <h3>Adaptations of Australian Animals</h3>
+        <p>Step 2 of 5</p>
+        <div className="student-phone-question">
+          <strong>Which feature helps a koala live in trees?</strong>
+        </div>
+        <div className="student-phone-options">
+          <span>Sharp claws for climbing</span>
+          <span>Bright feathers for display</span>
+          <span>Gills for swimming</span>
+        </div>
+        <a href={studentRoute()} className="student-phone-cta">Join lesson</a>
+      </div>
+    </div>
+  );
+}
+
+function LandingSubjectStrip() {
+  const [flippedSubject, setFlippedSubject] = useState("");
+
+  return (
+    <div className="subject-strip-scroll" aria-label="Subject overview">
+      {subjects.map(([label, cls, copy]) => {
+        const isFlipped = flippedSubject === label;
+        return (
+          <button
+            type="button"
+            className={`subject-flip-card ${cls} ${isFlipped ? "flipped" : ""}`}
+            key={label}
+            onClick={() => setFlippedSubject(isFlipped ? "" : label)}
+            aria-pressed={isFlipped}
+          >
+            <span className="subject-flip-inner">
+              <span className="subject-flip-face subject-flip-front">
+                <Icon type={subjectIconType(label)} className="" />
+                <strong>{label}</strong>
+              </span>
+              <span className="subject-flip-face subject-flip-back">
+                <strong>{label}</strong>
+                <span>{copy}</span>
+              </span>
+            </span>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
 function LandingPage() {
   return (
     <>
@@ -1052,7 +1110,7 @@ function LandingPage() {
             <h1>Learning through nature</h1>
             <p className="hero-subtitle">Inspire curiosity. Create change.</p>
             <p>Curriculum-aligned lessons, real-world experiences and conservation connections - for every learner, everywhere.</p>
-            <div className="hero-actions"><a className="primary-action" href={signupRoute()}>Get started free</a><a className="secondary-action" href={teacherPreviewRoute()}>Explore subjects</a></div>
+            <div className="hero-actions"><a className="primary-action" href={signupRoute()}>Get started free</a><a className="secondary-action" href={routePath("subjects")}>Explore subjects</a><a className="join-action" href={studentRoute()}>Join a lesson</a></div>
             <div className="alignment-list" aria-label="Curriculum alignment">
               <p className="alignment-note"><Icon type="book" className="alignment-icon" />Aligned to NSW and Australian curriculums (Early Stage 1 - Stage 6)</p>
               <p className="alignment-note"><Icon type="blocks" className="alignment-icon" />Aligned to the Early Years Learning Framework (Pre-School)</p>
@@ -1060,50 +1118,48 @@ function LandingPage() {
           </div>
           <div className="device-stage" aria-label="Wildly teacher dashboard preview">
             <div className="laptop"><div className="laptop-screen"><iframe className="teacher-preview" src={teacherPreviewRoute()} title="Wildly teacher dashboard preview" tabIndex="-1"></iframe></div><div className="laptop-base"></div></div>
-            <div className="phone"><img src={assets.heroKoala} alt="" /><h3>Adaptations of Australian Animals</h3><p>Ready to assign</p><a href={teacherPreviewRoute()}>View resource</a></div>
+            <StudentHeroPhonePreview />
           </div>
-        </section>
-        <section className="feature-row">
-          {[
-            ["leaf", "Curriculum-aligned learning", "Engaging lessons mapped to the Australian Curriculum across multiple subject areas."],
-            ["globe", "Connected real-world experiences", "Bring learning to life with excursion preparation, animal encounters and conservation action."],
-            ["target", "Linked with Taronga Tracka", "Extend inquiry beyond the classroom and turn citizen science data into next steps."],
-          ].map(([icon, title, copy]) => <article key={title}><Icon type={icon} className="" /><h2>{title}</h2><p>{copy}</p></article>)}
         </section>
         <section className="marketing-band">
           <div className="section-heading">
             <div>
               <h2>Live student learning</h2>
-              <p>Wildly now supports teacher-led presentation, live join-code lessons, and student-paced responses. Teachers create the class, launch the session, and students join on their own device with a code.</p>
+              <p>Teachers can present lessons, launch them live to a class, or let students work at their own pace. Every response feeds back into classroom analytics.</p>
             </div>
           </div>
           <div className="marketing-split">
             <div className="marketing-split-copy">
               <ul className="marketing-list">
-                <li>Teachers can present content front-of-class without students joining.</li>
-                <li>Teachers can launch a live session so students respond in real time.</li>
-                <li>Lessons can include slides, quizzes, polls and extended response questions.</li>
-                <li>Responses flow back into analytics for session review and future reporting.</li>
+                <li>Students join with a code and see their own version of the lesson on their device.</li>
+                <li>Teachers can build in slides, quizzes, polls and extended response tasks.</li>
+                <li>Presentation mode, live mode and student-paced mode can all sit inside the same lesson.</li>
+                <li>Designed for teacher-led classroom use without adding friction for students.</li>
               </ul>
+              <div className="hero-actions"><a className="join-action" href={studentRoute()}>Join a lesson</a></div>
             </div>
-            <StudentJoinCard />
+            <div className="student-side-showcase">
+              <StudentHeroPhonePreview />
+              <div className="student-side-copy">
+                <strong>Student experience</strong>
+                <p>Clean, guided lesson screens with prompts, media, quick checks and space for longer thinking.</p>
+              </div>
+            </div>
           </div>
         </section>
         <section className="subjects-section" id="subjects">
-          <div className="section-heading"><h2>Explore by subject</h2><a href={teacherPreviewRoute()}>View all subjects</a></div>
-          <div className="subject-strip">
-            {subjects.map(([label, cls, copy]) => <a className={cls} href={teacherPreviewRoute()} key={label}><Icon type={subjectIconType(label)} className="" /><strong>{label}</strong><span>{copy}</span></a>)}
-          </div>
+          <div className="section-heading"><h2>Explore by subject</h2><a href={routePath("subjects")}>Learn more</a></div>
+          <LandingSubjectStrip />
         </section>
         <section className="journey-section" id="paths">
-          <div className="section-heading"><div><h2>A learning journey, connected to nature</h2><p>Wildly makes it easy to connect classroom learning with authentic experiences.</p></div></div>
-          <div className="journey-line">{["Pre-visit learning", "At the zoo", "Tracka missions", "Post-visit reflection"].map((title, index) => <article key={title}><span>{String(index + 1).padStart(2, "0")}</span><h3>{title}</h3><p>{["Build background knowledge and curiosity before your excursion.", "Engage in guided experiences and real-world investigation.", "Take action with live data, citizen science and reflective tasks.", "Consolidate learning and connect back to curriculum outcomes."][index]}</p></article>)}</div>
-        </section>
-        <section className="trust-row" id="tracka">
-          <article><a className="trust-action" href={appLinks.tracka || appLinks.excursions}><img src={assets.trackaLogo} alt="Taronga Tracka" /><span>Proudly connected with Taronga Tracka</span></a></article>
-          <article><Icon type="book" className="" /><span>Aligned to NSW and Australian curriculums (Early Stage 1 - Stage 6)</span></article>
-          <article><Icon type="blocks" className="" /><span>Aligned to the Early Years Learning Framework (Pre-School)</span></article>
-          <article><Icon type="bookmark" className="" /><span>Secure, reliable teacher resources</span></article>
+          <div className="section-heading"><div><h2>A learning journey, connected to nature</h2><p>Wildly supports complete teaching sequences, whether learning starts in the classroom, at the zoo, or through digital exploration.</p></div></div>
+          <div className="journey-line">{[
+            ["Pre-visit learning", "Build background knowledge, vocabulary and curiosity before students begin the sequence."],
+            ["At the zoo or at school", "Use the same learning flow whether students are on-site, in class, or accessing content remotely."],
+            ["Taronga Tracka missions", "Extend learning through Tracka missions, games, tools, observation tasks and citizen science experiences."],
+            ["Fully built learning paths", "Access complete programs with assessments, lesson plans and resources connected to nature to save teacher time."],
+            ["Reflection and action", "Bring the learning together through discussion, evidence, action projects and curriculum-aligned assessment."],
+          ].map(([title, copy], index) => <article key={title}><span>{String(index + 1).padStart(2, "0")}</span><h3>{title}</h3><p>{copy}</p></article>)}</div>
         </section>
         <section className="cta-section" id="schools"><img src={assets.heroKoala} alt="Koala with joey" /><div><h2>Bring learning to life through nature</h2><p>Join thousands of educators using Wildly to inspire the next generation to care for nature - together.</p><div className="hero-actions"><a className="primary-action" href={signupRoute()}>Get started free</a><a className="secondary-action" href={appLinks.demoBooking}>Book a demo</a></div></div></section>
         <footer className="site-footer"><div className="footer-links"><a className="staff-login" href={routePath("staff")}>TARONGA STAFF LOGIN</a></div></footer>
