@@ -1595,15 +1595,15 @@ function TeacherDashboard({ config, contentItems = defaultContentItems.map(resol
   }).slice(0, 3), [activeSubject, publishedItems, query]);
   const contentDetail = publishedItems.find((item) => item.id === contentId) || null;
   const contentActivityBlocks = contentDetail ? buildLessonActivityBlocks(contentDetail) : [];
-  const publishedTarongaTvVideos = useMemo(() => tarongaTvVideos.filter((item) => normalizeEditorialStatus(item.status, "Draft") === "Published"), [tarongaTvVideos]);
-  const filteredTarongaTvVideos = useMemo(() => publishedTarongaTvVideos.filter((item) => {
+  const teacherVisibleTarongaTvVideos = useMemo(() => sortTarongaTvVideos(tarongaTvVideos), [tarongaTvVideos]);
+  const filteredTarongaTvVideos = useMemo(() => teacherVisibleTarongaTvVideos.filter((item) => {
     const matchesSubject = !activeSubject || item.subject === activeSubject;
     const matchesCategory = activeTvCategory === "All" || (item.categories || []).includes(activeTvCategory);
     const haystack = `${item.title} ${item.subject} ${item.stage} ${item.summary} ${item.description} ${(item.outcomeCodes || []).join(" ")}`.toLowerCase();
     return matchesSubject && matchesCategory && haystack.includes(query.toLowerCase());
-  }), [activeSubject, activeTvCategory, publishedTarongaTvVideos, query]);
-  const featuredTarongaTvVideo = filteredTarongaTvVideos[0] || publishedTarongaTvVideos[0] || null;
-  const tarongaTvDetail = publishedTarongaTvVideos.find((item) => item.id === tvVideoId) || null;
+  }), [activeSubject, activeTvCategory, teacherVisibleTarongaTvVideos, query]);
+  const featuredTarongaTvVideo = filteredTarongaTvVideos[0] || teacherVisibleTarongaTvVideos[0] || null;
+  const tarongaTvDetail = teacherVisibleTarongaTvVideos.find((item) => item.id === tvVideoId) || null;
   const contentDownloads = contentDetail ? buildContentDownloads(contentDetail) : [];
   const tarongaTvDownloads = tarongaTvDetail?.downloadLinks || [];
   const allResourceItems = [...lessons, ...resources];
