@@ -453,6 +453,10 @@ function normalizeYouTubeEmbedUrl(value = "") {
   return candidate;
 }
 
+function firstParagraph(text = "") {
+  return String(text || "").split(/\n\s*\n|\r\n\s*\r\n/).map((part) => part.trim()).find(Boolean) || "";
+}
+
 function resizeImageFile(file) {
   return new Promise((resolve, reject) => {
     if (!file.type.startsWith("image/")) {
@@ -4407,7 +4411,7 @@ function TarongaTvPanel({ items, contentItems, status, saveState, saveVideo, del
                   <div>
                     <span className="content-type">{draft.status}</span>
                     <h5>{draft.title || "Untitled Taronga TV video"}</h5>
-                    <p>{draft.summary || "Add a short summary so teachers can scan the purpose of the video."}</p>
+                    <p>{firstParagraph(draft.description) || draft.summary || "Add a short summary so teachers can scan the purpose of the video."}</p>
                     <div className="material-tags">
                       <span>{draft.subject}</span>
                       <span>{draft.stage}</span>
@@ -4450,7 +4454,7 @@ function TarongaTvPanel({ items, contentItems, status, saveState, saveVideo, del
                 <div>
                   <span className="content-type">{item.status}</span>
                   <h4>{item.title}</h4>
-                  <p>{item.summary}</p>
+                  <p>{firstParagraph(item.description) || item.summary}</p>
                   <small>{item.subject} - {item.stage}</small>
                   {item.duration ? <small>{item.duration}</small> : null}
                   {item.categories?.length ? <small>{item.categories.join(" · ")}</small> : null}
