@@ -1168,6 +1168,7 @@ function LandingSubjectStrip() {
 function LandingTarongaTvPreview() {
   const { items: tarongaTvVideos } = useTarongaTvVideos();
   const featuredVideo = tarongaTvVideos.find((item) => item.embedUrl) || tarongaTvVideos[0] || null;
+  const featuredDownloads = featuredVideo?.downloadLinks || [];
 
   if (!featuredVideo) {
     return (
@@ -1181,50 +1182,78 @@ function LandingTarongaTvPreview() {
   }
 
   return (
-    <div className="tv-detail-layout landing-tv-preview">
-      <article className="tv-player-card landing-tv-preview-card">
-        <div className="tv-embed-shell">
-          {featuredVideo.embedUrl ? (
-            <iframe
-              src={featuredVideo.embedUrl}
-              title={featuredVideo.title}
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              allowFullScreen
-            ></iframe>
-          ) : (
-            <div className="tv-embed-placeholder">
-              <Icon type="play" className="" />
-              <p>Add an embed URL in staff view to display the video here.</p>
-            </div>
-          )}
-        </div>
-      </article>
-
-      <aside className="tv-side-panel landing-tv-side-panel">
-        <div className="tv-info-card">
+    <section className="teacher-panel teacher-detail-page tv-detail-page landing-tv-detail-shell">
+      <div className="teacher-panel-header">
+        <div>
           <span className="content-type">Taronga TV</span>
-          <h3>{featuredVideo.title}</h3>
-          <div className="detail-meta">
-            <small>{featuredVideo.subject}</small>
-            <small>{featuredVideo.stage}</small>
-            {featuredVideo.duration ? <small>{featuredVideo.duration}</small> : null}
-            {featuredVideo.categories?.map((category) => <small key={category}>{category}</small>)}
-          </div>
-          <p>{featuredVideo.summary || featuredVideo.description}</p>
+          <h2>{featuredVideo.title}</h2>
+          <p>{featuredVideo.description || featuredVideo.summary}</p>
         </div>
+        <a className="secondary-action" href={teacherTvRoute()}>Open Taronga TV</a>
+      </div>
 
-        {featuredVideo.discussionPoints?.length ? (
-          <div className="tv-info-card">
-            <h3>Talking points</h3>
-            <ul className="detail-list">
-              {featuredVideo.discussionPoints.slice(0, 3).map((point, index) => (
-                <li key={`${point.time}-${index}`}>{point.time ? `${point.time} - ` : ""}{point.prompt}</li>
-              ))}
-            </ul>
+      <div className="tv-detail-layout landing-tv-preview">
+        <article className="tv-player-card landing-tv-preview-card">
+          <div className="tv-embed-shell">
+            {featuredVideo.embedUrl ? (
+              <iframe
+                src={featuredVideo.embedUrl}
+                title={featuredVideo.title}
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+              ></iframe>
+            ) : (
+              <div className="tv-embed-placeholder">
+                <Icon type="play" className="" />
+                <p>Add an embed URL in staff view to display the video here.</p>
+              </div>
+            )}
           </div>
-        ) : null}
-      </aside>
-    </div>
+        </article>
+
+        <aside className="tv-side-panel landing-tv-side-panel">
+          <div className="tv-info-card">
+            <h3>Video details</h3>
+            <div className="detail-meta">
+              <small>{featuredVideo.subject}</small>
+              <small>{featuredVideo.stage}</small>
+              {featuredVideo.duration ? <small>{featuredVideo.duration}</small> : null}
+              {featuredVideo.categories?.map((category) => <small key={category}>{category}</small>)}
+            </div>
+            {featuredVideo.summary ? <p>{featuredVideo.summary}</p> : null}
+          </div>
+
+          {featuredVideo.outcomeCodes?.length ? (
+            <div className="tv-info-card">
+              <h3>Linked outcomes</h3>
+              <ul className="tv-list">
+                {featuredVideo.outcomeCodes.map((outcome) => <li key={outcome}>{outcome}</li>)}
+              </ul>
+            </div>
+          ) : null}
+
+          {featuredDownloads.length ? (
+            <div className="tv-info-card">
+              <LinkSection links={featuredDownloads} />
+            </div>
+          ) : null}
+
+          {featuredVideo.discussionPoints?.length ? (
+            <div className="tv-info-card">
+              <h3>Discussion points</h3>
+              <ul className="tv-discussion-list">
+                {featuredVideo.discussionPoints.map((point, index) => (
+                  <li key={`${point.time}-${index}`}>
+                    <strong>{point.time || "Pause point"}</strong>
+                    <p>{point.prompt}</p>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
+        </aside>
+      </div>
+    </section>
   );
 }
 
