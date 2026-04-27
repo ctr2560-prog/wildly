@@ -4096,6 +4096,12 @@ function TarongaTvPanel({ items, contentItems, status, saveState, saveVideo, del
   const learningPathOptions = contentItems.filter((item) => item.type === "Learning Path");
   const selectedImage = draft.uploadedImageDataUrl || draft.customImageUrl || draft.thumbnailUrl || draft.image || assets[draft.imageKey] || assets.heroKoala;
   const selectedStockImage = stockImages.find((image) => (image.key && image.key === draft.imageKey) || (!draft.imageKey && !draft.uploadedImageDataUrl && !draft.customImageUrl && image.src === draft.thumbnailUrl));
+  const normalizedDraftStatus = normalizeEditorialStatus(draft.status, "Draft");
+  const submitLabel = saveState === "saving"
+    ? "Saving..."
+    : normalizedDraftStatus === "Published"
+      ? (selectedItem ? "Publish video" : "Save and publish video")
+      : (selectedItem ? "Update draft" : "Save draft");
 
   useEffect(() => {
     if (selectedItem) {
@@ -4327,7 +4333,7 @@ function TarongaTvPanel({ items, contentItems, status, saveState, saveVideo, del
                 <span className="content-step-badge">5</span>
                 <div>
                   <h4>Review and publish</h4>
-                  <p>Teachers will see this in Taronga TV and can open the linked learning from the video page.</p>
+                  <p>Set the status to Published, then use the main button below. The staff console `Publish updates` button is only for dashboard settings, not Taronga TV videos.</p>
                 </div>
               </div>
               <div className="content-review-grid">
@@ -4355,7 +4361,7 @@ function TarongaTvPanel({ items, contentItems, status, saveState, saveVideo, del
                     {selectedItem ? <a className="secondary-button slim-button" href={teacherTvRoute(selectedItem.id)} target="_blank" rel="noreferrer">Preview teacher page</a> : null}
                     {selectedItem ? <button type="button" className="delete-button editor-delete-button" onClick={handleDelete}>Delete</button> : null}
                     <button type="button" className="secondary-button" onClick={startNew}>Clear form</button>
-                    <button type="submit" disabled={saveState === "saving"}>{saveState === "saving" ? "Saving..." : selectedItem ? "Update video" : "Save video"}</button>
+                    <button type="submit" disabled={saveState === "saving"}>{submitLabel}</button>
                   </div>
                 </div>
               </div>
