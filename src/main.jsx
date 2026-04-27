@@ -1216,19 +1216,25 @@ function LandingPage() {
               </ul>
             </div>
             <article className="tv-feature-card">
-              <div className="tv-feature-frame">
-                <img className="marketing-split-image" src={assets.koala} alt="Taronga TV classroom-ready wildlife video" />
-                <span className="tv-play-button"><Icon type="play" className="" /></span>
-              </div>
-              <div className="tv-feature-copy">
-                <span className="audience-pill">Taronga TV</span>
-                <h3>Shows, explainers and nature stories</h3>
-                <p>Video content designed for curiosity, explanation and classroom follow-through.</p>
-                <ul className="tv-feature-list">
-                  <li>Preschool and early years episodes</li>
-                  <li>Curriculum-linked explainer videos</li>
-                  <li>Talking points and lesson connections</li>
-                </ul>
+              <div className="tv-ui-shell">
+                <div className="tv-ui-sidebar">
+                  <span className="audience-pill">Taronga TV</span>
+                  <span className="tv-ui-nav active">Featured</span>
+                  <span className="tv-ui-nav">Early Years</span>
+                  <span className="tv-ui-nav">Science</span>
+                  <span className="tv-ui-nav">Explainers</span>
+                </div>
+                <div className="tv-ui-main">
+                  <div className="tv-feature-frame">
+                    <img className="marketing-split-image" src={assets.koala} alt="Taronga TV classroom-ready wildlife video" />
+                    <span className="tv-play-button"><Icon type="play" className="" /></span>
+                  </div>
+                  <div className="tv-ui-row">
+                    <span className="tv-ui-chip">Preschool</span>
+                    <span className="tv-ui-chip">Explainer</span>
+                    <span className="tv-ui-chip">Linked lesson</span>
+                  </div>
+                </div>
               </div>
             </article>
           </div>
