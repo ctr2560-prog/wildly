@@ -1016,65 +1016,19 @@ svg {
   grid-template-columns: minmax(0, 1.02fr) minmax(0, 0.98fr);
 }
 
-.landing-tv-preview {
-  grid-template-columns: minmax(0, 1.1fr) minmax(280px, 0.9fr);
-  gap: 16px;
-  align-items: start;
+.landing-tv-screenshot-card {
+  display: block;
+  overflow: hidden;
+  border: 1px solid rgba(16, 54, 34, 0.08);
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: var(--surface-shadow-strong);
 }
 
-.landing-tv-detail-shell {
-  padding: 0;
-  border: 0;
-  background: transparent;
-  box-shadow: none;
-}
-
-.landing-tv-detail-shell .teacher-panel-header {
-  margin-bottom: 18px;
-}
-
-.landing-tv-preview-card,
-.landing-tv-side-panel .tv-info-card {
-  box-shadow: var(--surface-shadow);
-}
-
-.landing-tv-preview-card {
-  align-self: start;
-  border-radius: 12px;
-}
-
-.landing-tv-preview-card .tv-embed-shell {
-  border-radius: 12px;
-}
-
-.landing-tv-side-panel {
-  display: grid;
-  gap: 16px;
-}
-
-.landing-tv-side-panel h3 {
-  margin: 0 0 10px;
-  color: var(--green-950);
-  font-size: 16px;
-}
-
-.landing-tv-side-panel .detail-list {
-  margin-top: 0;
-}
-
-.landing-tv-side-panel .detail-list ul,
-.landing-tv-side-panel .detail-list {
-  padding-left: 18px;
-}
-
-.landing-tv-side-panel .tv-info-card:first-child h3 {
-  font-size: 18px;
-  line-height: 1.2;
-}
-
-.landing-tv-side-panel .tv-info-card:first-child p {
-  font-size: 15px;
-  line-height: 1.6;
+.landing-tv-screenshot-card img {
+  display: block;
+  width: 100%;
+  height: auto;
 }
 
 .professional-learning-cards {
