@@ -1168,9 +1168,9 @@ function LandingSubjectStrip() {
 
 function LandingTarongaTvPreview() {
   return (
-    <a className="landing-tv-screenshot-card" href={teacherTvRoute()} aria-label="Open Taronga TV">
+    <div className="landing-tv-screenshot-card" aria-label="Taronga TV preview">
       <img src={assets.tvScreenshot} alt="Taronga TV teacher-side preview" />
-    </a>
+    </div>
   );
 }
 
