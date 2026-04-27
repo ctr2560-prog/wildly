@@ -1161,6 +1161,69 @@ function LandingSubjectStrip() {
   );
 }
 
+function LandingTarongaTvPreview() {
+  const { items: tarongaTvVideos } = useTarongaTvVideos();
+  const featuredVideo = tarongaTvVideos.find((item) => item.embedUrl) || tarongaTvVideos[0] || null;
+
+  if (!featuredVideo) {
+    return (
+      <article className="tv-player-card landing-tv-preview-card">
+        <div className="tv-embed-placeholder">
+          <Icon type="play" className="" />
+          <p>Add a Taronga TV video in staff view and it will preview here automatically.</p>
+        </div>
+      </article>
+    );
+  }
+
+  return (
+    <div className="tv-detail-layout landing-tv-preview">
+      <article className="tv-player-card landing-tv-preview-card">
+        <div className="tv-embed-shell">
+          {featuredVideo.embedUrl ? (
+            <iframe
+              src={featuredVideo.embedUrl}
+              title={featuredVideo.title}
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+            ></iframe>
+          ) : (
+            <div className="tv-embed-placeholder">
+              <Icon type="play" className="" />
+              <p>Add an embed URL in staff view to display the video here.</p>
+            </div>
+          )}
+        </div>
+      </article>
+
+      <aside className="tv-side-panel landing-tv-side-panel">
+        <div className="tv-info-card">
+          <span className="content-type">Taronga TV</span>
+          <h3>{featuredVideo.title}</h3>
+          <div className="detail-meta">
+            <small>{featuredVideo.subject}</small>
+            <small>{featuredVideo.stage}</small>
+            {featuredVideo.duration ? <small>{featuredVideo.duration}</small> : null}
+            {featuredVideo.categories?.map((category) => <small key={category}>{category}</small>)}
+          </div>
+          <p>{featuredVideo.summary || featuredVideo.description}</p>
+        </div>
+
+        {featuredVideo.discussionPoints?.length ? (
+          <div className="tv-info-card">
+            <h3>Talking points</h3>
+            <ul className="detail-list">
+              {featuredVideo.discussionPoints.slice(0, 3).map((point, index) => (
+                <li key={`${point.time}-${index}`}>{point.time ? `${point.time} - ` : ""}{point.prompt}</li>
+              ))}
+            </ul>
+          </div>
+        ) : null}
+      </aside>
+    </div>
+  );
+}
+
 function LandingPage() {
   return (
     <>
@@ -1238,28 +1301,7 @@ function LandingPage() {
                 <li>Linked outcomes, talking points, lessons and learning pathways so video becomes part of a real teaching sequence.</li>
               </ul>
             </div>
-            <article className="tv-feature-card">
-              <div className="tv-ui-shell">
-                <div className="tv-ui-sidebar">
-                  <span className="audience-pill">Taronga TV</span>
-                  <span className="tv-ui-nav active">Featured</span>
-                  <span className="tv-ui-nav">Early Years</span>
-                  <span className="tv-ui-nav">Science</span>
-                  <span className="tv-ui-nav">Explainers</span>
-                </div>
-                <div className="tv-ui-main">
-                  <div className="tv-feature-frame">
-                    <img className="marketing-split-image" src={assets.koala} alt="Taronga TV classroom-ready wildlife video" />
-                    <span className="tv-play-button"><Icon type="play" className="" /></span>
-                  </div>
-                  <div className="tv-ui-row">
-                    <span className="tv-ui-chip">Preschool</span>
-                    <span className="tv-ui-chip">Explainer</span>
-                    <span className="tv-ui-chip">Linked lesson</span>
-                  </div>
-                </div>
-              </div>
-            </article>
+            <LandingTarongaTvPreview />
           </div>
         </section>
         <section className="marketing-band">
