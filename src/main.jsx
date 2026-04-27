@@ -1570,7 +1570,7 @@ function TeacherDashboard({ config, contentItems = defaultContentItems.map(resol
     setActiveSubject(routeSubject);
   }, [routeSubject]);
 
-  const publishedItems = useMemo(() => contentItems.filter((item) => item.status === "Published"), [contentItems]);
+  const publishedItems = useMemo(() => contentItems.filter((item) => normalizeEditorialStatus(item.status, "Draft") === "Published"), [contentItems]);
   const learningPaths = useMemo(() => publishedItems.filter((item) => item.type === "Learning Path"), [publishedItems]);
   const lessons = useMemo(() => publishedItems.filter((item) => item.type === "Lesson"), [publishedItems]);
   const resources = useMemo(() => publishedItems.filter((item) => item.type === "Resource"), [publishedItems]);
@@ -1586,7 +1586,7 @@ function TeacherDashboard({ config, contentItems = defaultContentItems.map(resol
   }).slice(0, 3), [activeSubject, publishedItems, query]);
   const contentDetail = publishedItems.find((item) => item.id === contentId) || null;
   const contentActivityBlocks = contentDetail ? buildLessonActivityBlocks(contentDetail) : [];
-  const publishedTarongaTvVideos = useMemo(() => tarongaTvVideos.filter((item) => item.status === "Published"), [tarongaTvVideos]);
+  const publishedTarongaTvVideos = useMemo(() => tarongaTvVideos.filter((item) => normalizeEditorialStatus(item.status, "Draft") === "Published"), [tarongaTvVideos]);
   const filteredTarongaTvVideos = useMemo(() => publishedTarongaTvVideos.filter((item) => {
     const matchesSubject = !activeSubject || item.subject === activeSubject;
     const matchesCategory = activeTvCategory === "All" || (item.categories || []).includes(activeTvCategory);
@@ -1615,7 +1615,7 @@ function TeacherDashboard({ config, contentItems = defaultContentItems.map(resol
     ["saved", "Saved", "bookmark"],
     ["calendar", "Calendar", "calendar"],
   ];
-  const publishedProfessionalLearningItems = professionalLearningItems.filter((item) => item.status !== "Draft");
+  const publishedProfessionalLearningItems = professionalLearningItems.filter((item) => normalizeEditorialStatus(item.status, "Draft") !== "Draft");
   const professionalLearningLinksById = Object.fromEntries(
     publishedProfessionalLearningItems.map((item) => [item.id, buildProfessionalLearningLinks(item)]),
   );
@@ -2749,11 +2749,18 @@ function sortProfessionalLearningItems(items) {
   return [...items].sort((a, b) => `${a.date || ""}${a.time || ""}`.localeCompare(`${b.date || ""}${b.time || ""}`));
 }
 
+function normalizeEditorialStatus(status = "", fallback = "Draft") {
+  const value = String(status || "").trim().toLowerCase();
+  if (value === "published") return "Published";
+  if (value === "review") return "Review";
+  if (value === "draft") return "Draft";
+  return fallback;
+}
+
 function resolveTarongaTvVideo(video = {}) {
   return {
     subject: "Science",
     stage: "Stage 2",
-    status: "Draft",
     duration: "",
     categories: [],
     outcomeCodes: [],
@@ -2762,6 +2769,7 @@ function resolveTarongaTvVideo(video = {}) {
     discussionPoints: [],
     downloadLinks: [],
     ...video,
+    status: normalizeEditorialStatus(video.status, "Draft"),
     embedUrl: normalizeYouTubeEmbedUrl(video.embedUrl || ""),
     thumbnail: video.thumbnail || video.thumbnailUrl || video.image || assets[video.imageKey] || assets.heroKoala,
   };
@@ -3303,7 +3311,7 @@ function StaffConsole({ onLock }) {
         pdfUrl: item.pdfUrl || "",
         infoUrl: item.infoUrl || "",
         downloadLinks: Array.isArray(item.downloadLinks) ? item.downloadLinks : parseNamedLinks(item.downloadLinks || ""),
-        status: item.status || "Draft",
+        status: normalizeEditorialStatus(item.status, "Draft"),
         updatedAt: serverTimestamp(),
       };
 
@@ -3345,7 +3353,7 @@ function StaffConsole({ onLock }) {
         description: item.description || "",
         subject: item.subject || "Science",
         stage: item.stage || "Stage 2",
-        status: item.status || "Draft",
+        status: normalizeEditorialStatus(item.status, "Draft"),
         duration: item.duration || "",
         embedUrl: normalizeYouTubeEmbedUrl(item.embedUrl || ""),
         imageKey: item.imageKey || "",
