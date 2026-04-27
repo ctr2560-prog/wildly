@@ -1570,6 +1570,15 @@ function TeacherDashboard({ config, contentItems = defaultContentItems.map(resol
     setActiveSubject(routeSubject);
   }, [routeSubject]);
 
+  useEffect(() => {
+    if (page !== "taronga-tv") return;
+    if (!routeSubject) {
+      setActiveSubject(null);
+    }
+    setActiveTvCategory("All");
+    setQuery("");
+  }, [page, routeSubject]);
+
   const publishedItems = useMemo(() => contentItems.filter((item) => normalizeEditorialStatus(item.status, "Draft") === "Published"), [contentItems]);
   const learningPaths = useMemo(() => publishedItems.filter((item) => item.type === "Learning Path"), [publishedItems]);
   const lessons = useMemo(() => publishedItems.filter((item) => item.type === "Lesson"), [publishedItems]);
