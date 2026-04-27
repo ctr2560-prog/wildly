@@ -1019,11 +1019,21 @@ svg {
 .landing-tv-preview {
   grid-template-columns: minmax(0, 1.1fr) minmax(280px, 0.9fr);
   gap: 16px;
+  align-items: start;
 }
 
 .landing-tv-preview-card,
 .landing-tv-side-panel .tv-info-card {
   box-shadow: var(--surface-shadow);
+}
+
+.landing-tv-preview-card {
+  align-self: start;
+  border-radius: 12px;
+}
+
+.landing-tv-preview-card .tv-embed-shell {
+  border-radius: 12px;
 }
 
 .landing-tv-side-panel {
@@ -1034,6 +1044,7 @@ svg {
 .landing-tv-side-panel h3 {
   margin: 0 0 10px;
   color: var(--green-950);
+  font-size: 16px;
 }
 
 .landing-tv-side-panel .detail-list {
@@ -1043,6 +1054,16 @@ svg {
 .landing-tv-side-panel .detail-list ul,
 .landing-tv-side-panel .detail-list {
   padding-left: 18px;
+}
+
+.landing-tv-side-panel .tv-info-card:first-child h3 {
+  font-size: 18px;
+  line-height: 1.2;
+}
+
+.landing-tv-side-panel .tv-info-card:first-child p {
+  font-size: 15px;
+  line-height: 1.6;
 }
 
 .professional-learning-cards {
