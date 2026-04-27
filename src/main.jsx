@@ -411,23 +411,46 @@ function createTarongaTvDraft() {
 function normalizeYouTubeEmbedUrl(value = "") {
   const raw = value.trim();
   if (!raw) return "";
-  if (raw.includes("/embed/")) return raw;
 
-  try {
-    const url = new URL(raw);
-    if (url.hostname === "youtu.be") {
-      const id = url.pathname.replace("/", "");
-      return id ? `https://www.youtube.com/embed/${id}` : raw;
-    }
-    if (url.hostname.includes("youtube.com")) {
-      const id = url.searchParams.get("v");
-      if (id) return `https://www.youtube.com/embed/${id}`;
-    }
-  } catch {
-    return raw;
+  const iframeSrcMatch = raw.match(/src=["']([^"']+)["']/i);
+  const candidate = iframeSrcMatch?.[1] || raw;
+  if (candidate.includes("/embed/")) {
+    return candidate.replace("https://www.youtube.com/embed/", "https://www.youtube-nocookie.com/embed/")
+      .replace("https://youtube.com/embed/", "https://www.youtube-nocookie.com/embed/")
+      .replace("https://m.youtube.com/embed/", "https://www.youtube-nocookie.com/embed/");
   }
 
-  return raw;
+  try {
+    const url = new URL(candidate);
+    const hostname = url.hostname.replace(/^www\./, "").replace(/^m\./, "");
+    let id = "";
+
+    if (hostname === "youtu.be") {
+      id = url.pathname.replace("/", "");
+    } else if (hostname === "youtube.com") {
+      if (url.pathname === "/watch") {
+        id = url.searchParams.get("v") || "";
+      } else if (url.pathname.startsWith("/shorts/") || url.pathname.startsWith("/live/") || url.pathname.startsWith("/embed/")) {
+        id = url.pathname.split("/")[2] || "";
+      }
+    }
+
+    if (id) {
+      const start = url.searchParams.get("t") || url.searchParams.get("start") || "";
+      const normalizedStart = start ? String(parseInt(start, 10) || 0) : "";
+      const startQuery = normalizedStart ? `?start=${normalizedStart}` : "";
+      return `https://www.youtube-nocookie.com/embed/${id}${startQuery}`;
+    }
+
+    if (hostname === "youtu.be") {
+      const id = url.pathname.replace("/", "");
+      return id ? `https://www.youtube-nocookie.com/embed/${id}` : candidate;
+    }
+  } catch {
+    return candidate;
+  }
+
+  return candidate;
 }
 
 function resizeImageFile(file) {
