@@ -437,14 +437,15 @@ main {
 }
 
 .hero-student-phone {
-  width: 176px;
+  width: 172px;
   min-height: 0;
-  aspect-ratio: 0.76;
+  aspect-ratio: 0.9;
 }
 
 .live-student-phone {
-  width: 174px;
-  min-height: 296px;
+  width: 172px;
+  min-height: 0;
+  aspect-ratio: 0.88;
 }
 
 .student-phone-bar {
