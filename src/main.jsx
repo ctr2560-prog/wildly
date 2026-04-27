@@ -1082,6 +1082,30 @@ function StudentHeroPhonePreview({ variant = "hero" }) {
   );
 }
 
+function HeroSecondaryLaptopPreview() {
+  return (
+    <div className="secondary-laptop">
+      <div className="secondary-laptop-screen">
+        <div className="secondary-laptop-toolbar">
+          <span></span>
+          <span></span>
+          <span></span>
+        </div>
+        <div className="secondary-laptop-body">
+          <span className="student-phone-pill">Live lesson</span>
+          <h3>Adaptations of Australian Animals</h3>
+          <p>Student view on device</p>
+          <div className="student-phone-question">
+            <strong>Which feature helps a koala live in trees?</strong>
+          </div>
+          <a href={studentRoute()} className="student-phone-cta">Submit</a>
+        </div>
+      </div>
+      <div className="secondary-laptop-base"></div>
+    </div>
+  );
+}
+
 function LandingSubjectStrip() {
   const [flippedSubject, setFlippedSubject] = useState("");
 
@@ -1134,7 +1158,7 @@ function LandingPage() {
           </div>
           <div className="device-stage" aria-label="Wildly teacher dashboard preview">
             <div className="laptop"><div className="laptop-screen"><iframe className="teacher-preview" src={teacherPreviewRoute()} title="Wildly teacher dashboard preview" tabIndex="-1"></iframe></div><div className="laptop-base"></div></div>
-            <StudentHeroPhonePreview />
+            <HeroSecondaryLaptopPreview />
           </div>
         </section>
         <section className="marketing-band">

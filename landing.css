@@ -436,16 +436,67 @@ main {
   overflow: hidden;
 }
 
-.hero-student-phone {
-  width: 172px;
-  min-height: 0;
-  aspect-ratio: 0.78;
-}
-
 .live-student-phone {
   width: 172px;
   min-height: 0;
   aspect-ratio: 0.88;
+}
+
+.secondary-laptop {
+  position: absolute;
+  right: 0;
+  bottom: 18px;
+  width: 250px;
+}
+
+.secondary-laptop-screen {
+  overflow: hidden;
+  border: 6px solid #1c201d;
+  border-radius: 10px 10px 6px 6px;
+  background: #fff;
+  box-shadow: 0 18px 34px rgba(21, 39, 29, 0.16);
+}
+
+.secondary-laptop-toolbar {
+  display: flex;
+  gap: 6px;
+  padding: 10px 12px;
+  border-bottom: 1px solid #edf1ec;
+  background: #fbfcfa;
+}
+
+.secondary-laptop-toolbar span {
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: #c7d3cb;
+}
+
+.secondary-laptop-body {
+  display: grid;
+  gap: 10px;
+  padding: 14px;
+}
+
+.secondary-laptop-body h3 {
+  margin: 0;
+  color: var(--green-950);
+  font-size: 17px;
+  line-height: 1.15;
+}
+
+.secondary-laptop-body p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.secondary-laptop-base {
+  width: 82%;
+  height: 12px;
+  margin: 0 auto;
+  border-radius: 0 0 18px 18px;
+  background: linear-gradient(90deg, #c7cec7, #f4f6f3 46%, #b9c0b9);
 }
 
 .student-phone-bar {
@@ -1380,6 +1431,10 @@ svg {
   }
 
   .phone {
+    display: none;
+  }
+
+  .secondary-laptop {
     display: none;
   }
 
