@@ -3379,19 +3379,24 @@ function StaffConsole({ onLock }) {
         updatedAt: serverTimestamp(),
       };
 
+      let savedId = item.id || "";
+
       if (item.id) {
         await setDoc(doc(db, "tarongaTvVideos", item.id), payload, { merge: true });
       } else {
-        await addDoc(tarongaTvCollection, {
+        const videoRef = await addDoc(tarongaTvCollection, {
           ...payload,
           createdAt: serverTimestamp(),
         });
+        savedId = videoRef.id;
       }
 
       setTarongaTvSaveState("saved");
+      return savedId;
     } catch (error) {
       console.error("Unable to save Taronga TV video", error);
       setTarongaTvSaveState("error");
+      return "";
     }
   }
 
@@ -4182,8 +4187,10 @@ function TarongaTvPanel({ items, contentItems, status, saveState, saveVideo, del
 
   async function handleSubmit(event) {
     event.preventDefault();
-    await saveVideo(draft);
-    setSelectedId("");
+    const savedId = await saveVideo(draft);
+    if (savedId) {
+      setSelectedId(savedId);
+    }
   }
 
   async function handleDelete() {
