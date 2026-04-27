@@ -1249,12 +1249,19 @@ function LandingPage() {
                   <p>Support teachers and leaders with professional learning designed around nature-connected pedagogy, curriculum planning and classroom implementation.</p>
                 </div>
               </div>
-              <ul className="marketing-list">
-                <li>Virtual sessions for schools and teacher networks.</li>
-                <li>Face-to-face workshops at your school.</li>
-                <li>On-site professional learning opportunities at Taronga Zoo Sydney and Taronga Western Plains Zoo Dubbo.</li>
-                <li>Practical workshops linking classroom planning, Wildly content and Taronga Tracka experiences.</li>
-              </ul>
+              <div className="professional-learning-cards">
+                {[
+                  ["Virtual sessions", "Online professional learning for schools, teams and teacher networks."],
+                  ["At your school", "Face-to-face workshops tailored to your staff and local context."],
+                  ["At Taronga", "On-site learning at Taronga Zoo Sydney and Taronga Western Plains Zoo Dubbo."],
+                  ["Practical workshops", "Focused on pedagogy, planning, Wildly content and Taronga Tracka integration."],
+                ].map(([title, copy]) => (
+                  <article className="marketing-card professional-learning-card" key={title}>
+                    <h3>{title}</h3>
+                    <p>{copy}</p>
+                  </article>
+                ))}
+              </div>
             </div>
           </div>
         </section>
