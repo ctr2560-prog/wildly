@@ -389,6 +389,305 @@ main {
   line-height: 1.6;
 }
 
+.marketing-page-about-rich {
+  display: grid;
+  gap: 26px;
+}
+
+.about-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+  gap: 34px;
+  align-items: center;
+  padding: 40px 0 18px;
+}
+
+.about-hero-copy {
+  display: grid;
+  gap: 16px;
+}
+
+.about-hero-copy h1 {
+  max-width: 640px;
+  margin: 0;
+  color: var(--green-950);
+  font-size: clamp(44px, 5vw, 72px);
+  line-height: 0.98;
+}
+
+.about-hero-copy .hero-subtitle {
+  max-width: 580px;
+  margin: 0;
+  color: #274235;
+  font-size: 28px;
+  line-height: 1.18;
+  font-weight: 700;
+}
+
+.about-hero-copy p:not(.hero-subtitle) {
+  max-width: 620px;
+  margin: 0;
+  color: #4d5c55;
+  font-size: 19px;
+  line-height: 1.7;
+}
+
+.about-hero-media {
+  width: 96%;
+  aspect-ratio: 1.38 / 1;
+  justify-self: end;
+  overflow: hidden;
+  border: 1px solid rgba(16, 54, 34, 0.08);
+  border-radius: 16px;
+  background: linear-gradient(180deg, #eef5ef, #f9fbf8);
+  box-shadow: 0 28px 56px rgba(12, 33, 22, 0.1);
+}
+
+.about-hero-media img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 30%;
+}
+
+.about-impact-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.about-impact-card {
+  min-height: 172px;
+  padding: 26px;
+  border: 1px solid rgba(16, 54, 34, 0.08);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 20px 44px rgba(12, 33, 22, 0.07);
+}
+
+.about-impact-card h2 {
+  margin: 0 0 12px;
+  color: var(--green-900);
+  font-size: 24px;
+  line-height: 1.12;
+}
+
+.about-impact-card p {
+  margin: 0;
+  color: #58665f;
+  font-size: 15px;
+  line-height: 1.65;
+}
+
+.about-story-band,
+.about-model-band {
+  padding: 18px 0 8px;
+  border-top: 1px solid var(--line);
+}
+
+.about-value-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+}
+
+.about-value-card {
+  display: grid;
+  align-content: start;
+  gap: 14px;
+  min-height: 212px;
+  padding: 28px;
+  border: 1px solid rgba(16, 54, 34, 0.08);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 20px 40px rgba(12, 33, 22, 0.06);
+}
+
+.about-value-card.featured {
+  min-height: 244px;
+  background: linear-gradient(180deg, #fff8ee, #fff2de);
+  border-color: rgba(201, 141, 42, 0.18);
+}
+
+.about-value-card.green {
+  background: linear-gradient(180deg, #f8fbf7, #f1f6ef);
+}
+
+.about-value-card.sand {
+  background: linear-gradient(180deg, #fffdf9, #fbf6ef);
+}
+
+.about-value-card.teal {
+  background: linear-gradient(180deg, #f6fbfa, #edf7f5);
+}
+
+.about-value-icon {
+  display: inline-grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  color: var(--green-900);
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: inset 0 0 0 1px rgba(16, 54, 34, 0.06);
+}
+
+.about-card-icon {
+  width: 28px;
+  height: 28px;
+  stroke-width: 1.9;
+}
+
+.about-value-card h3,
+.about-model-card h3 {
+  margin: 0;
+  color: var(--green-950);
+  font-size: 26px;
+  line-height: 1.08;
+}
+
+.about-value-card p,
+.about-model-card p {
+  margin: 0;
+  color: #56655d;
+  font-size: 16px;
+  line-height: 1.68;
+}
+
+.about-ecosystem {
+  display: grid;
+  grid-template-columns: minmax(0, 0.92fr) minmax(0, 1.08fr);
+  gap: 34px;
+  align-items: center;
+  padding: 26px 0;
+  border-top: 1px solid var(--line);
+}
+
+.about-ecosystem-media {
+  width: 92%;
+  height: 380px;
+  justify-self: start;
+  overflow: hidden;
+  border-radius: 16px;
+  box-shadow: 0 22px 46px rgba(12, 33, 22, 0.08);
+}
+
+.about-ecosystem-media img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.about-ecosystem-copy {
+  display: grid;
+  gap: 14px;
+}
+
+.about-kicker {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  width: fit-content;
+  padding: 0 12px;
+  border-radius: 999px;
+  color: var(--green-900);
+  background: var(--green-100);
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.about-ecosystem-copy h2 {
+  margin: 0;
+  color: var(--green-950);
+  font-size: 42px;
+  line-height: 1.02;
+}
+
+.about-ecosystem-copy > p {
+  max-width: 640px;
+  margin: 0;
+  color: #4d5c55;
+  font-size: 18px;
+  line-height: 1.68;
+}
+
+.about-checklist {
+  display: grid;
+  gap: 14px;
+  margin: 6px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.about-checklist li {
+  display: grid;
+  grid-template-columns: 36px minmax(0, 1fr);
+  gap: 12px;
+  align-items: start;
+}
+
+.about-checklist li span {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  color: var(--green-900);
+  background: #eef5ea;
+}
+
+.about-check-icon {
+  width: 18px;
+  height: 18px;
+  stroke-width: 2.2;
+}
+
+.about-checklist li p {
+  margin: 0;
+  color: #46554e;
+  font-size: 16px;
+  line-height: 1.6;
+}
+
+.about-model-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 20px;
+}
+
+.about-model-card {
+  display: grid;
+  align-content: start;
+  gap: 14px;
+  min-height: 220px;
+  padding: 28px;
+  border: 1px solid rgba(16, 54, 34, 0.08);
+  border-radius: 14px;
+  background: linear-gradient(180deg, #ffffff, #f8fbf7);
+  box-shadow: 0 18px 38px rgba(12, 33, 22, 0.06);
+}
+
+.about-model-step {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  color: #fff;
+  background: linear-gradient(180deg, var(--green-900), var(--green-800));
+  font-size: 14px;
+  font-weight: 900;
+}
+
+.about-cta-band {
+  margin-top: 6px;
+}
+
 .audience-pill {
   display: inline-flex;
   align-items: center;
@@ -1523,6 +1822,20 @@ svg {
     grid-template-columns: 1fr;
   }
 
+  .about-hero,
+  .about-impact-grid,
+  .about-value-grid,
+  .about-ecosystem,
+  .about-model-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .about-hero-media,
+  .about-ecosystem-media {
+    width: 100%;
+    justify-self: stretch;
+  }
+
   .device-stage {
     min-height: 440px;
   }
@@ -1610,6 +1923,30 @@ svg {
 
   .student-side-showcase {
     grid-template-columns: 1fr;
+  }
+
+  .about-hero {
+    gap: 22px;
+    padding-top: 24px;
+  }
+
+  .about-hero-copy h1 {
+    font-size: 42px;
+  }
+
+  .about-hero-copy .hero-subtitle {
+    font-size: 22px;
+  }
+
+  .about-impact-card,
+  .about-value-card,
+  .about-model-card {
+    min-height: 0;
+    padding: 22px;
+  }
+
+  .about-ecosystem-media {
+    height: 280px;
   }
 
   .journey-line::before {

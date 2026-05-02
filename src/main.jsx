@@ -1291,48 +1291,9 @@ function LandingPage() {
 }
 
 function MarketingPage({ page = "about" }) {
+  if (page === "about") return <AboutMarketingPage />;
+
   const pageConfig = {
-    about: {
-      eyebrow: "About Wildly",
-      title: "A learning platform built around nature, curriculum and action.",
-      subtitle: "Wildly helps teachers move from inspiration to structured classroom learning.",
-      description: "It brings curriculum-aligned resources, learning sequences, Taronga-connected experiences and adaptive pathways into one place so schools can teach with clarity and relevance.",
-      image: assets.aboutTop,
-      imageAlt: "Students and educators learning with wildlife",
-      primaryLabel: "Get started free",
-      primaryHref: signupRoute(),
-      secondaryLabel: "View teacher preview",
-      secondaryHref: teacherPreviewRoute(),
-      stats: [
-        ["Curriculum-aligned", "NSW, Australian Curriculum and Early Years support"],
-        ["Teacher-ready", "Units, lessons, videos and downloadable resources"],
-        ["Real-world", "Connected to Taronga experiences and Tracka data"],
-      ],
-      bands: [
-        {
-          title: "What Wildly does",
-          copy: "Wildly is designed as both a teacher resource library and a long-term learning engine. It supports classroom planning now, and can grow into personalised student pathways as your data and content model mature.",
-          cards: [
-            ["Resource library", "Teachers can browse by subject, stage and format, then open or assign content."],
-            ["Planning support", "Learning paths, lesson groupings and linked outcomes reduce manual setup."],
-            ["Excursions and Zoosnooz", "Taronga experiences can connect directly into classroom preparation, follow-up and reflection."],
-            ["Connected experiences", "Excursions, Tracka missions, Taronga TV and professional learning all sit inside the same ecosystem."],
-          ],
-        },
-        {
-          title: "Why the model matters",
-          copy: "This is not just a static repository. The product structure already supports progression from content access to assignment, reporting and adaptive recommendations.",
-          split: {
-            image: assets.aboutBottom,
-            points: [
-              "Teacher-first interface for planning, scanning and assigning.",
-              "Staff-side publishing tools for content, video and professional learning.",
-              "A platform structure that can expand cleanly into student workflows later.",
-            ],
-          },
-        },
-      ],
-    },
     subjects: {
       eyebrow: "Subjects",
       title: "Explore curriculum areas designed for real classrooms.",
@@ -1562,6 +1523,156 @@ function MarketingPage({ page = "about" }) {
           <div>
             <h2>Ready to shape this page further?</h2>
             <p>This is now a proper destination page with editable structure, content bands and visuals. You can refine copy, replace imagery and add real school-facing detail later.</p>
+          </div>
+          <div className="hero-actions">
+            <a className="primary-action" href={signupRoute()}>Get started</a>
+            <a className="secondary-action" href={appLinks.demoBooking}>Book a demo</a>
+          </div>
+        </section>
+
+        <footer className="site-footer"><div className="footer-links"><a className="staff-login" href={routePath("staff")}>TARONGA STAFF LOGIN</a></div></footer>
+      </main>
+    </>
+  );
+}
+
+function AboutMarketingPage() {
+  const impactStats = [
+    ["Teacher-first", "Built for scanning, planning, assigning and adapting without extra setup."],
+    ["Curriculum aligned", "Supports NSW, Australian Curriculum and Early Years implementation."],
+    ["Connected ecosystem", "Resources, Taronga TV, Tracka, excursions and professional learning in one model."],
+    ["Ready to grow", "Structured to expand into student pathways, live learning and analytics."],
+  ];
+
+  const valueCards = [
+    {
+      title: "Resource library",
+      copy: "Teachers can move quickly from subject browsing into lessons, videos, downloads and assignable content.",
+      icon: "book",
+      tone: "green",
+    },
+    {
+      title: "Learning design",
+      copy: "Learning paths, linked outcomes, lesson structures and teacher notes reduce planning overhead.",
+      icon: "path",
+      tone: "sand",
+    },
+    {
+      title: "Excursions and Zoosnooz",
+      copy: "Taronga experiences can connect directly into pre-visit teaching, live engagement and classroom follow-up.",
+      icon: "target",
+      tone: "gold",
+      featured: true,
+    },
+    {
+      title: "Staff publishing control",
+      copy: "Education teams can manage resources, Taronga TV and professional learning through one publishing workflow.",
+      icon: "monitor",
+      tone: "teal",
+    },
+  ];
+
+  const ecosystemPoints = [
+    "Teacher-first interface for planning, scanning and assigning.",
+    "Staff-side publishing tools for content, video and professional learning.",
+    "A platform structure that can expand cleanly into student workflows later.",
+    "One system that can connect classroom learning to Taronga experiences and future analytics.",
+  ];
+
+  const modelCards = [
+    ["Browse and plan", "Teachers enter through a familiar, low-friction resource-library experience."],
+    ["Teach and assign", "Content can move into lessons, live sessions, downloadable files and classroom delivery."],
+    ["Extend and analyse", "Tracka, Taronga TV, excursions and reporting deepen the learning loop over time."],
+  ];
+
+  return (
+    <>
+      <SiteHeader active="about" />
+      <main className="marketing-page marketing-page-about-rich">
+        <section className="about-hero">
+          <div className="about-hero-copy">
+            <span className="audience-pill">About Wildly</span>
+            <h1>A learning platform built around nature, curriculum and action.</h1>
+            <p className="hero-subtitle">Wildly helps teachers move from inspiration to structured classroom learning.</p>
+            <p>It brings curriculum-aligned resources, learning sequences, Taronga-connected experiences and adaptive pathways into one place so schools can teach with clarity and relevance.</p>
+            <div className="hero-actions">
+              <a className="primary-action" href={signupRoute()}>Get started free</a>
+              <a className="secondary-action" href={teacherPreviewRoute()}>View teacher preview</a>
+            </div>
+          </div>
+          <div className="about-hero-media">
+            <img src={assets.aboutTop} alt="Students and educators learning with wildlife" />
+          </div>
+        </section>
+
+        <section className="about-impact-grid">
+          {impactStats.map(([title, copy]) => (
+            <article className="about-impact-card" key={title}>
+              <h2>{title}</h2>
+              <p>{copy}</p>
+            </article>
+          ))}
+        </section>
+
+        <section className="about-story-band">
+          <div className="section-heading">
+            <div>
+              <h2>What Wildly does</h2>
+              <p>Wildly is designed as both a teacher resource library and a long-term learning engine. It supports classroom planning now, and can grow into personalised student pathways as your data and content model mature.</p>
+            </div>
+          </div>
+          <div className="about-value-grid">
+            {valueCards.map((card) => (
+              <article className={`about-value-card ${card.featured ? "featured" : ""} ${card.tone}`} key={card.title}>
+                <span className="about-value-icon"><Icon type={card.icon} className="about-card-icon" /></span>
+                <h3>{card.title}</h3>
+                <p>{card.copy}</p>
+              </article>
+            ))}
+          </div>
+        </section>
+
+        <section className="about-ecosystem">
+          <div className="about-ecosystem-media">
+            <img src={assets.aboutBottom} alt="Students engaging with Wildly outdoors" />
+          </div>
+          <div className="about-ecosystem-copy">
+            <span className="about-kicker">Why the model matters</span>
+            <h2>More than a static repository.</h2>
+            <p>The product structure already supports progression from content access into assignment, reporting, live learning and adaptive recommendations. That gives you a clearer path from concept to a full teaching and learning platform.</p>
+            <ul className="about-checklist">
+              {ecosystemPoints.map((point) => (
+                <li key={point}>
+                  <span><Icon type="plus" className="about-check-icon" /></span>
+                  <p>{point}</p>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </section>
+
+        <section className="about-model-band">
+          <div className="section-heading">
+            <div>
+              <h2>How the platform grows with schools</h2>
+              <p>The strongest education platforms make the first use case simple, then expand into richer teaching, engagement and operational workflows. Wildly is structured the same way.</p>
+            </div>
+          </div>
+          <div className="about-model-grid">
+            {modelCards.map(([title, copy], index) => (
+              <article className="about-model-card" key={title}>
+                <span className="about-model-step">0{index + 1}</span>
+                <h3>{title}</h3>
+                <p>{copy}</p>
+              </article>
+            ))}
+          </div>
+        </section>
+
+        <section className="marketing-cta-band about-cta-band">
+          <div>
+            <h2>Built for educators. Designed to deepen over time.</h2>
+            <p>Start with teacher access, curriculum-aligned resources and professional learning. Then layer in Tracka, Taronga TV, live lessons and student pathways as the platform grows.</p>
           </div>
           <div className="hero-actions">
             <a className="primary-action" href={signupRoute()}>Get started</a>
