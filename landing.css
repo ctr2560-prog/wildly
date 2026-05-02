@@ -203,11 +203,38 @@ main {
   object-fit: cover;
 }
 
+.marketing-page-about .marketing-hero {
+  grid-template-columns: minmax(0, 0.92fr) minmax(0, 1.08fr);
+  gap: 38px;
+  min-height: 660px;
+  padding-top: 46px;
+}
+
+.marketing-page-about .marketing-hero-copy {
+  display: grid;
+  gap: 14px;
+}
+
+.marketing-page-about .marketing-hero-visual {
+  min-height: 560px;
+  border-radius: 12px;
+  background: linear-gradient(180deg, #eef5ef 0%, #f8fbf8 100%);
+}
+
+.marketing-page-about .marketing-hero-visual img {
+  object-position: center 32%;
+}
+
 .marketing-stat-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 18px;
   padding: 10px 0 22px;
+}
+
+.marketing-stat-grid-about {
+  gap: 20px;
+  padding: 18px 0 28px;
 }
 
 .marketing-stat-card,
@@ -235,15 +262,46 @@ main {
   line-height: 1.6;
 }
 
+.marketing-page-about .marketing-stat-card {
+  min-height: 172px;
+  padding: 28px;
+  border-radius: 12px;
+  box-shadow: 0 22px 44px rgba(12, 33, 22, 0.07);
+}
+
+.marketing-page-about .marketing-stat-card h2 {
+  font-size: 24px;
+}
+
 .marketing-band {
   padding: 30px 0;
   border-top: 1px solid var(--line);
+}
+
+.marketing-band-about .section-heading {
+  margin-bottom: 22px;
 }
 
 .marketing-card-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 18px;
+}
+
+.marketing-card-grid-about {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+}
+
+.marketing-page-about .marketing-card {
+  min-height: 182px;
+  padding: 28px;
+  border-radius: 12px;
+  box-shadow: 0 20px 40px rgba(12, 33, 22, 0.06);
+}
+
+.marketing-page-about .marketing-card h3 {
+  font-size: 24px;
 }
 
 .marketing-split {
@@ -253,6 +311,12 @@ main {
   align-items: center;
 }
 
+.marketing-split-about {
+  grid-template-columns: minmax(0, 0.94fr) minmax(0, 1.06fr);
+  align-items: stretch;
+  gap: 28px;
+}
+
 .marketing-split-image {
   width: 100%;
   min-height: 340px;
@@ -260,8 +324,23 @@ main {
   object-fit: cover;
 }
 
+.marketing-split-about .marketing-split-image {
+  width: 94%;
+  height: 100%;
+  min-height: 420px;
+  max-height: 456px;
+  justify-self: start;
+  align-self: stretch;
+  border-radius: 12px;
+}
+
 .marketing-split-copy {
   padding: 10px 0;
+}
+
+.marketing-split-about .marketing-split-copy {
+  display: grid;
+  align-content: center;
 }
 
 .marketing-list {

@@ -31,6 +31,8 @@ const assets = {
   binturong: assetPath("assets/binturong.jpg"),
   gorilla: assetPath("assets/gorilla.jpg"),
   teacherPl: assetPath("assets/teacher-pl.png"),
+  aboutTop: assetPath("assets/about-top.png"),
+  aboutBottom: assetPath("assets/about-bottom.png"),
   tvScreenshot: assetPath("assets/TV-Screenshot.png"),
 };
 
@@ -1295,8 +1297,8 @@ function MarketingPage({ page = "about" }) {
       title: "A learning platform built around nature, curriculum and action.",
       subtitle: "Wildly helps teachers move from inspiration to structured classroom learning.",
       description: "It brings curriculum-aligned resources, learning sequences, Taronga-connected experiences and adaptive pathways into one place so schools can teach with clarity and relevance.",
-      image: assets.gorilla,
-      imageAlt: "Gorilla habitat",
+      image: assets.aboutTop,
+      imageAlt: "Students and educators learning with wildlife",
       primaryLabel: "Get started free",
       primaryHref: signupRoute(),
       secondaryLabel: "View teacher preview",
@@ -1313,6 +1315,7 @@ function MarketingPage({ page = "about" }) {
           cards: [
             ["Resource library", "Teachers can browse by subject, stage and format, then open or assign content."],
             ["Planning support", "Learning paths, lesson groupings and linked outcomes reduce manual setup."],
+            ["Excursions and Zoosnooz", "Taronga experiences can connect directly into classroom preparation, follow-up and reflection."],
             ["Connected experiences", "Excursions, Tracka missions, Taronga TV and professional learning all sit inside the same ecosystem."],
           ],
         },
@@ -1320,7 +1323,7 @@ function MarketingPage({ page = "about" }) {
           title: "Why the model matters",
           copy: "This is not just a static repository. The product structure already supports progression from content access to assignment, reporting and adaptive recommendations.",
           split: {
-            image: assets.binturong,
+            image: assets.aboutBottom,
             points: [
               "Teacher-first interface for planning, scanning and assigning.",
               "Staff-side publishing tools for content, video and professional learning.",
@@ -1490,8 +1493,8 @@ function MarketingPage({ page = "about" }) {
   return (
     <>
       <SiteHeader active={page} />
-      <main className="marketing-page">
-        <section className="marketing-hero">
+      <main className={`marketing-page marketing-page-${page}`}>
+        <section className={`marketing-hero marketing-hero-${page}`}>
           <div className="marketing-hero-copy">
             <span className="audience-pill">{pageConfig.eyebrow}</span>
             <h1>{pageConfig.title}</h1>
@@ -1507,7 +1510,7 @@ function MarketingPage({ page = "about" }) {
           </div>
         </section>
 
-        <section className="marketing-stat-grid">
+        <section className={`marketing-stat-grid marketing-stat-grid-${page}`}>
           {pageConfig.stats.map(([title, copy]) => (
             <article className="marketing-stat-card" key={title}>
               <h2>{title}</h2>
@@ -1517,7 +1520,7 @@ function MarketingPage({ page = "about" }) {
         </section>
 
         {pageConfig.bands.map((band) => (
-          <section className="marketing-band" key={band.title}>
+          <section className={`marketing-band marketing-band-${page}`} key={band.title}>
             <div className="section-heading">
               <div>
                 <h2>{band.title}</h2>
@@ -1532,7 +1535,7 @@ function MarketingPage({ page = "about" }) {
             ) : null}
 
             {band.cards ? (
-              <div className="marketing-card-grid">
+              <div className={`marketing-card-grid marketing-card-grid-${page}`}>
                 {band.cards.map(([title, copy]) => (
                   <article className="marketing-card" key={title}>
                     <h3>{title}</h3>
@@ -1543,7 +1546,7 @@ function MarketingPage({ page = "about" }) {
             ) : null}
 
             {band.split ? (
-              <div className="marketing-split">
+              <div className={`marketing-split marketing-split-${page}`}>
                 <img className="marketing-split-image" src={band.split.image} alt="" />
                 <div className="marketing-split-copy">
                   <ul className="marketing-list">
