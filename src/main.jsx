@@ -30,6 +30,7 @@ const assets = {
   giraffe: assetPath("assets/giraffe.jpg"),
   binturong: assetPath("assets/binturong.jpg"),
   gorilla: assetPath("assets/gorilla.jpg"),
+  teacherPl: assetPath("assets/teacher-pl.png"),
   tvScreenshot: assetPath("assets/TV-Screenshot.png"),
 };
 
@@ -1256,7 +1257,7 @@ function LandingPage() {
         </section>
         <section className="marketing-band">
           <div className="marketing-split professional-learning-band">
-            <img className="marketing-split-image" src={assets.gorilla} alt="Professional learning with Wildly by Taronga" />
+            <img className="marketing-split-image" src={assets.teacherPl} alt="Taronga teacher professional learning session" />
             <div className="marketing-split-copy">
               <div className="section-heading compact-heading">
                 <div>
