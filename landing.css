@@ -775,6 +775,27 @@ svg {
   line-height: 1.35;
 }
 
+.subject-strip {
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  align-items: stretch;
+}
+
+.subject-strip > a {
+  display: grid;
+  align-content: start;
+  gap: 10px;
+  min-height: 148px;
+  padding: 18px;
+  border-radius: 8px;
+  box-shadow: var(--surface-shadow);
+}
+
+.subject-strip > a svg {
+  width: 34px;
+  height: 34px;
+  stroke-width: 1.8;
+}
+
 .science {
   color: #377e37;
   background: #eef6e8;
