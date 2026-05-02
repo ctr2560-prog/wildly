@@ -407,6 +407,14 @@ main {
   gap: 16px;
 }
 
+.about-hero-copy .audience-pill {
+  min-height: 40px;
+  padding: 0 18px;
+  border-radius: 999px;
+  font-size: 15px;
+  font-weight: 900;
+}
+
 .about-hero-copy h1 {
   max-width: 640px;
   margin: 0;
@@ -682,6 +690,40 @@ main {
   background: linear-gradient(180deg, var(--green-900), var(--green-800));
   font-size: 14px;
   font-weight: 900;
+}
+
+.about-placeholder-band {
+  padding: 18px 0 8px;
+  border-top: 1px solid var(--line);
+}
+
+.about-placeholder-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+}
+
+.about-placeholder-card {
+  min-height: 190px;
+  padding: 28px;
+  border: 1px solid rgba(16, 54, 34, 0.08);
+  border-radius: 14px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(246, 250, 245, 0.98));
+  box-shadow: 0 18px 38px rgba(12, 33, 22, 0.06);
+}
+
+.about-placeholder-card h3 {
+  margin: 0 0 12px;
+  color: var(--green-950);
+  font-size: 24px;
+  line-height: 1.1;
+}
+
+.about-placeholder-card p {
+  margin: 0;
+  color: #56655d;
+  font-size: 16px;
+  line-height: 1.68;
 }
 
 .about-cta-band {
@@ -1826,7 +1868,8 @@ svg {
   .about-impact-grid,
   .about-value-grid,
   .about-ecosystem,
-  .about-model-grid {
+  .about-model-grid,
+  .about-placeholder-grid {
     grid-template-columns: 1fr;
   }
 
@@ -1940,7 +1983,8 @@ svg {
 
   .about-impact-card,
   .about-value-card,
-  .about-model-card {
+  .about-model-card,
+  .about-placeholder-card {
     min-height: 0;
     padding: 22px;
   }

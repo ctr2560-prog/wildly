@@ -1565,16 +1565,16 @@ function AboutMarketingPage() {
       featured: true,
     },
     {
-      title: "Staff publishing control",
-      copy: "Education teams can manage resources, Taronga TV and professional learning through one publishing workflow.",
-      icon: "monitor",
+      title: "Student live mode",
+      copy: "Teachers can run lessons live, share a code and guide students through interactive classroom experiences on their own devices.",
+      icon: "play",
       tone: "teal",
     },
   ];
 
   const ecosystemPoints = [
     "Teacher-first interface for planning, scanning and assigning.",
-    "Staff-side publishing tools for content, video and professional learning.",
+    "Learning through nature delivered through modern digital innovation and connected classroom experiences.",
     "A platform structure that can expand cleanly into student workflows later.",
     "One system that can connect classroom learning to Taronga experiences and future analytics.",
   ];
@@ -1597,7 +1597,6 @@ function AboutMarketingPage() {
             <p>It brings curriculum-aligned resources, learning sequences, Taronga-connected experiences and adaptive pathways into one place so schools can teach with clarity and relevance.</p>
             <div className="hero-actions">
               <a className="primary-action" href={signupRoute()}>Get started free</a>
-              <a className="secondary-action" href={teacherPreviewRoute()}>View teacher preview</a>
             </div>
           </div>
           <div className="about-hero-media">
@@ -1662,6 +1661,28 @@ function AboutMarketingPage() {
             {modelCards.map(([title, copy], index) => (
               <article className="about-model-card" key={title}>
                 <span className="about-model-step">0{index + 1}</span>
+                <h3>{title}</h3>
+                <p>{copy}</p>
+              </article>
+            ))}
+          </div>
+        </section>
+
+        <section className="about-placeholder-band">
+          <div className="section-heading">
+            <div>
+              <h2>Strategic direction and organisational context</h2>
+              <p>Use this area later for the longer-form institutional story behind Wildly and how it supports Taronga’s broader education direction.</p>
+            </div>
+          </div>
+          <div className="about-placeholder-grid">
+            {[
+              ["Strategic directions", "Placeholder for the key strategic directions that Wildly supports across education, conservation and engagement."],
+              ["Goals", "Placeholder for platform goals, intended school impact, and the teaching and learning outcomes you want to drive."],
+              ["Statistics", "Placeholder for rollout numbers, educator reach, student engagement figures, program participation or usage metrics."],
+              ["History", "Placeholder for the Wildly story, how it evolved from Taronga education work, and where it is heading next."],
+            ].map(([title, copy]) => (
+              <article className="about-placeholder-card" key={title}>
                 <h3>{title}</h3>
                 <p>{copy}</p>
               </article>
