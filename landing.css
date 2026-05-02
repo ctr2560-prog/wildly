@@ -206,8 +206,9 @@ main {
 .marketing-page-about .marketing-hero {
   grid-template-columns: minmax(0, 0.92fr) minmax(0, 1.08fr);
   gap: 38px;
-  min-height: 660px;
+  min-height: 0;
   padding-top: 46px;
+  align-items: center;
 }
 
 .marketing-page-about .marketing-hero-copy {
@@ -216,12 +217,18 @@ main {
 }
 
 .marketing-page-about .marketing-hero-visual {
-  min-height: 560px;
+  width: 94%;
+  aspect-ratio: 1.42 / 1;
+  min-height: 0;
+  max-height: 430px;
+  justify-self: end;
+  align-self: center;
   border-radius: 12px;
   background: linear-gradient(180deg, #eef5ef 0%, #f8fbf8 100%);
 }
 
 .marketing-page-about .marketing-hero-visual img {
+  height: 100%;
   object-position: center 32%;
 }
 
@@ -313,7 +320,7 @@ main {
 
 .marketing-split-about {
   grid-template-columns: minmax(0, 0.94fr) minmax(0, 1.06fr);
-  align-items: stretch;
+  align-items: center;
   gap: 28px;
 }
 
@@ -325,12 +332,12 @@ main {
 }
 
 .marketing-split-about .marketing-split-image {
-  width: 94%;
-  height: 100%;
-  min-height: 420px;
-  max-height: 456px;
+  width: 90%;
+  height: 350px;
+  min-height: 0;
+  max-height: 350px;
   justify-self: start;
-  align-self: stretch;
+  align-self: center;
   border-radius: 12px;
 }
 
