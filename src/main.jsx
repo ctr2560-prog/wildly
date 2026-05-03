@@ -1292,41 +1292,9 @@ function LandingPage() {
 
 function MarketingPage({ page = "about" }) {
   if (page === "about") return <AboutMarketingPage />;
+  if (page === "subjects") return <SubjectsMarketingPage />;
 
   const pageConfig = {
-    subjects: {
-      eyebrow: "Subjects",
-      title: "Explore curriculum areas designed for real classrooms.",
-      subtitle: "Subject pages can later become deep browse destinations. For now, this gives you a strong editable scaffold.",
-      description: "Wildly supports discipline-based and cross-curricular teaching. Teachers can move from broad subject browsing into lessons, resources, videos and learning pathways.",
-      image: assets.heroKoala,
-      imageAlt: "Koala with joey",
-      primaryLabel: "Open teacher resources",
-      primaryHref: teacherRoute("resources"),
-      secondaryLabel: "Teacher preview",
-      secondaryHref: teacherPreviewRoute(),
-      stats: [
-        ["9 subject areas", "Including Early Years and Literacy & Numeracy"],
-        ["Cross-curricular", "Content can connect outcomes across multiple areas"],
-        ["Stage-based", "Ready for filtering by year level and progression"],
-      ],
-      bands: [
-        {
-          title: "Subject library",
-          copy: "Each subject can become its own browse experience with teacher language, filters and highlighted content collections.",
-          subjectCards: true,
-        },
-        {
-          title: "Built for breadth",
-          copy: "The subject model supports both traditional classroom areas and Taronga-specific delivery modes like excursions, nature-based literacy, and early years engagement.",
-          cards: [
-            ["Science and HSIE", "Strong fit for conservation, ecosystems, habitats and real-world inquiry."],
-            ["Literacy, numeracy and English", "Useful for writing, speaking, data interpretation and evidence-based thinking."],
-            ["Early Years and PDHPE", "Supports play-based, wellbeing-led and sensory learning experiences."],
-          ],
-        },
-      ],
-    },
     "learning-paths": {
       eyebrow: "Learning Paths",
       title: "Build full teaching sequences, not just isolated resources.",
@@ -1698,6 +1666,183 @@ function AboutMarketingPage() {
           <div className="hero-actions">
             <a className="primary-action" href={signupRoute()}>Get started</a>
             <a className="secondary-action" href={appLinks.demoBooking}>Book a demo</a>
+          </div>
+        </section>
+
+        <footer className="site-footer"><div className="footer-links"><a className="staff-login" href={routePath("staff")}>TARONGA STAFF LOGIN</a></div></footer>
+      </main>
+    </>
+  );
+}
+
+function SubjectsMarketingPage() {
+  const [activeSubject, setActiveSubject] = useState("Science");
+
+  const previewCards = useMemo(() => {
+    const imageBySubject = {
+      Science: assets.heroKoala,
+      English: assets.koala,
+      "Literacy & Numeracy": assets.river,
+      Mathematics: assets.giraffe,
+      HSIE: assets.rhino,
+      PDHPE: assets.aboutBottom,
+      CAPA: assets.binturong,
+      "Technology & STEM": assets.aboutTop,
+      "Early Years": assets.teacherPl,
+    };
+
+    return {
+      Science: [
+        { id: "sci-path", type: "Learning Path", title: "Wildlife Adaptations Unit", stage: "Stage 2", length: "6 weeks", image: imageBySubject.Science, description: "Inquiry sequence linking habitats, features and survival.", locked: true },
+        { id: "sci-lesson", type: "Lesson", title: "Observing Features for Survival", stage: "Stage 2", length: "60 min", image: imageBySubject.Science, description: "Teacher-led lesson with prompts, slides and discussion checks.", locked: true },
+        { id: "sci-resource", type: "Resource", title: "Animal Adaptations Worksheet Pack", stage: "Stage 2", length: "PDF + slides", image: imageBySubject.Science, description: "Printable and digital resources for class and small-group work.", locked: true },
+      ],
+      English: [
+        { id: "eng-path", type: "Learning Path", title: "Writing for Wildlife Action", stage: "Stage 3", length: "4 weeks", image: imageBySubject.English, description: "Reading, discussion and persuasive writing around conservation contexts.", locked: true },
+        { id: "eng-lesson", type: "Lesson", title: "Building Evidence in Persuasive Texts", stage: "Stage 3", length: "55 min", image: imageBySubject.English, description: "Shared writing lesson with scaffolded sentence stems and examples.", locked: true },
+        { id: "eng-resource", type: "Resource", title: "Vocabulary and Mentor Text Kit", stage: "Stage 3", length: "Docs + exemplars", image: imageBySubject.English, description: "Downloadable texts, vocabulary lists and classroom display assets.", locked: true },
+      ],
+      "Literacy & Numeracy": [
+        { id: "litnum-path", type: "Learning Path", title: "Nature Data and Communication", stage: "Stage 2", length: "5 weeks", image: imageBySubject["Literacy & Numeracy"], description: "Integrated sequence connecting reading, graphs and interpretation.", locked: true },
+        { id: "litnum-lesson", type: "Lesson", title: "Reading and Comparing Wildlife Data", stage: "Stage 2", length: "50 min", image: imageBySubject["Literacy & Numeracy"], description: "Students interpret tables and explain findings using evidence.", locked: true },
+        { id: "litnum-resource", type: "Resource", title: "Core Skills Practice Set", stage: "Stage 2", length: "Worksheet set", image: imageBySubject["Literacy & Numeracy"], description: "Short tasks for fluency, analysis and written response.", locked: true },
+      ],
+      Mathematics: [
+        { id: "math-path", type: "Learning Path", title: "Patterns, Data and Wildlife", stage: "Stage 3", length: "5 weeks", image: imageBySubject.Mathematics, description: "Maths sequence using fieldwork and real-world animal datasets.", locked: true },
+        { id: "math-lesson", type: "Lesson", title: "Representing Habitat Data", stage: "Stage 3", length: "60 min", image: imageBySubject.Mathematics, description: "Students build graphs and compare change across environments.", locked: true },
+        { id: "math-resource", type: "Resource", title: "Animal Movement Data Pack", stage: "Stage 3", length: "CSV + task cards", image: imageBySubject.Mathematics, description: "Ready-to-teach datasets and printable support tasks.", locked: true },
+      ],
+      HSIE: [
+        { id: "hsie-path", type: "Learning Path", title: "People, Place and Conservation", stage: "Stage 3", length: "6 weeks", image: imageBySubject.HSIE, description: "Explore place, perspective, systems and stewardship.", locked: true },
+        { id: "hsie-lesson", type: "Lesson", title: "Country, Community and Care", stage: "Stage 3", length: "60 min", image: imageBySubject.HSIE, description: "Discussion-based lesson connecting place and action.", locked: true },
+        { id: "hsie-resource", type: "Resource", title: "Case Study and Reflection Kit", stage: "Stage 3", length: "Slides + PDF", image: imageBySubject.HSIE, description: "Teacher-ready case studies with student reflection prompts.", locked: true },
+      ],
+      PDHPE: [
+        { id: "pdhpe-path", type: "Learning Path", title: "Wellbeing Through Nature", stage: "Stage 2", length: "4 weeks", image: imageBySubject.PDHPE, description: "Movement, reflection and wellbeing through outdoor learning.", locked: true },
+        { id: "pdhpe-lesson", type: "Lesson", title: "Connection, Calm and Community", stage: "Stage 2", length: "45 min", image: imageBySubject.PDHPE, description: "Simple wellbeing lesson with guided reflection prompts.", locked: true },
+        { id: "pdhpe-resource", type: "Resource", title: "Nature Wellbeing Toolkit", stage: "Stage 2", length: "Poster + activity cards", image: imageBySubject.PDHPE, description: "Classroom resources for habits, routines and discussion.", locked: true },
+      ],
+      CAPA: [
+        { id: "capa-path", type: "Learning Path", title: "Creative Responses to Nature", stage: "Stage 2", length: "5 weeks", image: imageBySubject.CAPA, description: "Visual arts and media tasks connected to animals and habitats.", locked: true },
+        { id: "capa-lesson", type: "Lesson", title: "Wildlife Sketch and Story", stage: "Stage 2", length: "55 min", image: imageBySubject.CAPA, description: "Observation drawing and response writing in one lesson.", locked: true },
+        { id: "capa-resource", type: "Resource", title: "Creative Prompt Pack", stage: "Stage 2", length: "Slides + printable cards", image: imageBySubject.CAPA, description: "Quick-start prompts for artmaking, media and response.", locked: true },
+      ],
+      "Technology & STEM": [
+        { id: "stem-path", type: "Learning Path", title: "Design for Conservation", stage: "Stage 4", length: "8 weeks", image: imageBySubject["Technology & STEM"], description: "Systems thinking, prototyping and environmental problem solving.", locked: true },
+        { id: "stem-lesson", type: "Lesson", title: "Prototype for Habitat Protection", stage: "Stage 4", length: "70 min", image: imageBySubject["Technology & STEM"], description: "Teacher-led design sprint with critique and iteration.", locked: true },
+        { id: "stem-resource", type: "Resource", title: "STEM Brief and Planning Kit", stage: "Stage 4", length: "Template pack", image: imageBySubject["Technology & STEM"], description: "Structured design materials and project planning supports.", locked: true },
+      ],
+      "Early Years": [
+        { id: "ey-path", type: "Learning Path", title: "Animals, Story and Discovery", stage: "Pre-School", length: "Term sequence", image: imageBySubject["Early Years"], description: "Play-based sequence for storytelling, movement and observation.", locked: true },
+        { id: "ey-lesson", type: "Lesson", title: "Moving Like Animals", stage: "Pre-School", length: "30 min", image: imageBySubject["Early Years"], description: "Teacher-led story and movement experience for young learners.", locked: true },
+        { id: "ey-resource", type: "Resource", title: "Early Years Visual Prompt Set", stage: "Pre-School", length: "Printable cards", image: imageBySubject["Early Years"], description: "Image-led prompt pack for story, talk and sensory learning.", locked: true },
+      ],
+    };
+  }, []);
+
+  const cards = previewCards[activeSubject] || [];
+
+  return (
+    <>
+      <SiteHeader active="subjects" />
+      <main className="marketing-page subjects-page">
+        <section className="subjects-hero">
+          <div className="subjects-hero-copy">
+            <span className="audience-pill">Subjects</span>
+            <h1>Browse Wildly’s subject library before unlocking the full catalogue.</h1>
+            <p className="hero-subtitle">Explore how learning paths, lessons and resources are organised across curriculum areas.</p>
+            <p>Like the strongest educator platforms, Wildly lets schools preview structure, depth and subject coverage first. Full access then opens the complete teaching library, downloads, and assignable classroom content.</p>
+            <div className="hero-actions">
+              <a className="primary-action" href={signupRoute()}>Unlock full access</a>
+              <a className="secondary-action" href={appLinks.demoBooking}>Book a demo</a>
+            </div>
+          </div>
+          <div className="subjects-hero-panel">
+            <div className="subjects-hero-panel-header">
+              <span>Curriculum library preview</span>
+              <strong>Locked content</strong>
+            </div>
+            <div className="subjects-hero-panel-grid">
+              {["Learning Paths", "Lessons", "Resources"].map((label) => (
+                <article key={label}>
+                  <small>{label}</small>
+                  <strong>{label === "Learning Paths" ? "48+" : label === "Lessons" ? "320+" : "640+"}</strong>
+                  <span>Visible after access</span>
+                </article>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <section className="subjects-filter-band">
+          <div className="section-heading">
+            <div>
+              <h2>Subject browse preview</h2>
+              <p>Select a subject to preview how Wildly structures learning paths, lessons and resources. Cards are intentionally locked until access is activated.</p>
+            </div>
+          </div>
+          <div className="subjects-filter-row" role="tablist" aria-label="Subjects">
+            {subjects.map(([label, cls]) => (
+              <button
+                key={label}
+                type="button"
+                role="tab"
+                aria-selected={activeSubject === label}
+                className={`subjects-filter-chip ${cls} ${activeSubject === label ? "active" : ""}`}
+                onClick={() => setActiveSubject(label)}
+              >
+                <Icon type={subjectIconType(label)} className="subjects-filter-icon" />
+                <span>{label}</span>
+              </button>
+            ))}
+          </div>
+        </section>
+
+        <section className="subjects-preview-grid" aria-label={`${activeSubject} locked previews`}>
+          {cards.map((card) => (
+            <article className="subjects-preview-card" key={card.id}>
+              <div className="subjects-preview-image-wrap">
+                <img src={card.image} alt="" />
+                <div className="subjects-preview-lock">
+                  <span className="subjects-paywall-badge">Wildly Plus</span>
+                  <strong>Preview only</strong>
+                  <p>Unlock to open the full {card.type.toLowerCase()}, downloads and assignment tools.</p>
+                </div>
+              </div>
+              <div className="subjects-preview-meta">
+                <div className="subjects-preview-topline">
+                  <span className="subjects-type-chip">{card.type}</span>
+                  <span>{card.stage}</span>
+                  <span>{card.length}</span>
+                </div>
+                <h3>{card.title}</h3>
+                <p>{card.description}</p>
+                <div className="subjects-preview-actions">
+                  <button type="button" className="subjects-locked-button">Locked</button>
+                  <a className="subjects-upgrade-link" href={signupRoute()}>Get access</a>
+                </div>
+              </div>
+            </article>
+          ))}
+        </section>
+
+        <section className="subjects-paywall-band">
+          <div>
+            <span className="about-kicker">Access model</span>
+            <h2>See the structure first. Unlock the teaching detail next.</h2>
+            <p>Subject browsing stays public enough for schools to understand the platform. Full membership can then open complete lesson content, resource downloads, linked learning paths and classroom delivery workflows.</p>
+          </div>
+          <div className="subjects-paywall-points">
+            {[
+              "Browse by subject and stage",
+              "Preview locked learning paths, lessons and resources",
+              "Unlock teacher-ready files, linked outcomes and assignable content",
+            ].map((point) => (
+              <article key={point}>
+                <Icon type="book" className="subjects-paywall-point-icon" />
+                <span>{point}</span>
+              </article>
+            ))}
           </div>
         </section>
 
