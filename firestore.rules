@@ -2,49 +2,84 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return signedIn() && request.auth.uid == userId;
+    }
+
+    function userProfile(userId) {
+      return get(/databases/$(database)/documents/users/$(userId));
+    }
+
+    function isStaff() {
+      return signedIn()
+        && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+        && userProfile(request.auth.uid).data.role in [
+          "Education Staff",
+          "Curriculum Leader",
+          "School Leader"
+        ];
+    }
+
+    function publicContentWrite() {
+      return isStaff();
+    }
+
     match /dashboardConfig/{docId} {
       allow read: if true;
-      allow write: if true;
+      allow write: if publicContentWrite();
     }
 
     match /contentItems/{docId} {
       allow read: if true;
-      allow write: if true;
+      allow write: if publicContentWrite();
     }
 
     match /lessons/{docId} {
       allow read: if true;
-      allow write: if true;
+      allow write: if publicContentWrite();
     }
 
     match /learningPaths/{docId} {
       allow read: if true;
-      allow write: if true;
+      allow write: if publicContentWrite();
     }
 
     match /resources/{docId} {
       allow read: if true;
-      allow write: if true;
+      allow write: if publicContentWrite();
     }
 
     match /professionalLearning/{docId} {
       allow read: if true;
-      allow write: if true;
+      allow write: if publicContentWrite();
     }
 
     match /tarongaTvVideos/{docId} {
       allow read: if true;
-      allow write: if true;
+      allow write: if publicContentWrite();
     }
 
     match /liveSessions/{docId} {
       allow read: if true;
-      allow write: if true;
+      allow create: if signedIn();
+      allow update, delete: if signedIn();
     }
 
     match /liveResponses/{docId} {
-      allow read: if true;
-      allow write: if true;
+      allow read: if signedIn();
+      allow create, update: if true;
+      allow delete: if isStaff();
+    }
+
+    match /users/{userId} {
+      allow read: if isOwner(userId) || isStaff();
+      allow create, update: if isOwner(userId)
+        && request.resource.data.email == request.auth.token.email;
+      allow delete: if isStaff();
     }
   }
 }

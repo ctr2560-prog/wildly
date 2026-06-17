@@ -34,6 +34,7 @@ const assets = {
   aboutTop: assetPath("assets/about-top.png"),
   aboutBottom: assetPath("assets/about-bottom.png"),
   tvScreenshot: assetPath("assets/TV-Screenshot.png"),
+  dashboardScreenshot: assetPath("assets/wildly-dashboard-homepage.png"),
 };
 
 const stockImages = [
@@ -344,6 +345,7 @@ function generateSessionCode() {
 
 const staffPassword = "admin";
 const staffSessionKey = "wildly-staff-session";
+const staffRoles = ["Education Staff", "Curriculum Leader", "School Leader"];
 
 function listFromText(value) {
   return value
@@ -1196,8 +1198,9 @@ function LandingPage() {
             </div>
           </div>
           <div className="device-stage" aria-label="Wildly teacher dashboard preview">
-            <div className="laptop"><div className="laptop-screen"><iframe className="teacher-preview" src={teacherPreviewRoute()} title="Wildly teacher dashboard preview" tabIndex="-1"></iframe></div><div className="laptop-base"></div></div>
-            <HeroSecondaryLaptopPreview />
+            <div className="screenshot-showcase">
+              <img className="teacher-preview-image" src={assets.dashboardScreenshot} alt="Wildly teacher dashboard preview" />
+            </div>
           </div>
         </section>
         <section className="marketing-band">
@@ -1290,9 +1293,415 @@ function LandingPage() {
   );
 }
 
+function TrackaMarketingPage() {
+  const [activeMode, setActiveMode] = useState("zoo");
+  const [activeSlide, setActiveSlide] = useState(0);
+
+  const MODES = [
+    { id: "zoo", label: "Zoo", tagline: "GPS-guided animal tracking and live missions during your Taronga Zoo excursion.", img: assetPath("assets/tracka/mode-zoo.jpg") },
+    { id: "zoosnooz", label: "ZooSnooz", tagline: "Taronga's overnight experience with after-dark keeper missions and documentary making.", img: assetPath("assets/tracka/mode-zoosnooz.jpg") },
+    { id: "school", label: "School", tagline: "A virtual zoo that brings the full Taronga experience into your classroom.", img: assetPath("assets/tracka/mode-school.jpg"), comingSoon: true },
+  ];
+
+  const FEATURES = [
+    { title: "GPS Technology", sub: "Find every animal, every time.", desc: "Live GPS guides students to each animal zone across the zoo — no getting lost, no missed encounters.", img: assetPath("assets/tracka/app-map.jpg") },
+    { title: "Missions & Games", sub: "Learning through play.", desc: "Students engage through observation games, hands-on activities and documentary making at each animal.", imgs: [1,2,3,4].map(n => assetPath(`assets/tracka/mission-${n}.jpg`)) },
+    { title: "Badge Collection", sub: "Every visit tells a story.", desc: "Completed missions unlock animal badges that build each student's personal wildlife collection.", img: assetPath("assets/tracka/app-collection.jpg") },
+    { title: "Wildly Integration", sub: "Extending the impact beyond the visit.", desc: "Connect zoo observations to classroom curriculum through Wildly — before, during and after every excursion.", img: assetPath("assets/tracka/app-wildly.jpg") },
+  ];
+
+  const STEPS = [
+    { num: "01", who: "teacher", title: "Create a Class", desc: "Set up your class in the teacher portal and receive a unique join code in seconds." },
+    { num: "02", who: "student", title: "Students Join", desc: "Students enter the class code on arrival to connect instantly to your group." },
+    { num: "03", who: "student", title: "Explore the Zoo", desc: "GPS technology guides students to each animal zone at their own pace." },
+    { num: "04", who: "student", title: "Complete Missions", desc: "Students engage through games, hands-on activities and documentary making." },
+    { num: "05", who: "student", title: "Earn Badges", desc: "Completed missions unlock badges that build each student's wildlife collection." },
+    { num: "06", who: "teacher", title: "Review Student Data", desc: "Review observation scores, mission progress and curriculum-aligned learning reports from your teacher portal." },
+  ];
+
+  const PORTAL_SLIDES = [
+    { title: "Class Overview", desc: "See every student's progress across all animal missions in real time.", img: assetPath("assets/tracka/portal-slide-4.jpg") },
+    { title: "Writing Analytics", desc: "Track student writing quality scores from observation and documentary tasks.", img: assetPath("assets/tracka/portal-slide-1.jpg") },
+    { title: "Student Observations", desc: "Review individual student observations, images and responses from the zoo.", img: assetPath("assets/tracka/portal-slide-2.jpg") },
+    { title: "ZooSnooz Portal", desc: "Manage overnight groups, keeper interactions and real-time mission updates.", img: assetPath("assets/tracka/portal-slide-3.jpg") },
+  ];
+
+  const ANIMALS = [
+    { img: assetPath("assets/tracka/lion.jpg"), name: "African Lion", badge: assetPath("assets/tracka/badge-lion.png") },
+    { img: assetPath("assets/tracka/giraffe.jpg"), name: "Giraffe", badge: assetPath("assets/tracka/badge-giraffe.png") },
+    { img: assetPath("assets/tracka/gorilla.jpg"), name: "Gorilla", badge: assetPath("assets/tracka/badge-gorilla.png") },
+    { img: assetPath("assets/tracka/koala.jpg"), name: "Koala", badge: assetPath("assets/tracka/badge-koala.png") },
+    { img: assetPath("assets/tracka/tiger.jpg"), name: "Sumatran Tiger", badge: assetPath("assets/tracka/badge-tiger.png") },
+    { img: assetPath("assets/tracka/rhino.jpg"), name: "White Rhino", badge: assetPath("assets/tracka/badge-rhino.png") },
+  ];
+
+  const currentMode = MODES.find(m => m.id === activeMode);
+
+  return (
+    <>
+      <SiteHeader active="tracka" />
+      <main className="tracka-page">
+
+        <section className="tracka-hero">
+          <div className="tracka-hero-copy">
+            <img className="tracka-logo-hero" src={assetPath("assets/tracka/tracka-logo.png")} alt="Taronga Tracka" />
+            <h1>Real animals.<br />Real missions.<br />Real learning.</h1>
+            <p className="tracka-hero-lead">GPS-guided discovery missions at Taronga Zoo — connecting students to wildlife through observation, data and hands-on challenges.</p>
+            <div className="hero-actions">
+              <a className="primary-action" href={appLinks.tracka} target="_blank" rel="noopener noreferrer">Open Taronga Tracka</a>
+              <a className="secondary-action" href={appLinks.excursions}>Plan an excursion</a>
+            </div>
+          </div>
+          <div className="tracka-hero-app">
+            <img src={assetPath("assets/tracka/app-home.jpg")} alt="Taronga Tracka app" className="tracka-hero-app-img" />
+          </div>
+        </section>
+
+        <section className="tracka-stats-bar">
+          {[
+            ["K–12", "Curriculum-aligned for every stage"],
+            ["3 modes", "Zoo, ZooSnooz & School"],
+            ["12 badges", "Per-student achievement system"],
+            ["Live data", "Real-time observation capture"],
+          ].map(([stat, desc]) => (
+            <div key={stat} className="tracka-stat">
+              <strong>{stat}</strong>
+              <span>{desc}</span>
+            </div>
+          ))}
+        </section>
+
+        <section className="tracka-modes-section">
+          <div className="tracka-section-header">
+            <span className="audience-pill">3 Experience Modes</span>
+            <h2>One app. Every Taronga experience.</h2>
+            <p>Taronga Tracka adapts to how your class visits Taronga — from a day excursion to an overnight ZooSnooz or a virtual classroom journey.</p>
+          </div>
+          <div className="tracka-mode-tabs">
+            {MODES.map(m => (
+              <button key={m.id} className={`tracka-mode-tab${activeMode === m.id ? " active" : ""}`} onClick={() => setActiveMode(m.id)}>
+                {m.label}{m.comingSoon && <span className="tracka-coming-soon">Soon</span>}
+              </button>
+            ))}
+          </div>
+          <div className="tracka-mode-display">
+            <div className="tracka-mode-img-wrap">
+              <img src={currentMode.img} alt={currentMode.label} />
+            </div>
+            <div className="tracka-mode-desc">
+              <h3>{currentMode.label} Mode</h3>
+              <p>{currentMode.tagline}</p>
+            </div>
+          </div>
+        </section>
+
+        <section className="tracka-features-section">
+          <div className="tracka-section-header">
+            <span className="audience-pill">App Features</span>
+            <h2>Everything students need to explore</h2>
+          </div>
+          <div className="tracka-features-showcase">
+            {FEATURES.map((f, i) => (
+              <article key={f.title} className={`tracka-feature-showcase-card${i % 2 === 1 ? " reversed" : ""}`}>
+                <div className="tracka-feature-showcase-media">
+                  {f.imgs ? (
+                    <div className="tracka-mission-grid">
+                      {f.imgs.map((src, j) => <img key={j} src={src} alt={`Mission ${j + 1}`} />)}
+                    </div>
+                  ) : (
+                    <img src={f.img} alt={f.title} />
+                  )}
+                </div>
+                <div className="tracka-feature-showcase-copy">
+                  <h3>{f.title}</h3>
+                  <p className="tracka-feature-sub">{f.sub}</p>
+                  <p>{f.desc}</p>
+                </div>
+              </article>
+            ))}
+          </div>
+        </section>
+
+        <section className="tracka-steps-section">
+          <div className="tracka-section-header">
+            <span className="audience-pill">How It Works</span>
+            <h2>Six steps from classroom to collection</h2>
+          </div>
+          <div className="tracka-steps-grid">
+            {STEPS.map(s => (
+              <article key={s.num} className="tracka-step-card">
+                <div className="tracka-step-top">
+                  <span className="tracka-step-num">{s.num}</span>
+                  <span className={`tracka-step-who ${s.who}`}>{s.who === "teacher" ? "Teacher" : "Student"}</span>
+                </div>
+                <h3>{s.title}</h3>
+                <p>{s.desc}</p>
+              </article>
+            ))}
+          </div>
+        </section>
+
+        <section className="tracka-portal-section">
+          <div className="tracka-portal-inner">
+            <div className="tracka-section-header light">
+              <span className="audience-pill">For Educators</span>
+              <h2>Teacher Portal</h2>
+              <p>Live analytics, student observations, and wildlife documentaries — all in one place.</p>
+            </div>
+            <div className="tracka-portal-demo">
+              <div className="tracka-portal-tabs">
+                {PORTAL_SLIDES.map((s, i) => (
+                  <button key={i} className={`tracka-portal-tab${activeSlide === i ? " active" : ""}`} onClick={() => setActiveSlide(i)}>
+                    {s.title}
+                  </button>
+                ))}
+              </div>
+              <div className="tracka-portal-slide">
+                <img src={PORTAL_SLIDES[activeSlide].img} alt={PORTAL_SLIDES[activeSlide].title} />
+                <p className="tracka-portal-caption">{PORTAL_SLIDES[activeSlide].desc}</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section className="tracka-animals-section">
+          <div className="section-heading">
+            <div>
+              <h2>Discover wildlife missions</h2>
+              <p>Students explore real animals through guided discovery tasks — from enclosures to ecosystems.</p>
+            </div>
+            <a href={appLinks.tracka} target="_blank" rel="noopener noreferrer">Open Tracka</a>
+          </div>
+          <div className="tracka-animal-grid">
+            {ANIMALS.map(a => (
+              <article key={a.name} className="tracka-animal-card">
+                <div className="tracka-animal-img-wrap">
+                  <img src={a.img} alt={a.name} />
+                  <img src={a.badge} alt={`${a.name} badge`} className="tracka-animal-badge" />
+                </div>
+                <div className="tracka-animal-info">
+                  <strong>{a.name}</strong>
+                </div>
+              </article>
+            ))}
+          </div>
+        </section>
+
+        <section className="tracka-integration-section">
+          <div className="tracka-integration-inner">
+            <div className="tracka-integration-copy">
+              <span className="audience-pill">Wildly + Tracka</span>
+              <h2>Two products. One connected learning experience.</h2>
+              <p>Wildly is the teacher planning and curriculum delivery layer. Tracka is the field discovery and mission environment. Together they give every student a seamless journey from classroom to zoo and back again.</p>
+              <ul className="marketing-list">
+                <li>Use Wildly to plan your excursion sequence and pre-load student knowledge.</li>
+                <li>Students join Tracka with a class code and complete missions at the zoo.</li>
+                <li>Return to Wildly lessons to consolidate, assess and take conservation action.</li>
+                <li>Teacher dashboard shows engagement across both platforms in one view.</li>
+              </ul>
+              <div className="hero-actions" style={{marginTop: "28px"}}>
+                <a className="primary-action" href={signupRoute()}>Get started with Wildly</a>
+                <a className="secondary-action" href={appLinks.tracka} target="_blank" rel="noopener noreferrer">Open Tracka</a>
+              </div>
+            </div>
+            <div className="tracka-integration-logos">
+              <div className="tracka-logo-card">
+                <img src={assets.wildlyLogo} alt="Wildly by Taronga" />
+                <span>Curriculum planning &amp; delivery</span>
+              </div>
+              <div className="tracka-plus">+</div>
+              <div className="tracka-logo-card">
+                <img src={assetPath("assets/tracka/tracka-logo.png")} alt="Taronga Tracka" />
+                <span>Field missions &amp; discovery</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section className="cta-section" id="excursions">
+          <img src={assets.heroKoala} alt="Koala with joey" />
+          <div>
+            <h2>Ready to take your class to the zoo?</h2>
+            <p>Book an excursion and unlock the full Tracka experience — with Wildly lessons before and after to make every moment count.</p>
+            <div className="hero-actions">
+              <a className="primary-action" href={appLinks.excursions}>Book an excursion</a>
+              <a className="secondary-action" href={appLinks.tracka} target="_blank" rel="noopener noreferrer">Open Taronga Tracka</a>
+            </div>
+          </div>
+        </section>
+        <footer className="site-footer"><div className="footer-links"><a className="staff-login" href={routePath("staff")}>TARONGA STAFF LOGIN</a></div></footer>
+      </main>
+    </>
+  );
+}
+
+function LearningPathsMarketingPage() {
+  const ARCH = [
+    { icon: <Icon type="blocks" />, label: "Learning Path", desc: "Holds the unit structure — duration, curriculum outcomes, administration materials and every lesson in sequence." },
+    { icon: <Icon type="target" />, label: "Lesson", desc: "The teaching block. Sits inside a path or stands alone. Includes objectives, timing and teaching notes." },
+    { icon: <Icon type="link" />, label: "Resource", desc: "The specific file, link, worksheet, video or embed teachers use with students." },
+  ];
+
+  const FEATURES = [
+    {
+      title: "Plan your whole unit in one place",
+      sub: "Week-by-week sequencing.",
+      desc: "A learning path holds your unit structure — duration, curriculum outcomes, admin materials and every lesson in sequence. Open it once and have everything your class needs for the term.",
+      img: assets.giraffe,
+    },
+    {
+      title: "Teach lesson by lesson",
+      sub: "Clear objectives, every time.",
+      desc: "Each lesson has its own objectives, timing and teaching notes. Assign the full lesson, share a specific resource, or jump straight to the download — whatever fits the moment.",
+      img: assets.gorilla,
+    },
+    {
+      title: "Resources right where they belong",
+      sub: "No more searching.",
+      desc: "Files, links, worksheets, videos and guides are attached to the lesson they support. Students and teachers always find what they need without leaving the page.",
+      img: assets.heroKoala,
+    },
+  ];
+
+  const STEPS = [
+    { num: "01", who: "teacher", title: "Find a path", desc: "Browse learning paths by subject, year group or curriculum focus in the teacher dashboard." },
+    { num: "02", who: "teacher", title: "Review the sequence", desc: "Open the path to see the full unit — duration, outcomes and every lesson laid out in order." },
+    { num: "03", who: "teacher", title: "Open any lesson", desc: "Click into a lesson to see teaching notes, objectives and all linked resources at a glance." },
+    { num: "04", who: "teacher", title: "Share with your class", desc: "Download resources, share links or assign a lesson directly from the dashboard." },
+    { num: "05", who: "teacher", title: "Move through the unit", desc: "Return to the path each lesson to pick up where you left off — the sequence holds your place." },
+    { num: "06", who: "teacher", title: "Connect to Tracka", desc: "Pair your unit with a Taronga Tracka excursion for before, during and after learning." },
+  ];
+
+  return (
+    <>
+      <SiteHeader active="learning-paths" />
+      <main className="lp-page">
+
+        <section className="lp-hero">
+          <div className="lp-hero-copy">
+            <span className="audience-pill">Learning Paths</span>
+            <h1>Build full teaching sequences,<br />not just isolated resources.</h1>
+            <p className="lp-hero-lead">A learning path is the unit structure that connects lessons, resources and outcomes — giving teachers a clean way to move from long-term planning into week-by-week delivery.</p>
+            <div className="hero-actions">
+              <a className="primary-action" href={teacherRoute("paths")}>View learning paths</a>
+              <a className="secondary-action" href={signupRoute()}>Get started free</a>
+            </div>
+          </div>
+          <div className="lp-hero-visual">
+            <img src={assets.dashboardScreenshot} alt="Wildly teacher dashboard" className="lp-hero-screenshot" />
+          </div>
+        </section>
+
+        <section className="tracka-stats-bar">
+          {[
+            ["K–12", "Curriculum-aligned for every stage"],
+            ["All subjects", "Science, HSIE, English & more"],
+            ["3 layers", "Paths, lessons & resources linked"],
+            ["Free", "For all registered teachers"],
+          ].map(([stat, desc]) => (
+            <div key={stat} className="tracka-stat">
+              <strong>{stat}</strong>
+              <span>{desc}</span>
+            </div>
+          ))}
+        </section>
+
+        <section className="lp-arch-section">
+          <div className="tracka-section-header">
+            <span className="audience-pill">Content Architecture</span>
+            <h2>One system. Three simple layers.</h2>
+            <p>The structure is intentionally simple — a path contains lessons, and lessons contain resources. Teachers can enter at any level and always find what they need.</p>
+          </div>
+          <div className="lp-arch-flow">
+            {ARCH.map((item, i) => (
+              <React.Fragment key={item.label}>
+                <div className="lp-arch-card">
+                  <div className="lp-arch-icon">{item.icon}</div>
+                  <h3>{item.label}</h3>
+                  <p>{item.desc}</p>
+                </div>
+                {i < ARCH.length - 1 && <div className="lp-arch-arrow"><svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg></div>}
+              </React.Fragment>
+            ))}
+          </div>
+        </section>
+
+        <section className="tracka-features-section">
+          <div className="tracka-section-header">
+            <span className="audience-pill">How it helps teachers</span>
+            <h2>Everything in the right place, every time</h2>
+          </div>
+          <div className="tracka-features-showcase">
+            {FEATURES.map((f, i) => (
+              <article key={f.title} className={`tracka-feature-showcase-card${i % 2 === 1 ? " reversed" : ""}`}>
+                <div className="tracka-feature-showcase-media">
+                  <img src={f.img} alt={f.title} />
+                </div>
+                <div className="tracka-feature-showcase-copy">
+                  <h3>{f.title}</h3>
+                  <p className="tracka-feature-sub">{f.sub}</p>
+                  <p>{f.desc}</p>
+                </div>
+              </article>
+            ))}
+          </div>
+        </section>
+
+        <section className="tracka-steps-section">
+          <div className="tracka-section-header">
+            <span className="audience-pill">How It Works</span>
+            <h2>From planning to teaching in minutes</h2>
+          </div>
+          <div className="tracka-steps-grid">
+            {STEPS.map(s => (
+              <article key={s.num} className="tracka-step-card">
+                <div className="tracka-step-top">
+                  <span className="tracka-step-num">{s.num}</span>
+                  <span className={`tracka-step-who ${s.who}`}>{s.who === "teacher" ? "Teacher" : "Student"}</span>
+                </div>
+                <h3>{s.title}</h3>
+                <p>{s.desc}</p>
+              </article>
+            ))}
+          </div>
+        </section>
+
+        <section className="lp-dashboard-section">
+          <div className="lp-dashboard-inner">
+            <div className="tracka-section-header light">
+              <span className="audience-pill">In the dashboard</span>
+              <h2>Built into your teacher workspace</h2>
+              <p>Learning paths live inside the Wildly teacher dashboard — no extra tool, no extra login. Plan, teach and explore from one place.</p>
+            </div>
+            <div className="lp-dashboard-screenshot">
+              <img src={assets.dashboardScreenshot} alt="Wildly teacher dashboard" />
+            </div>
+          </div>
+        </section>
+
+        <section className="cta-section">
+          <img src={assets.heroKoala} alt="Koala with joey" />
+          <div>
+            <h2>Ready to plan your next unit?</h2>
+            <p>Browse curriculum-aligned learning paths built by the Taronga education team — and start teaching with confidence.</p>
+            <div className="hero-actions">
+              <a className="primary-action" href={signupRoute()}>Get started free</a>
+              <a className="secondary-action" href={teacherPreviewRoute()}>Preview the dashboard</a>
+            </div>
+          </div>
+        </section>
+
+        <footer className="site-footer"><div className="footer-links"><a className="staff-login" href={routePath("staff")}>TARONGA STAFF LOGIN</a></div></footer>
+      </main>
+    </>
+  );
+}
+
 function MarketingPage({ page = "about" }) {
   if (page === "about") return <AboutMarketingPage />;
   if (page === "subjects") return <SubjectsMarketingPage />;
+  if (page === "tracka") return <TrackaMarketingPage />;
+  if (page === "learning-paths") return <LearningPathsMarketingPage />;
 
   const pageConfig = {
     "learning-paths": {
@@ -3017,6 +3426,7 @@ const professionalLearningCollection = collection(db, "professionalLearning");
 const tarongaTvCollection = collection(db, "tarongaTvVideos");
 const liveSessionsCollection = collection(db, "liveSessions");
 const liveResponsesCollection = collection(db, "liveResponses");
+const usersCollection = collection(db, "users");
 
 function collectionForContentType(type) {
   return {
@@ -3104,7 +3514,7 @@ function useContentItems() {
       (error) => {
         console.error("Unable to load contentItems", error);
         setItems(defaultContentItems.map(resolveContentItem));
-        setStatus("error");
+        setStatus(error.code === "permission-denied" ? "fallback" : "error");
       },
     );
   }, []);
@@ -3132,7 +3542,7 @@ function useProfessionalLearningItems() {
       (error) => {
         console.error("Unable to load professionalLearning", error);
         setItems(defaultProfessionalLearningItems);
-        setStatus("error");
+        setStatus(error.code === "permission-denied" ? "fallback" : "error");
       },
     );
   }, []);
@@ -3160,7 +3570,7 @@ function useTarongaTvVideos() {
       (error) => {
         console.error("Unable to load tarongaTvVideos", error);
         setItems(defaultTarongaTvVideos.map(resolveTarongaTvVideo));
-        setStatus("error");
+        setStatus(error.code === "permission-denied" ? "fallback" : "error");
       },
     );
   }, []);
@@ -3210,6 +3620,28 @@ function useLiveResponses() {
   }, []);
 
   return { items, status };
+}
+
+function useUsers() {
+  const [users, setUsers] = useState([]);
+  const [status, setStatus] = useState("loading");
+
+  useEffect(() => {
+    return onSnapshot(
+      query(usersCollection, orderBy("name")),
+      (snapshot) => {
+        setUsers(snapshot.docs.map((d) => ({ id: d.id, ...d.data() })));
+        setStatus(snapshot.empty ? "empty" : "live");
+      },
+      (error) => {
+        console.error("Unable to load users", error);
+        setUsers([]);
+        setStatus(error.code === "permission-denied" ? "permission-denied" : "error");
+      },
+    );
+  }, []);
+
+  return { users, status };
 }
 
 function useLiveSessionById(sessionId) {
@@ -3320,7 +3752,8 @@ function useDashboardConfig() {
       },
       (error) => {
         console.error("Unable to load dashboardConfig/main", error);
-        setStatus("error");
+        setConfig(defaultDashboardConfig);
+        setStatus(error.code === "permission-denied" ? "fallback" : "error");
       },
     );
   }, []);
@@ -3367,8 +3800,6 @@ function TeacherPage({ page = "dashboard", subject = "", contentId = "", tvVideo
 
   return (
     <>
-      <FirestoreStatus status={status} />
-      <ContentFirestoreStatus status={contentStatus} />
       <TeacherDashboard config={config} contentItems={contentItems} professionalLearningItems={professionalLearningItems} tarongaTvVideos={tarongaTvVideos} page={page} subject={subject} contentId={contentId} tvVideoId={tvVideoId} profile={profile} onSignOut={handleSignOut} preview={preview} workspace={workspace} onToggleSaved={toggleSavedItem} onAssignContent={assignContentToClass} onCreateClass={createClass} />
     </>
   );
@@ -3400,12 +3831,10 @@ function StaffPasswordScreen({ onUnlock }) {
 
   function handleSubmit(event) {
     event.preventDefault();
-
     if (password === staffPassword) {
       onUnlock();
       return;
     }
-
     setError("Incorrect password.");
   }
 
@@ -3415,9 +3844,9 @@ function StaffPasswordScreen({ onUnlock }) {
         <img src={assets.wildlyLogo} alt="Wildly by Taronga" />
         <span>Taronga Staff Console</span>
         <h1>Staff password</h1>
-        <p>Enter the temporary staff password to edit Wildly dashboard content.</p>
+        <p>Enter the staff password to access the console.</p>
         <form onSubmit={handleSubmit}>
-          <label>Password<input type="password" value={password} onChange={(event) => setPassword(event.target.value)} placeholder={staffPassword} autoComplete="current-password" autoFocus /></label>
+          <label>Password<input type="password" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="current-password" autoFocus /></label>
           {error && <p className="auth-error">{error}</p>}
           <button type="submit">Enter staff console</button>
         </form>
@@ -3434,6 +3863,7 @@ function StaffConsole({ onLock }) {
   const { items: tarongaTvVideos, status: tarongaTvStatus } = useTarongaTvVideos();
   const { items: liveSessions, status: liveSessionsStatus } = useLiveSessions();
   const { items: liveResponses, status: liveResponsesStatus } = useLiveResponses();
+  const { users, status: usersStatus } = useUsers();
   const [config, setConfig] = useState(defaultDashboardConfig);
   const [previewKey, setPreviewKey] = useState(0);
   const [saveState, setSaveState] = useState("idle");
@@ -3729,8 +4159,8 @@ function StaffConsole({ onLock }) {
       <main className="staff-workspace">
         <header className="staff-topbar"><div><span>Taronga Staff Console</span><h1>Wildly learning operations</h1></div><div className="staff-actions"><a href={routePath("teacher")}>Teacher view</a><button type="button" onClick={publishUpdates}>Publish updates</button><button type="button" className="sign-out-button" onClick={onLock}>Lock staff view</button></div></header>
         <NoticeBanner notice={notice} onClose={() => setNotice("")} />
-        {panel === "overview" && <section className="staff-panel active"><div className="overview-grid">{[["Active users", "4,286", "Teachers, students and Taronga staff this term"], ["Assigned resources", "18,940", "Lessons, learning paths and missions launched"], ["Tracka-linked sessions", "72%", "Activities connected to excursion or citizen science data"], ["Curriculum coverage", "146", "Mapped outcomes across NSW and Australian Curriculum"]].map(([label, value, copy]) => <article key={label}><span>{label}</span><strong>{value}</strong><p>{copy}</p></article>)}</div><div className="overview-snapshot"><article><h2>Current priorities</h2><p>Science and HSIE pathways are seeing the strongest uptake this month, with data interpretation flagged as the highest-value support area.</p></article><article><h2>Next recommended action</h2><p>Review Stage 3 animal adaptations lessons and prepare a Tracka mission bundle for upcoming school visits.</p></article></div></section>}
-        {panel === "users" && <UsersPanel onPlaceholder={(message) => setNotice(message)} />}
+        {panel === "overview" && <OverviewPanel contentItems={contentItems} tvVideos={tarongaTvVideos} plItems={professionalLearningItems} liveSessions={liveSessions} liveResponses={liveResponses} />}
+        {panel === "users" && <UsersPanel users={users} usersStatus={usersStatus} onPlaceholder={(message) => setNotice(message)} />}
         {panel === "analytics" && <AnalyticsPanel liveSessions={liveSessions} liveResponses={liveResponses} liveSessionsStatus={liveSessionsStatus} liveResponsesStatus={liveResponsesStatus} onPlaceholder={(message) => setNotice(message)} />}
         {panel === "content" && <ContentPanel contentItems={contentItems} status={contentStatus} saveState={contentSaveState} seedContentItems={seedContentItems} addContentItem={addContentItem} deleteContentItem={deleteContentItem} />}
         {panel === "taronga-tv" && <TarongaTvPanel items={tarongaTvVideos} contentItems={contentItems} status={tarongaTvStatus} saveState={tarongaTvSaveState} saveVideo={saveTarongaTvVideo} deleteVideo={deleteTarongaTvVideo} />}
@@ -3741,22 +4171,212 @@ function StaffConsole({ onLock }) {
   );
 }
 
-function UsersPanel({ onPlaceholder }) {
-  const userRows = [
-    ["James Thompson", "Teacher", "Riverbank Public School", "Active", "Today"],
-    ["Ava Wilson", "Student", "Riverbank Public School", "Active", "Today"],
-    ["Maya Chen", "Taronga staff", "Taronga Education", "Review", "Yesterday"],
-    ["Samir Patel", "School admin", "Western Sydney Learning Hub", "Active", "2 days ago"],
+function OverviewPanel({ contentItems, tvVideos, plItems, liveSessions, liveResponses }) {
+  const publishedContent = contentItems.filter((i) => i.status === "Published").length;
+  const publishedTv = tvVideos.filter((v) => v.status === "Published").length;
+  const publishedPl = plItems.filter((s) => s.status === "Published").length;
+  const activeSessions = liveSessions.filter((s) => s.state !== "ended").length;
+  const totalResponses = liveResponses.length;
+  const uniqueStudents = new Set(liveResponses.map((r) => r.studentName?.trim()).filter(Boolean)).size;
+
+  const contentBreakdown = [
+    { label: "Learning Paths", count: contentItems.filter((i) => i.type === "Learning Path").length },
+    { label: "Lessons", count: contentItems.filter((i) => i.type === "Lesson").length },
+    { label: "Resources", count: contentItems.filter((i) => i.type === "Resource").length },
+    { label: "TV Videos", count: tvVideos.length },
+    { label: "PL Sessions", count: plItems.length },
   ];
+  const maxCount = Math.max(...contentBreakdown.map((b) => b.count), 1);
+
+  return (
+    <section className="staff-section staff-panel active">
+      <div className="sc-overview-grid">
+        <div className="sc-stat-card accent">
+          <span>Published content</span>
+          <strong>{publishedContent}</strong>
+          <p>{contentItems.length} total items in Firestore</p>
+        </div>
+        <div className="sc-stat-card">
+          <span>Taronga TV</span>
+          <strong>{publishedTv}</strong>
+          <p>{tvVideos.length} total videos</p>
+        </div>
+        <div className="sc-stat-card">
+          <span>Student responses</span>
+          <strong>{totalResponses}</strong>
+          <p>{uniqueStudents} unique students</p>
+        </div>
+        <div className="sc-stat-card">
+          <span>Live sessions</span>
+          <strong>{liveSessions.length}</strong>
+          <p>{activeSessions} still active</p>
+        </div>
+      </div>
+
+      <div className="sc-overview-body">
+        <div className="sc-overview-card">
+          <h3>Content breakdown</h3>
+          <div className="sc-content-breakdown">
+            {contentBreakdown.map((b) => (
+              <div key={b.label} className="sc-breakdown-row">
+                <span className="sc-breakdown-label">{b.label}</span>
+                <div className="sc-breakdown-bar"><span style={{width: `${(b.count / maxCount) * 100}%`}} /></div>
+                <span className="sc-breakdown-count">{b.count}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+        <div className="sc-overview-card">
+          <h3>Quick actions</h3>
+          <p>Content, Taronga TV and Professional Learning panels let you create and publish directly to Firestore. Use the Analytics panel to monitor live session engagement. Edit Dashboard to update what teachers see on login.</p>
+          {publishedPl > 0 && <p style={{marginTop:12}}><strong>{publishedPl}</strong> published professional learning session{publishedPl !== 1 ? "s" : ""} visible to teachers.</p>}
+          {activeSessions > 0 && <p style={{marginTop:8,color:"var(--green-800)",fontWeight:700}}>{activeSessions} live session{activeSessions !== 1 ? "s" : ""} currently active.</p>}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function UsersPanel({ users = [], usersStatus = "loading", onPlaceholder }) {
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState("All roles");
-  const visibleRows = userRows.filter(([name, role, org]) => {
-    const matchesSearch = `${name} ${role} ${org}`.toLowerCase().includes(search.toLowerCase());
-    const matchesRole = roleFilter === "All roles" || role === roleFilter.slice(0, -1) || role === roleFilter;
+
+  const allRoles = [...new Set(users.map((u) => u.role).filter(Boolean))].sort();
+
+  const visibleUsers = users.filter((u) => {
+    const haystack = `${u.name || ""} ${u.role || ""} ${u.school || ""} ${u.email || ""}`.toLowerCase();
+    const matchesSearch = !search || haystack.includes(search.toLowerCase());
+    const matchesRole = roleFilter === "All roles" || u.role === roleFilter;
     return matchesSearch && matchesRole;
   });
 
-  return <section className="staff-section staff-panel active"><div className="section-heading"><div><h2>Users</h2><p>Analyse all teachers, students, schools and Taronga staff involved in Wildly.</p></div><button type="button" onClick={() => onPlaceholder("Add user placeholder. Connect this to your user invite or provisioning flow.")}>Add user</button></div><div className="user-layout"><article className="user-breakdown"><h3>User mix</h3><div className="donut" aria-label="User mix chart"></div><ul>{[["teacher", "Teachers", "682"], ["student", "Students", "3,421"], ["staff", "Taronga staff", "74"], ["school", "School admins", "109"]].map(([cls, label, value]) => <li key={label}><span className={cls}></span>{label}<strong>{value}</strong></li>)}</ul></article><article className="user-table-card"><div className="table-toolbar"><label><Icon type="target" className="" /><input type="search" placeholder="Search users, schools or roles" value={search} onChange={(event) => setSearch(event.target.value)} /></label><select aria-label="Filter users" value={roleFilter} onChange={(event) => setRoleFilter(event.target.value)}><option>All roles</option><option>Teacher</option><option>Student</option><option>Taronga staff</option><option>School admin</option></select></div><table><thead><tr><th>User</th><th>Role</th><th>Organisation</th><th>Status</th><th>Last active</th></tr></thead><tbody>{visibleRows.map(([name, role, org, status, active]) => <tr key={name}><td>{name}</td><td>{role}</td><td>{org}</td><td><span className={`status ${status === "Active" ? "active" : "review"}`}>{status}</span></td><td>{active}</td></tr>)}</tbody></table>{visibleRows.length ? null : <p className="empty-table-copy">No users match this filter.</p>}</article></div></section>;
+  const roleCounts = users.reduce((acc, u) => {
+    const r = u.role || "Unknown";
+    acc[r] = (acc[r] || 0) + 1;
+    return acc;
+  }, {});
+
+  const countTeachers = users.filter((u) => u.role === "Teacher").length;
+  const countStaff = users.filter((u) => staffRoles.includes(u.role)).length;
+  const countOther = users.filter((u) => u.role !== "Teacher" && !staffRoles.includes(u.role)).length;
+
+  function formatDate(ts) {
+    if (!ts) return "—";
+    const d = ts.toDate ? ts.toDate() : new Date(ts);
+    const now = new Date();
+    const diffMs = now - d;
+    const diffDays = Math.floor(diffMs / 86400000);
+    if (diffDays === 0) return "Today";
+    if (diffDays === 1) return "Yesterday";
+    if (diffDays < 7) return `${diffDays} days ago`;
+    return d.toLocaleDateString("en-AU", { day: "numeric", month: "short" });
+  }
+
+  const isPermissionDenied = usersStatus === "permission-denied";
+  const isLoading = usersStatus === "loading";
+
+  return (
+    <section className="staff-section staff-panel active">
+      <div className="section-heading">
+        <div>
+          <h2>Users</h2>
+          <p>All registered teachers, staff and administrators in Wildly.</p>
+        </div>
+        <button type="button" onClick={() => onPlaceholder("User invites coming soon — connect this to your provisioning flow.")}>Invite user</button>
+      </div>
+
+      {isPermissionDenied && (
+        <article className="placeholder-card" style={{ marginBottom: 24 }}>
+          <h3>Staff sign-in required</h3>
+          <p>Reading all user accounts requires Firebase authentication with a staff role. Log in at <code>/#login</code> with a staff account (Education Staff, Curriculum Leader, or School Leader) to see live user data here.</p>
+        </article>
+      )}
+
+      <div className="sc-overview-grid" style={{ marginBottom: 24 }}>
+        {[
+          ["Total users", isLoading ? "…" : users.length, "Registered accounts"],
+          ["Teachers", isLoading ? "…" : countTeachers, "Signed up via get-started"],
+          ["Taronga staff", isLoading ? "…" : countStaff, "Education, Curriculum, School Leader"],
+          ["Other roles", isLoading ? "…" : countOther, "Accounts with other or no role"],
+        ].map(([label, value, desc]) => (
+          <article key={label} className="sc-stat-card">
+            <span className="sc-stat-label">{label}</span>
+            <strong className="sc-stat-value">{value}</strong>
+            <p className="sc-stat-desc">{desc}</p>
+          </article>
+        ))}
+      </div>
+
+      <article className="user-table-card">
+        <div className="table-toolbar">
+          <label>
+            <Icon type="target" className="" />
+            <input
+              type="search"
+              placeholder="Search name, school or email"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+          </label>
+          <select aria-label="Filter by role" value={roleFilter} onChange={(e) => setRoleFilter(e.target.value)}>
+            <option>All roles</option>
+            {allRoles.map((r) => <option key={r}>{r}</option>)}
+          </select>
+        </div>
+
+        {isLoading ? (
+          <p className="empty-table-copy">Loading users…</p>
+        ) : (
+          <table>
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Role</th>
+                <th>School / Organisation</th>
+                <th>Email</th>
+                <th>Last updated</th>
+              </tr>
+            </thead>
+            <tbody>
+              {visibleUsers.map((u) => (
+                <tr key={u.id}>
+                  <td>{u.name || "—"}</td>
+                  <td>
+                    <span className={`sc-status-badge ${staffRoles.includes(u.role) ? "published" : "draft"}`}>
+                      {u.role || "No role"}
+                    </span>
+                  </td>
+                  <td>{u.school || "—"}</td>
+                  <td style={{ fontSize: 13, color: "#666" }}>{u.email || "—"}</td>
+                  <td style={{ fontSize: 13, color: "#888" }}>{formatDate(u.updatedAt)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+
+        {!isLoading && visibleUsers.length === 0 && (
+          <p className="empty-table-copy">
+            {users.length === 0
+              ? isPermissionDenied
+                ? "Sign in with a staff account to view users."
+                : "No users have registered yet."
+              : "No users match this filter."}
+          </p>
+        )}
+
+        {!isLoading && users.length > 0 && (
+          <div style={{ display: "flex", gap: 16, flexWrap: "wrap", padding: "12px 0 0", borderTop: "1px solid #eee", marginTop: 8 }}>
+            {Object.entries(roleCounts).sort((a, b) => b[1] - a[1]).map(([role, count]) => (
+              <span key={role} style={{ fontSize: 12, color: "#555" }}>
+                <strong style={{ color: "#1a4d2e" }}>{count}</strong> {role}
+              </span>
+            ))}
+          </div>
+        )}
+      </article>
+    </section>
+  );
 }
 
 function AnalyticsPanel({ liveSessions = [], liveResponses = [], liveSessionsStatus = "loading", liveResponsesStatus = "loading", onPlaceholder }) {
@@ -3906,6 +4526,7 @@ function ContentPanel({ contentItems, status, saveState, seedContentItems, addCo
   const [selectedId, setSelectedId] = useState("");
   const [draft, setDraft] = useState(createContentDraft("Learning Path"));
   const [imageError, setImageError] = useState("");
+  const [formTab, setFormTab] = useState("details");
   const learningPaths = contentItems.filter((item) => item.type === "Learning Path");
   const lessonOptions = contentItems.filter((item) => item.type === "Lesson");
   const resourceOptions = contentItems.filter((item) => item.type === "Resource");
@@ -3988,6 +4609,7 @@ function ContentPanel({ contentItems, status, saveState, seedContentItems, addCo
   }
 
   useEffect(() => {
+    setFormTab("details");
     if (selectedItem) {
       setDraft(makeEditableDraft(selectedItem));
       setImageError("");
@@ -4100,284 +4722,199 @@ function ContentPanel({ contentItems, status, saveState, seedContentItems, addCo
     if (item) selectItem(item);
   }
 
+  const contentFormTabs = [
+    { id: "details", label: "Details" },
+    { id: "files", label: "Files & Image" },
+    ...(draft.type !== "Learning Path" ? [{ id: "engagement", label: "Engagement" }] : []),
+    { id: "structure", label: "Structure" },
+  ];
+
   return (
     <section className="staff-section staff-panel active">
-      <div className="section-heading">
+      <div className="sc-panel-header">
         <div>
           <h2>Content Studio</h2>
-          <p>Create content in a simple flow: choose what you are making, add the essentials, connect related items and publish.</p>
+          <p>Create and manage learning paths, lessons and resources for teachers.</p>
         </div>
-        <div className="heading-actions">
-          <button type="button" onClick={seedContentItems}>Seed Firestore content</button>
-        </div>
+        <button type="button" className="secondary-button slim-button" onClick={seedContentItems}>Seed defaults</button>
       </div>
-      <ContentFirestoreStatus status={status} saveState={saveState} collectionLabel="Taronga TV library" collectionName="tarongaTvVideos" loadingLabel="Loading Taronga TV library..." emptyLabel="Firestore tarongaTvVideos is empty. Showing fallback videos until you add your own." savingLabel="Writing Taronga TV video to Firestore..." savedLabel="Taronga TV video saved to Firestore." errorLabel="Taronga TV videos could not load. Check rules allow access to tarongaTvVideos." />
+      <ContentFirestoreStatus status={status} saveState={saveState} />
 
-      <div className="content-flow-shell">
-        <div className="content-type-selector" aria-label="Content types">
-          {["Learning Path", "Lesson", "Resource"].map((type) => (
-            <button key={type} type="button" className={`content-type-card ${activeType === type ? "active" : ""}`} onClick={() => startNew(type)}>
-              <div className="content-type-icon">
-                <Icon type={typeCopy[type].icon} className="nav-svg" />
+      <div className="sc-type-tabs">
+        {["Learning Path", "Lesson", "Resource"].map((type) => (
+          <button key={type} type="button" className={`sc-type-tab${activeType === type ? " active" : ""}`} onClick={() => startNew(type)}>
+            <Icon type={typeCopy[type].icon} className="" />
+            {type}
+            <span className="sc-type-count">{contentItems.filter((i) => i.type === type).length}</span>
+          </button>
+        ))}
+      </div>
+
+      <div className="sc-master-detail">
+        <div className="sc-list">
+          <div className="sc-list-header">
+            <span>{currentItems.length} item{currentItems.length !== 1 ? "s" : ""}</span>
+            <button type="button" onClick={() => startNew(activeType)}>+ New</button>
+          </div>
+          <div className="sc-list-items">
+            {!selectedId && (
+              <div className="sc-item active">
+                <span className="sc-status-badge draft">Draft</span>
+                <strong>New {activeType}</strong>
+                <span className="sc-item-meta">Unsaved</span>
               </div>
-              <div>
-                <strong>{type}</strong>
-                <p>{typeCopy[type].description}</p>
-                <small>{typeCopy[type].intro}</small>
+            )}
+            {currentItems.map((item) => (
+              <div key={item.id} className={`sc-item${selectedId === item.id ? " active" : ""}`} onClick={() => selectItem(item)}>
+                <span className={`sc-status-badge ${(item.status || "draft").toLowerCase()}`}>{item.status || "Draft"}</span>
+                <strong>{item.title}</strong>
+                <span className="sc-item-meta">{item.subject} · {item.stage}{item.durationWeeks ? ` · ${item.durationWeeks}w` : ""}{item.durationMinutes ? ` · ${item.durationMinutes}m` : ""}</span>
               </div>
-            </button>
-          ))}
+            ))}
+            {!currentItems.length && <div className="sc-list-empty">No {activeType.toLowerCase()}s yet.</div>}
+          </div>
         </div>
 
-        <form className="content-form content-flow-form" onSubmit={submitContent}>
-          <div className="content-flow-toolbar">
+        <form className="sc-detail" onSubmit={submitContent}>
+          <div className="sc-detail-header">
             <div>
-              <span className="content-type">{selectedId ? "Editing existing content" : "New content"}</span>
-              <h3>{selectedId ? draft.title || `Edit ${draft.type.toLowerCase()}` : `Create ${draft.type.toLowerCase()}`}</h3>
-              <p>{typeCopy[draft.type].intro}</p>
+              <span className="content-type">{selectedId ? "Editing" : "New"}</span>
+              <h3>{selectedId ? (draft.title || `Edit ${draft.type}`) : `New ${draft.type}`}</h3>
             </div>
-
-            <div className="content-flow-toolbar-actions">
-              <label className="content-quick-select">
-                Continue editing
-                <select value={selectedId} onChange={(event) => handleExistingSelection(event.target.value)}>
-                  <option value="">Start a new {draft.type.toLowerCase()}</option>
-                  {currentItems.map((item) => <option value={item.id} key={item.id || item.title}>{item.title}</option>)}
-                </select>
-              </label>
-              <button type="button" className="secondary-button" onClick={() => startNew(activeType)}>{typeCopy[activeType].button}</button>
+            <div className="sc-detail-actions">
+              {selectedId ? <button type="button" className="delete-button" onClick={() => confirmDelete(draft)}>Delete</button> : null}
+              <button type="button" className="secondary-button" onClick={() => startNew(activeType)}>Clear</button>
+              <button type="submit" disabled={saveState === "saving"}>{saveState === "saving" ? "Saving…" : selectedId ? "Update" : "Save"}</button>
             </div>
           </div>
 
-          <div className="content-flow-main">
-            <section className="content-step-card">
-              <div className="content-step-header">
-                <span className="content-step-badge">1</span>
-                <div>
-                  <h4>Core details</h4>
-                  <p>Start with the essentials staff need to recognise and organise this content.</p>
+          <div className="sc-tabs">
+            {contentFormTabs.map((tab) => (
+              <button key={tab.id} type="button" className={`sc-tab${formTab === tab.id ? " active" : ""}`} onClick={() => setFormTab(tab.id)}>{tab.label}</button>
+            ))}
+          </div>
+
+          <div className="sc-form-body">
+            {formTab === "details" && (
+              <div className="sc-fields">
+                <div className="sc-field-row">
+                  <div className="sc-field"><label>Title</label><input type="text" required value={draft.title} onChange={(e) => updateDraft({ title: e.target.value })} /></div>
+                  <div className="sc-field"><label>Status</label><select value={draft.status} onChange={(e) => updateDraft({ status: e.target.value })}><option>Draft</option><option>Review</option><option>Published</option></select></div>
                 </div>
-              </div>
-              <div className="content-editor-fields">
-                <label>Title<input type="text" required value={draft.title} onChange={(event) => updateDraft({ title: event.target.value })} /></label>
-                <label>Subject<select value={draft.subject} onChange={(event) => updateDraft({ subject: event.target.value })}>{subjects.map(([label]) => <option key={label}>{label}</option>)}</select></label>
-                <label>Stage<input type="text" value={draft.stage} onChange={(event) => updateDraft({ stage: event.target.value })} /></label>
-                <label>Status<select value={draft.status} onChange={(event) => updateDraft({ status: event.target.value })}><option>Draft</option><option>Review</option><option>Published</option></select></label>
-                {draft.type === "Learning Path" ? <label>Duration in weeks<input type="number" min="0" value={draft.durationWeeks} onChange={(event) => updateDraft({ durationWeeks: event.target.value })} /></label> : null}
-                {draft.type === "Lesson" ? <label>Duration in minutes<input type="number" min="0" value={draft.durationMinutes} onChange={(event) => updateDraft({ durationMinutes: event.target.value })} /></label> : null}
-                <label className="wide-field">Summary<input type="text" required value={draft.summary} onChange={(event) => updateDraft({ summary: event.target.value })} /></label>
-                <label className="wide-field">Description<textarea value={draft.description} onChange={(event) => updateDraft({ description: event.target.value })}></textarea></label>
-                <label className="wide-field">Outcomes<textarea placeholder="One outcome per line" value={draft.outcomeCodes} onChange={(event) => updateDraft({ outcomeCodes: event.target.value })}></textarea></label>
-              </div>
-            </section>
-
-            <section className="content-step-card">
-              <div className="content-step-header">
-                <span className="content-step-badge">2</span>
-                <div>
-                  <h4>Files, links and image</h4>
-                  <p>Keep uploads and links in one place so staff do not need to hunt for the right field.</p>
+                <div className="sc-field-row">
+                  <div className="sc-field"><label>Subject</label><select value={draft.subject} onChange={(e) => updateDraft({ subject: e.target.value })}>{subjects.map(([label]) => <option key={label}>{label}</option>)}</select></div>
+                  <div className="sc-field"><label>Stage</label><input type="text" value={draft.stage} onChange={(e) => updateDraft({ stage: e.target.value })} /></div>
                 </div>
+                {draft.type === "Learning Path" && <div className="sc-field"><label>Duration (weeks)</label><input type="number" min="0" value={draft.durationWeeks} style={{maxWidth:140}} onChange={(e) => updateDraft({ durationWeeks: e.target.value })} /></div>}
+                {draft.type === "Lesson" && <div className="sc-field"><label>Duration (minutes)</label><input type="number" min="0" value={draft.durationMinutes} style={{maxWidth:140}} onChange={(e) => updateDraft({ durationMinutes: e.target.value })} /></div>}
+                <div className="sc-field"><label>Summary</label><input type="text" required value={draft.summary} onChange={(e) => updateDraft({ summary: e.target.value })} placeholder="One-line teacher-facing description" /></div>
+                <div className="sc-field"><label>Description</label><textarea value={draft.description} rows={4} onChange={(e) => updateDraft({ description: e.target.value })} /></div>
+                <div className="sc-field"><label>Outcomes</label><textarea placeholder="One outcome per line" value={draft.outcomeCodes} rows={3} onChange={(e) => updateDraft({ outcomeCodes: e.target.value })} /></div>
               </div>
+            )}
 
-              <div className="simple-image-picker">
-                <img src={selectedImage} alt="" />
-                <div>
-                  <label>
-                    Stock image
-                    <select value={selectedStockImage ? (selectedStockImage.key || selectedStockImage.src) : ""} onChange={(event) => chooseStockImage(event.target.value)}>
-                      <option value="">Choose a stock image</option>
-                      {stockImages.map((stockImage) => <option value={stockImage.key || stockImage.src} key={`${stockImage.label}-${stockImage.src}`}>{stockImage.label}</option>)}
-                    </select>
-                  </label>
-                  <label>Image URL<input type="url" value={draft.customImageUrl} onChange={(event) => updateDraft({ customImageUrl: event.target.value, uploadedImageDataUrl: "", image: event.target.value, imageKey: "" })} placeholder="https://..." /></label>
-                  <label>Upload image<input type="file" accept="image/*" onChange={uploadCardImage} /></label>
-                  {imageError ? <p className="auth-error">{imageError}</p> : null}
-                </div>
-              </div>
-
-              <div className="content-editor-fields">
-                {draft.type === "Learning Path" ? (
-                  <>
-                    <label>Teacher admin documents URL<input type="url" value={draft.teacherAdminUrl} onChange={(event) => updateDraft({ teacherAdminUrl: event.target.value })} placeholder="Drive, PDF or Canva link" /></label>
-                    <label>Unit plan URL<input type="url" value={draft.unitPlanUrl} onChange={(event) => updateDraft({ unitPlanUrl: event.target.value })} placeholder="Scope, sequence or program link" /></label>
-                    <label className="wide-field">Teacher notes<textarea placeholder="One note or prompt per line" value={draft.activityPrompts} onChange={(event) => updateDraft({ activityPrompts: event.target.value })}></textarea></label>
-                  </>
-                ) : null}
-
-                {draft.type === "Lesson" ? (
-                  <>
-                    <label>Lesson plan URL<input type="url" value={draft.lessonPlanUrl} onChange={(event) => updateDraft({ lessonPlanUrl: event.target.value })} placeholder="PDF, Drive or Canva link" /></label>
-                    <label>Teacher guide URL<input type="url" value={draft.teacherGuideUrl} onChange={(event) => updateDraft({ teacherGuideUrl: event.target.value })} placeholder="Optional support material" /></label>
-                  </>
-                ) : null}
-
-                {draft.type === "Resource" ? (
-                  <>
-                    <label>Resource file or Canva URL<input type="url" value={draft.resourceUrl} onChange={(event) => updateDraft({ resourceUrl: event.target.value })} placeholder="PDF, image, video, Canva or Drive link" /></label>
-                    <label>Student worksheet URL<input type="url" value={draft.studentWorksheetUrl} onChange={(event) => updateDraft({ studentWorksheetUrl: event.target.value })} placeholder="Optional worksheet or download" /></label>
-                    <label className="wide-field">Extra resource links<textarea placeholder="One URL per line" value={draft.resourceLinks} onChange={(event) => updateDraft({ resourceLinks: event.target.value })}></textarea></label>
-                  </>
-                ) : null}
-                <label className="wide-field">Download links<textarea placeholder="One per line: Label | URL" value={draft.downloadLinks} onChange={(event) => updateDraft({ downloadLinks: event.target.value })}></textarea></label>
-              </div>
-            </section>
-
-            {draft.type !== "Learning Path" ? (
-              <section className="content-step-card">
-                <div className="content-step-header">
-                  <span className="content-step-badge">3</span>
-                  <div>
-                    <h4>Student engagement</h4>
-                    <p>Build live or student-paced lesson steps. These power join-code sessions, teacher-led presentation, and post-session analytics.</p>
+            {formTab === "files" && (
+              <div className="sc-fields">
+                <div className="sc-image-picker">
+                  <div className="sc-image-preview"><img src={selectedImage} alt="" /></div>
+                  <div className="sc-image-options">
+                    <div className="sc-field"><label>Stock image</label><select value={selectedStockImage ? (selectedStockImage.key || selectedStockImage.src) : ""} onChange={(e) => chooseStockImage(e.target.value)}><option value="">Choose stock image</option>{stockImages.map((si) => <option value={si.key || si.src} key={`${si.label}-${si.src}`}>{si.label}</option>)}</select></div>
+                    <div className="sc-field"><label>Image URL</label><input type="url" value={draft.customImageUrl} onChange={(e) => updateDraft({ customImageUrl: e.target.value, uploadedImageDataUrl: "", image: e.target.value, imageKey: "" })} placeholder="https://..." /></div>
+                    <div className="sc-field"><label>Upload image</label>
+                      <div className="sc-upload-zone" onClick={() => document.getElementById("content-img-upload").click()}><Icon type="plus" className="" /><span>Click to upload</span></div>
+                      <input type="file" id="content-img-upload" accept="image/*" onChange={uploadCardImage} style={{display:"none"}} />
+                    </div>
+                    {imageError ? <p className="auth-error">{imageError}</p> : null}
                   </div>
                 </div>
-                <div className="teacher-card-actions">
-                  <button type="button" className="secondary-button slim-button" onClick={() => addActivityBlock("slide")}>Add slide</button>
-                  <button type="button" className="secondary-button slim-button" onClick={() => addActivityBlock("quiz")}>Add quiz</button>
-                  <button type="button" className="secondary-button slim-button" onClick={() => addActivityBlock("poll")}>Add poll</button>
-                  <button type="button" className="secondary-button slim-button" onClick={() => addActivityBlock("extended-response")}>Add extended response</button>
+
+                {draft.type === "Learning Path" && <>
+                  <div className="sc-field"><label>Teacher admin documents URL</label><input type="url" value={draft.teacherAdminUrl} onChange={(e) => updateDraft({ teacherAdminUrl: e.target.value })} placeholder="Drive, PDF or Canva link" /></div>
+                  <div className="sc-field"><label>Unit plan URL</label><input type="url" value={draft.unitPlanUrl} onChange={(e) => updateDraft({ unitPlanUrl: e.target.value })} placeholder="Scope, sequence or program link" /></div>
+                  <div className="sc-field"><label>Teacher notes</label><textarea placeholder="One note per line" value={draft.activityPrompts} rows={3} onChange={(e) => updateDraft({ activityPrompts: e.target.value })} /></div>
+                </>}
+                {draft.type === "Lesson" && <>
+                  <div className="sc-field"><label>Lesson plan URL</label><input type="url" value={draft.lessonPlanUrl} onChange={(e) => updateDraft({ lessonPlanUrl: e.target.value })} placeholder="PDF, Drive or Canva link" /></div>
+                  <div className="sc-field"><label>Teacher guide URL</label><input type="url" value={draft.teacherGuideUrl} onChange={(e) => updateDraft({ teacherGuideUrl: e.target.value })} placeholder="Optional support material" /></div>
+                </>}
+                {draft.type === "Resource" && <>
+                  <div className="sc-field"><label>Resource file or Canva URL</label><input type="url" value={draft.resourceUrl} onChange={(e) => updateDraft({ resourceUrl: e.target.value })} placeholder="PDF, image, video, Canva or Drive link" /></div>
+                  <div className="sc-field"><label>Student worksheet URL</label><input type="url" value={draft.studentWorksheetUrl} onChange={(e) => updateDraft({ studentWorksheetUrl: e.target.value })} placeholder="Optional worksheet or download" /></div>
+                  <div className="sc-field"><label>Extra resource links</label><textarea placeholder="One URL per line" value={draft.resourceLinks} rows={3} onChange={(e) => updateDraft({ resourceLinks: e.target.value })} /></div>
+                </>}
+                <div className="sc-field"><label>Download links</label><textarea placeholder="One per line: Label | URL" value={draft.downloadLinks} rows={3} onChange={(e) => updateDraft({ downloadLinks: e.target.value })} /></div>
+              </div>
+            )}
+
+            {formTab === "engagement" && draft.type !== "Learning Path" && (
+              <div className="sc-fields">
+                <div className="sc-engagement-actions">
+                  {["slide", "quiz", "poll", "extended-response"].map((t) => (
+                    <button key={t} type="button" className="secondary-button slim-button" onClick={() => addActivityBlock(t)}>+ {t.replace("-", " ")}</button>
+                  ))}
                 </div>
-                <div className="discussion-points-editor">
-                  {(draft.activityBlocks || []).length ? draft.activityBlocks.map((block, index) => (
-                    <article className="discussion-point-row lesson-block-row" key={block.id}>
-                      <label>
-                        Step type
-                        <select value={block.type} onChange={(event) => updateActivityBlock(block.id, { type: event.target.value, options: event.target.value === "slide" || event.target.value === "extended-response" ? [] : (block.options?.length ? block.options : ["Option 1", "Option 2"]) })}>
-                          <option value="slide">Slide</option>
-                          <option value="quiz">Quiz</option>
-                          <option value="poll">Poll</option>
-                          <option value="extended-response">Extended response</option>
+                {(draft.activityBlocks || []).length ? draft.activityBlocks.map((block, index) => (
+                  <div className="sc-block-card" key={block.id}>
+                    <div className="sc-block-header">
+                      <div className="sc-field" style={{margin:0}}>
+                        <label>Type</label>
+                        <select value={block.type} onChange={(e) => updateActivityBlock(block.id, { type: e.target.value, options: e.target.value === "slide" || e.target.value === "extended-response" ? [] : (block.options?.length ? block.options : ["Option 1", "Option 2"]) })}>
+                          <option value="slide">Slide</option><option value="quiz">Quiz</option><option value="poll">Poll</option><option value="extended-response">Extended response</option>
                         </select>
-                      </label>
-                      <div className="content-editor-fields lesson-block-fields">
-                        <label>Step title<input type="text" value={block.title} onChange={(event) => updateActivityBlock(block.id, { title: event.target.value })} placeholder={`Step ${index + 1}`} /></label>
-                        <label className="wide-field">Prompt<textarea value={block.prompt} onChange={(event) => updateActivityBlock(block.id, { prompt: event.target.value })} placeholder="What do students see or respond to?" /></label>
-                        <label className="wide-field">Teacher notes<textarea value={block.notes || ""} onChange={(event) => updateActivityBlock(block.id, { notes: event.target.value })} placeholder="Optional teacher prompt, explanation or transition note." /></label>
-                        {block.type === "quiz" || block.type === "poll" ? (
-                          <>
-                            <label className="wide-field">Options<textarea value={(block.options || []).join("\n")} onChange={(event) => updateActivityBlock(block.id, { options: listFromText(event.target.value) })} placeholder="One option per line" /></label>
-                            {block.type === "quiz" ? <label>Correct answer<input type="text" value={block.answer || ""} onChange={(event) => updateActivityBlock(block.id, { answer: event.target.value })} placeholder="Match one option exactly" /></label> : null}
-                          </>
-                        ) : null}
                       </div>
-                      <button type="button" className="delete-button" onClick={() => removeActivityBlock(block.id)}>Remove</button>
-                    </article>
-                  )) : <p className="mini-empty">Add at least one slide or question to make this interactive for students.</p>}
-                </div>
-              </section>
-            ) : null}
-
-            <section className="content-step-card">
-              <div className="content-step-header">
-                <span className="content-step-badge">{draft.type === "Learning Path" ? "3" : "4"}</span>
-                <div>
-                  <h4>Structure and relationships</h4>
-                  <p>Link this item into the wider content model only where it needs to sit.</p>
-                </div>
-              </div>
-
-              <div className="content-editor-fields">
-                {draft.type === "Learning Path" ? (
-                  <fieldset className="lesson-picker wide-field">
-                    <legend>Lessons in this learning path</legend>
-                    {lessonOptions.length ? lessonOptions.map((lesson) => <label key={lesson.id || lesson.title}><input type="checkbox" checked={draft.lessonIds.includes(lesson.id)} onChange={() => toggleListItem("lessonIds", lesson.id)} />{lesson.title}<small>{lesson.subject} - {lesson.stage}</small></label>) : <p>Create lessons first, then attach them here.</p>}
-                  </fieldset>
-                ) : null}
-
-                {draft.type === "Lesson" ? (
-                  <>
-                    <label>Learning path<select value={draft.learningPathId} onChange={(event) => updateDraft({ learningPathId: event.target.value })}><option value="">Standalone lesson</option>{learningPaths.map((path) => <option value={path.id} key={path.id || path.title}>{path.title}</option>)}</select></label>
-                    <fieldset className="lesson-picker wide-field">
-                      <legend>Resources in this lesson</legend>
-                      {resourceOptions.length ? resourceOptions.map((resource) => <label key={resource.id || resource.title}><input type="checkbox" checked={draft.resourceIds.includes(resource.id)} onChange={() => toggleListItem("resourceIds", resource.id)} />{resource.title}<small>{resource.subject} - {resource.stage}</small></label>) : <p>Create resources first, then attach them here.</p>}
-                    </fieldset>
-                  </>
-                ) : null}
-
-                {draft.type === "Resource" ? (
-                  <label className="wide-field">Lesson<select value={draft.lessonId} onChange={(event) => updateDraft({ lessonId: event.target.value })}><option value="">Standalone resource</option>{lessonOptions.map((lesson) => <option value={lesson.id} key={lesson.id || lesson.title}>{lesson.title}</option>)}</select></label>
-                ) : null}
-              </div>
-            </section>
-
-            <section className="content-step-card review-card">
-              <div className="content-step-header">
-                <span className="content-step-badge">{draft.type === "Learning Path" ? "4" : "5"}</span>
-                <div>
-                  <h4>Review and save</h4>
-                  <p>Check where this will appear for teachers, then save it to Firestore.</p>
-                </div>
-              </div>
-
-              <div className="content-review-grid">
-                <div className="content-review-preview">
-                  <img className="content-thumb" src={selectedImage} alt="" />
-                  <div>
-                    <span className="content-type">{draft.status}</span>
-                    <h5>{draft.title || `Untitled ${draft.type.toLowerCase()}`}</h5>
-                    <p>{draft.summary || "Add a short summary so teachers can scan this quickly."}</p>
-                    <div className="material-tags">
-                      <span>{draft.subject}</span>
-                      <span>{draft.stage || "Stage not set"}</span>
-                      <span>{selectedId ? "Existing item" : "New item"}</span>
+                      <button type="button" className="delete-button slim-button" onClick={() => removeActivityBlock(block.id)}>Remove</button>
+                    </div>
+                    <div className="sc-block-fields">
+                      <div className="sc-field"><label>Step title</label><input type="text" value={block.title} onChange={(e) => updateActivityBlock(block.id, { title: e.target.value })} placeholder={`Step ${index + 1}`} /></div>
+                      <div className="sc-field"><label>Prompt</label><textarea value={block.prompt} rows={2} onChange={(e) => updateActivityBlock(block.id, { prompt: e.target.value })} placeholder="What do students see or respond to?" /></div>
+                      <div className="sc-field"><label>Teacher notes</label><textarea value={block.notes || ""} rows={2} onChange={(e) => updateActivityBlock(block.id, { notes: e.target.value })} placeholder="Optional note or transition." /></div>
+                      {(block.type === "quiz" || block.type === "poll") && <div className="sc-field"><label>Options</label><textarea value={(block.options || []).join("\n")} rows={3} onChange={(e) => updateActivityBlock(block.id, { options: listFromText(e.target.value) })} placeholder="One option per line" /></div>}
+                      {block.type === "quiz" && <div className="sc-field"><label>Correct answer</label><input type="text" value={block.answer || ""} onChange={(e) => updateActivityBlock(block.id, { answer: e.target.value })} placeholder="Match one option exactly" /></div>}
                     </div>
                   </div>
-                </div>
-
-                <div className="content-review-meta">
-                  <h5>Teachers will see this in</h5>
-                  <div className="editor-meta-list">
-                    {typeCopy[draft.type].review.map((label) => <span key={label}>{label}</span>)}
+                )) : (
+                  <div className="sc-empty-engagement">
+                    <Icon type="plus" className="" />
+                    <p>Add slides, quizzes and polls to make this lesson interactive for students.</p>
                   </div>
-                  <div className="content-form-actions">
-                    {selectedId ? <button type="button" className="delete-button editor-delete-button" onClick={() => confirmDelete(draft)}>Delete</button> : null}
-                    <button type="button" className="secondary-button" onClick={() => startNew(activeType)}>Clear form</button>
-                    <button type="submit" disabled={saveState === "saving"}>{saveState === "saving" ? "Saving..." : selectedId ? "Update content" : "Save to Firestore"}</button>
-                  </div>
-                </div>
+                )}
               </div>
-            </section>
-          </div>
-        </form>
+            )}
 
-        <section className="content-library-section">
-          <div className="content-library-section-header">
-            <div>
-              <span className="content-type">{activeType}</span>
-              <h3>Existing {typeCopy[activeType].title}</h3>
-              <p>Select something to edit, or stay in the flow above to create a new item.</p>
-            </div>
-            <button type="button" className="secondary-button" onClick={() => startNew(activeType)}>{typeCopy[activeType].button}</button>
-          </div>
-
-          <div className="content-library-grid">
-            {currentItems.length ? currentItems.map((item) => (
-              <article className={`content-mini-card ${selectedId === item.id ? "selected" : ""}`} key={item.id || item.title} onClick={() => selectItem(item)}>
-                <img className="content-thumb" src={item.image} alt="" />
-                <div>
-                  <span className="content-type">{item.status}</span>
-                  <h4>{item.title}</h4>
-                  <p>{item.summary || item.description}</p>
-                  <small>{item.subject} - {item.stage}</small>
-                  {item.durationWeeks ? <small>{item.durationWeeks} weeks</small> : null}
-                  {item.durationMinutes ? <small>{item.durationMinutes} minutes</small> : null}
-                  {item.learningPathId ? <small>Path: {itemTitle(learningPaths, item.learningPathId)}</small> : null}
-                  {item.lessonId ? <small>Lesson: {itemTitle(lessonOptions, item.lessonId)}</small> : null}
-                  {item.lessonIds?.length ? <small>{item.lessonIds.length} lessons linked</small> : null}
-                  {item.resourceIds?.length ? <small>{item.resourceIds.length} resources linked</small> : null}
-                  {materialCount(item) ? <div className="material-tags"><span>{materialCount(item)} links/files</span></div> : null}
-                </div>
-              </article>
-            )) : (
-              <article className="empty-content-card">
-                <Icon type="plus" className="" />
-                <h4>No {activeType.toLowerCase()}s yet</h4>
-                <p>Create the first one using the steps above.</p>
-              </article>
+            {formTab === "structure" && (
+              <div className="sc-fields">
+                {draft.type === "Learning Path" && (
+                  <div className="sc-field">
+                    <label>Lessons in this path</label>
+                    <div className="sc-checkbox-list">
+                      {lessonOptions.length ? lessonOptions.map((lesson) => (
+                        <label key={lesson.id || lesson.title} className="sc-checkbox-item">
+                          <input type="checkbox" checked={draft.lessonIds.includes(lesson.id)} onChange={() => toggleListItem("lessonIds", lesson.id)} />
+                          <div><strong>{lesson.title}</strong><span>{lesson.subject} · {lesson.stage}</span></div>
+                        </label>
+                      )) : <p className="mini-empty">Create lessons first, then attach them here.</p>}
+                    </div>
+                  </div>
+                )}
+                {draft.type === "Lesson" && <>
+                  <div className="sc-field"><label>Parent learning path</label><select value={draft.learningPathId} onChange={(e) => updateDraft({ learningPathId: e.target.value })}><option value="">Standalone lesson</option>{learningPaths.map((p) => <option value={p.id} key={p.id || p.title}>{p.title}</option>)}</select></div>
+                  <div className="sc-field">
+                    <label>Resources in this lesson</label>
+                    <div className="sc-checkbox-list">
+                      {resourceOptions.length ? resourceOptions.map((resource) => (
+                        <label key={resource.id || resource.title} className="sc-checkbox-item">
+                          <input type="checkbox" checked={draft.resourceIds.includes(resource.id)} onChange={() => toggleListItem("resourceIds", resource.id)} />
+                          <div><strong>{resource.title}</strong><span>{resource.subject} · {resource.stage}</span></div>
+                        </label>
+                      )) : <p className="mini-empty">Create resources first, then attach them here.</p>}
+                    </div>
+                  </div>
+                </>}
+                {draft.type === "Resource" && <div className="sc-field"><label>Parent lesson</label><select value={draft.lessonId} onChange={(e) => updateDraft({ lessonId: e.target.value })}><option value="">Standalone resource</option>{lessonOptions.map((l) => <option value={l.id} key={l.id || l.title}>{l.title}</option>)}</select></div>}
+              </div>
             )}
           </div>
-        </section>
+        </form>
       </div>
     </section>
   );
@@ -4387,6 +4924,7 @@ function TarongaTvPanel({ items, contentItems, status, saveState, saveVideo, del
   const [selectedId, setSelectedId] = useState("");
   const [draft, setDraft] = useState(createTarongaTvDraft());
   const [imageError, setImageError] = useState("");
+  const [formTab, setFormTab] = useState("details");
   const selectedItem = items.find((item) => item.id === selectedId) || null;
   const lessonOptions = contentItems.filter((item) => item.type === "Lesson");
   const learningPathOptions = contentItems.filter((item) => item.type === "Learning Path");
@@ -4400,6 +4938,7 @@ function TarongaTvPanel({ items, contentItems, status, saveState, saveVideo, del
       : (selectedItem ? "Update draft" : "Save draft");
 
   useEffect(() => {
+    setFormTab("details");
     if (selectedItem) {
       setDraft({
         ...createTarongaTvDraft(),
@@ -4502,201 +5041,160 @@ function TarongaTvPanel({ items, contentItems, status, saveState, saveVideo, del
     setSelectedId("");
   }
 
+  const tvFormTabs = [
+    { id: "details", label: "Details" },
+    { id: "thumbnail", label: "Thumbnail" },
+    { id: "curriculum", label: "Curriculum" },
+    { id: "discussion", label: "Discussion Points" },
+  ];
+
   return (
     <section className="staff-section staff-panel active">
-      <div className="section-heading">
+      <div className="sc-panel-header">
         <div>
           <h2>Taronga TV</h2>
-          <p>Create curriculum-aligned videos with linked lessons, learning paths, outcomes and timed discussion points.</p>
+          <p>Curriculum-aligned videos with linked lessons, outcomes and timed discussion prompts.</p>
         </div>
       </div>
       <ContentFirestoreStatus status={status} saveState={saveState} />
 
-      <div className="content-flow-shell">
-        <form className="content-form content-flow-form" onSubmit={handleSubmit}>
-          <div className="content-flow-toolbar">
+      <div className="sc-master-detail">
+        <div className="sc-list">
+          <div className="sc-list-header">
+            <span>{items.length} video{items.length !== 1 ? "s" : ""}</span>
+            <button type="button" onClick={startNew}>+ New</button>
+          </div>
+          <div className="sc-list-items">
+            {!selectedId && (
+              <div className="sc-item active">
+                <span className="sc-status-badge draft">Draft</span>
+                <strong>New video</strong>
+                <span className="sc-item-meta">Unsaved</span>
+              </div>
+            )}
+            {items.map((item) => (
+              <div key={item.id} className={`sc-item${selectedId === item.id ? " active" : ""}`} onClick={() => setSelectedId(item.id)}>
+                <span className={`sc-status-badge ${(item.status || "draft").toLowerCase()}`}>{item.status || "Draft"}</span>
+                <strong>{item.title}</strong>
+                <span className="sc-item-meta">{item.subject} · {item.stage}{item.duration ? ` · ${item.duration}` : ""}</span>
+              </div>
+            ))}
+            {!items.length && <div className="sc-list-empty">No videos yet.</div>}
+          </div>
+        </div>
+
+        <form className="sc-detail" onSubmit={handleSubmit}>
+          <div className="sc-detail-header">
             <div>
-              <span className="content-type">{selectedId ? "Editing video" : "New video"}</span>
-              <h3>{selectedId ? draft.title || "Edit Taronga TV video" : "Create Taronga TV video"}</h3>
-              <p>Keep the workflow simple: add the classroom-facing summary, paste the embed link, connect curriculum and then drop in pause-point prompts.</p>
+              <span className="content-type">{selectedId ? "Editing" : "New"}</span>
+              <h3>{selectedId ? (draft.title || "Edit video") : "New Taronga TV video"}</h3>
             </div>
-            <div className="content-flow-toolbar-actions">
-              <label className="content-quick-select">
-                Continue editing
-                <select value={selectedId} onChange={(event) => setSelectedId(event.target.value)}>
-                  <option value="">Start a new video</option>
-                  {items.map((item) => <option key={item.id} value={item.id}>{item.title}</option>)}
-                </select>
-              </label>
-              <button type="button" className="secondary-button" onClick={startNew}>New video</button>
+            <div className="sc-detail-actions">
+              {selectedItem ? <a className="secondary-button slim-button" style={{textDecoration:"none",display:"inline-flex",alignItems:"center"}} href={teacherTvRoute(selectedItem.id)} target="_blank" rel="noreferrer">Preview</a> : null}
+              {selectedItem ? <button type="button" className="delete-button" onClick={handleDelete}>Delete</button> : null}
+              <button type="button" className="secondary-button" onClick={startNew}>Clear</button>
+              <button type="submit" disabled={saveState === "saving"}>{saveState === "saving" ? "Saving…" : submitLabel}</button>
             </div>
           </div>
 
-          <div className="content-flow-main">
-            <section className="content-step-card">
-              <div className="content-step-header">
-                <span className="content-step-badge">1</span>
-                <div>
-                  <h4>Video details</h4>
-                  <p>Add the essential teacher-facing information first.</p>
-                </div>
-              </div>
-              <div className="content-editor-fields">
-                <label>Title<input type="text" required value={draft.title} onChange={(event) => updateDraft({ title: event.target.value })} /></label>
-                <label>Status<select value={draft.status} onChange={(event) => updateDraft({ status: event.target.value })}><option>Draft</option><option>Published</option></select></label>
-                <label>Subject<select value={draft.subject} onChange={(event) => updateDraft({ subject: event.target.value })}>{subjects.map(([label]) => <option key={label}>{label}</option>)}</select></label>
-                <label>Stage<input type="text" value={draft.stage} onChange={(event) => updateDraft({ stage: event.target.value })} /></label>
-                <label>Duration<input type="text" value={draft.duration} onChange={(event) => updateDraft({ duration: event.target.value })} placeholder="6 min" /></label>
-                <label>Embed or YouTube URL<input type="url" value={draft.embedUrl} onChange={(event) => updateDraft({ embedUrl: event.target.value })} placeholder="https://www.youtube.com/watch?v=... or embed URL" /></label>
-                <label className="wide-field">Summary<input type="text" required value={draft.summary} onChange={(event) => updateDraft({ summary: event.target.value })} /></label>
-                <label className="wide-field">Description<textarea value={draft.description} onChange={(event) => updateDraft({ description: event.target.value })}></textarea></label>
-                <fieldset className="lesson-picker wide-field">
-                  <legend>Categories / playlists</legend>
-                  {tarongaTvCategories.map((category) => <label key={category}><input type="checkbox" checked={draft.categories.includes(category)} onChange={() => toggleRelation("categories", category)} />{category}</label>)}
-                </fieldset>
-                <label className="wide-field">Download links<textarea placeholder="One per line: Label | URL" value={draft.downloadLinks} onChange={(event) => updateDraft({ downloadLinks: event.target.value })}></textarea></label>
-              </div>
-            </section>
+          <div className="sc-tabs">
+            {tvFormTabs.map((tab) => (
+              <button key={tab.id} type="button" className={`sc-tab${formTab === tab.id ? " active" : ""}`} onClick={() => setFormTab(tab.id)}>{tab.label}</button>
+            ))}
+          </div>
 
-            <section className="content-step-card">
-              <div className="content-step-header">
-                <span className="content-step-badge">2</span>
-                <div>
-                  <h4>Thumbnail and preview</h4>
-                  <p>Use a stock image, your own upload, or a direct thumbnail URL.</p>
+          <div className="sc-form-body">
+            {formTab === "details" && (
+              <div className="sc-fields">
+                <div className="sc-field-row">
+                  <div className="sc-field"><label>Title</label><input type="text" required value={draft.title} onChange={(e) => updateDraft({ title: e.target.value })} /></div>
+                  <div className="sc-field"><label>Status</label><select value={draft.status} onChange={(e) => updateDraft({ status: e.target.value })}><option>Draft</option><option>Published</option></select></div>
                 </div>
-              </div>
-              <div className="simple-image-picker">
-                <img src={selectedImage} alt="" />
-                <div>
-                  <label>
-                    Stock image
-                    <select value={selectedStockImage ? (selectedStockImage.key || selectedStockImage.src) : ""} onChange={(event) => chooseStockImage(event.target.value)}>
-                      <option value="">Choose a stock image</option>
-                      {stockImages.map((stockImage) => <option value={stockImage.key || stockImage.src} key={`${stockImage.label}-${stockImage.src}`}>{stockImage.label}</option>)}
-                    </select>
-                  </label>
-                  <label>Thumbnail URL<input type="url" value={draft.customImageUrl} onChange={(event) => updateDraft({ customImageUrl: event.target.value, uploadedImageDataUrl: "", thumbnailUrl: event.target.value, imageKey: "" })} placeholder="https://..." /></label>
-                  <label>Upload thumbnail<input type="file" accept="image/*" onChange={uploadCardImage} /></label>
-                  {imageError ? <p className="auth-error">{imageError}</p> : null}
+                <div className="sc-field-row">
+                  <div className="sc-field"><label>Subject</label><select value={draft.subject} onChange={(e) => updateDraft({ subject: e.target.value })}>{subjects.map(([label]) => <option key={label}>{label}</option>)}</select></div>
+                  <div className="sc-field"><label>Stage</label><input type="text" value={draft.stage} onChange={(e) => updateDraft({ stage: e.target.value })} /></div>
                 </div>
+                <div className="sc-field-row">
+                  <div className="sc-field"><label>Duration</label><input type="text" value={draft.duration} onChange={(e) => updateDraft({ duration: e.target.value })} placeholder="6 min" /></div>
+                  <div className="sc-field"><label>YouTube or Embed URL</label><input type="url" value={draft.embedUrl} onChange={(e) => updateDraft({ embedUrl: e.target.value })} placeholder="https://youtube.com/watch?v=..." /></div>
+                </div>
+                <div className="sc-field"><label>Summary</label><input type="text" required value={draft.summary} onChange={(e) => updateDraft({ summary: e.target.value })} /></div>
+                <div className="sc-field"><label>Description</label><textarea value={draft.description} rows={4} onChange={(e) => updateDraft({ description: e.target.value })} /></div>
+                <div className="sc-field">
+                  <label>Categories</label>
+                  <div className="sc-checkbox-list" style={{maxHeight:160}}>
+                    {tarongaTvCategories.map((cat) => (
+                      <label key={cat} className="sc-checkbox-item">
+                        <input type="checkbox" checked={draft.categories.includes(cat)} onChange={() => toggleRelation("categories", cat)} />
+                        <div><strong>{cat}</strong></div>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+                <div className="sc-field"><label>Download links</label><textarea placeholder="One per line: Label | URL" value={draft.downloadLinks} rows={3} onChange={(e) => updateDraft({ downloadLinks: e.target.value })} /></div>
               </div>
-            </section>
+            )}
 
-            <section className="content-step-card">
-              <div className="content-step-header">
-                <span className="content-step-badge">3</span>
-                <div>
-                  <h4>Curriculum and linked content</h4>
-                  <p>Connect the video to outcomes, lessons and learning paths teachers can open next.</p>
+            {formTab === "thumbnail" && (
+              <div className="sc-fields">
+                <div className="sc-image-picker">
+                  <div className="sc-image-preview"><img src={selectedImage} alt="" /></div>
+                  <div className="sc-image-options">
+                    <div className="sc-field"><label>Stock image</label><select value={selectedStockImage ? (selectedStockImage.key || selectedStockImage.src) : ""} onChange={(e) => chooseStockImage(e.target.value)}><option value="">Choose stock image</option>{stockImages.map((si) => <option value={si.key || si.src} key={`${si.label}-${si.src}`}>{si.label}</option>)}</select></div>
+                    <div className="sc-field"><label>Thumbnail URL</label><input type="url" value={draft.customImageUrl} onChange={(e) => updateDraft({ customImageUrl: e.target.value, uploadedImageDataUrl: "", thumbnailUrl: e.target.value, imageKey: "" })} placeholder="https://..." /></div>
+                    <div className="sc-field"><label>Upload thumbnail</label>
+                      <div className="sc-upload-zone" onClick={() => document.getElementById("tv-thumb-upload").click()}><Icon type="plus" className="" /><span>Click to upload</span></div>
+                      <input type="file" id="tv-thumb-upload" accept="image/*" onChange={uploadCardImage} style={{display:"none"}} />
+                    </div>
+                    {imageError ? <p className="auth-error">{imageError}</p> : null}
+                  </div>
                 </div>
               </div>
-              <div className="content-editor-fields">
-                <label className="wide-field">Outcomes<textarea placeholder="One outcome per line" value={draft.outcomeCodes} onChange={(event) => updateDraft({ outcomeCodes: event.target.value })}></textarea></label>
-                <fieldset className="lesson-picker wide-field">
-                  <legend>Linked lessons</legend>
-                  {lessonOptions.length ? lessonOptions.map((lesson) => <label key={lesson.id || lesson.title}><input type="checkbox" checked={draft.lessonIds.includes(lesson.id)} onChange={() => toggleRelation("lessonIds", lesson.id)} />{lesson.title}<small>{lesson.subject} - {lesson.stage}</small></label>) : <p>Create lessons first, then attach them here.</p>}
-                </fieldset>
-                <fieldset className="lesson-picker wide-field">
-                  <legend>Linked learning paths</legend>
-                  {learningPathOptions.length ? learningPathOptions.map((path) => <label key={path.id || path.title}><input type="checkbox" checked={draft.learningPathIds.includes(path.id)} onChange={() => toggleRelation("learningPathIds", path.id)} />{path.title}<small>{path.subject} - {path.stage}</small></label>) : <p>Create learning paths first, then attach them here.</p>}
-                </fieldset>
-              </div>
-            </section>
+            )}
 
-            <section className="content-step-card">
-              <div className="content-step-header">
-                <span className="content-step-badge">4</span>
-                <div>
-                  <h4>Timed discussion points</h4>
-                  <p>Add the pause moments and teacher prompts that make the video immediately usable in class.</p>
+            {formTab === "curriculum" && (
+              <div className="sc-fields">
+                <div className="sc-field"><label>Curriculum outcomes</label><textarea placeholder="One outcome per line" value={draft.outcomeCodes} rows={4} onChange={(e) => updateDraft({ outcomeCodes: e.target.value })} /></div>
+                <div className="sc-field">
+                  <label>Linked lessons</label>
+                  <div className="sc-checkbox-list">
+                    {lessonOptions.length ? lessonOptions.map((lesson) => (
+                      <label key={lesson.id || lesson.title} className="sc-checkbox-item">
+                        <input type="checkbox" checked={draft.lessonIds.includes(lesson.id)} onChange={() => toggleRelation("lessonIds", lesson.id)} />
+                        <div><strong>{lesson.title}</strong><span>{lesson.subject} · {lesson.stage}</span></div>
+                      </label>
+                    )) : <p className="mini-empty">Create lessons first.</p>}
+                  </div>
+                </div>
+                <div className="sc-field">
+                  <label>Linked learning paths</label>
+                  <div className="sc-checkbox-list">
+                    {learningPathOptions.length ? learningPathOptions.map((path) => (
+                      <label key={path.id || path.title} className="sc-checkbox-item">
+                        <input type="checkbox" checked={draft.learningPathIds.includes(path.id)} onChange={() => toggleRelation("learningPathIds", path.id)} />
+                        <div><strong>{path.title}</strong><span>{path.subject} · {path.stage}</span></div>
+                      </label>
+                    )) : <p className="mini-empty">Create learning paths first.</p>}
+                  </div>
                 </div>
               </div>
-              <div className="discussion-points-editor">
+            )}
+
+            {formTab === "discussion" && (
+              <div className="sc-fields">
+                <p style={{margin:0,color:"var(--muted)",fontSize:13}}>Add pause moments with timestamps so teachers know exactly when to stop the video and prompt discussion.</p>
                 {draft.discussionPoints.map((point, index) => (
-                  <div className="discussion-point-row" key={`discussion-${index}`}>
-                    <label>Time<input type="text" value={point.time} onChange={(event) => updateDiscussionPoint(index, { time: event.target.value })} placeholder="02:15" /></label>
-                    <label>Talking point<textarea value={point.prompt} onChange={(event) => updateDiscussionPoint(index, { prompt: event.target.value })} placeholder="Pause and ask..." /></label>
-                    <button type="button" className="secondary-button slim-button" onClick={() => removeDiscussionPoint(index)}>Remove</button>
+                  <div key={`dp-${index}`} className="sc-discussion-point">
+                    <div className="sc-field" style={{margin:0}}><label>Timestamp</label><input type="text" value={point.time} onChange={(e) => updateDiscussionPoint(index, { time: e.target.value })} placeholder="02:15" /></div>
+                    <div className="sc-field" style={{margin:0}}><label>Talking point</label><textarea value={point.prompt} rows={2} onChange={(e) => updateDiscussionPoint(index, { prompt: e.target.value })} placeholder="Pause and ask..." /></div>
+                    <button type="button" className="delete-button slim-button" style={{alignSelf:"flex-end",marginBottom:2}} onClick={() => removeDiscussionPoint(index)}>✕</button>
                   </div>
                 ))}
-                <button type="button" className="secondary-button" onClick={addDiscussionPoint}>Add discussion point</button>
+                <button type="button" className="secondary-button" onClick={addDiscussionPoint}>+ Add discussion point</button>
               </div>
-            </section>
-
-            <section className="content-step-card review-card">
-              <div className="content-step-header">
-                <span className="content-step-badge">5</span>
-                <div>
-                  <h4>Review and publish</h4>
-                  <p>Set the status to Published, then use the main button below. The staff console `Publish updates` button is only for dashboard settings, not Taronga TV videos.</p>
-                </div>
-              </div>
-              <div className="content-review-grid">
-                <div className="content-review-preview">
-                  <img className="content-thumb" src={selectedImage} alt="" />
-                  <div>
-                    <span className="content-type">{draft.status}</span>
-                    <h5>{draft.title || "Untitled Taronga TV video"}</h5>
-                    <p>{firstParagraph(draft.description) || draft.summary || "Add a short summary so teachers can scan the purpose of the video."}</p>
-                    <div className="material-tags">
-                      <span>{draft.subject}</span>
-                      <span>{draft.stage}</span>
-                      {draft.duration ? <span>{draft.duration}</span> : null}
-                    </div>
-                  </div>
-                </div>
-                <div className="content-review-meta">
-                  <h5>Teacher experience</h5>
-                  <div className="editor-meta-list">
-                    <span>Taronga TV library</span>
-                    <span>Video detail page</span>
-                    <span>Linked lessons and paths</span>
-                  </div>
-                  <div className="content-form-actions">
-                    {selectedItem ? <a className="secondary-button slim-button" href={teacherTvRoute(selectedItem.id)} target="_blank" rel="noreferrer">Preview teacher page</a> : null}
-                    {selectedItem ? <button type="button" className="delete-button editor-delete-button" onClick={handleDelete}>Delete</button> : null}
-                    <button type="button" className="secondary-button" onClick={startNew}>Clear form</button>
-                    <button type="submit" disabled={saveState === "saving"}>{submitLabel}</button>
-                  </div>
-                </div>
-              </div>
-            </section>
-          </div>
-        </form>
-
-        <section className="content-library-section">
-          <div className="content-library-section-header">
-            <div>
-              <span className="content-type">Taronga TV</span>
-              <h3>Existing videos</h3>
-              <p>Choose a video to edit, or stay in the flow above to create a new one.</p>
-            </div>
-            <button type="button" className="secondary-button" onClick={startNew}>New video</button>
-          </div>
-          <div className="content-library-grid">
-            {items.length ? items.map((item) => (
-              <article className={`content-mini-card ${selectedId === item.id ? "selected" : ""}`} key={item.id} onClick={() => setSelectedId(item.id)}>
-                <img className="content-thumb" src={item.thumbnail} alt="" />
-                <div>
-                  <span className="content-type">{item.status}</span>
-                  <h4>{item.title}</h4>
-                  <p>{firstParagraph(item.description) || item.summary}</p>
-                  <small>{item.subject} - {item.stage}</small>
-                  {item.duration ? <small>{item.duration}</small> : null}
-                  {item.categories?.length ? <small>{item.categories.join(" · ")}</small> : null}
-                  {item.discussionPoints?.length ? <small>{item.discussionPoints.length} discussion points</small> : null}
-                </div>
-              </article>
-            )) : (
-              <article className="empty-content-card">
-                <Icon type="play" className="" />
-                <h4>No videos yet</h4>
-                <p>Create the first Taronga TV video using the steps above.</p>
-              </article>
             )}
           </div>
-        </section>
+        </form>
       </div>
     </section>
   );
@@ -4704,6 +5202,7 @@ function TarongaTvPanel({ items, contentItems, status, saveState, saveVideo, del
 
 function ProfessionalLearningPanel({ items, status, saveState, saveItem, deleteItem }) {
   const [selectedId, setSelectedId] = useState("");
+  const [formTab, setFormTab] = useState("details");
   const [draft, setDraft] = useState({
     title: "",
     date: "",
@@ -4719,6 +5218,7 @@ function ProfessionalLearningPanel({ items, status, saveState, saveItem, deleteI
   const selectedItem = items.find((item) => item.id === selectedId) || null;
 
   useEffect(() => {
+    setFormTab("details");
     if (selectedItem) {
       setDraft({
         id: selectedItem.id,
@@ -4763,154 +5263,92 @@ function ProfessionalLearningPanel({ items, status, saveState, saveItem, deleteI
     setSelectedId("");
   }
 
+  const plFormTabs = [
+    { id: "details", label: "Session Details" },
+    { id: "links", label: "Links & Files" },
+  ];
+
   return (
     <section className="staff-section staff-panel active">
-      <div className="section-heading">
+      <div className="sc-panel-header">
         <div>
           <h2>Professional Learning</h2>
-          <p>Create upcoming professional learning sessions for teachers. These surface in the teacher professional learning page, calendar and notification bell.</p>
+          <p>Publish sessions for teachers — they surface in the PL page, calendar and notification bell.</p>
         </div>
       </div>
       <ContentFirestoreStatus status={status} saveState={saveState} />
-      <div className="content-flow-shell">
-        <form className="content-form content-flow-form" onSubmit={handleSubmit}>
-          <div className="content-flow-toolbar">
+
+      <div className="sc-master-detail">
+        <div className="sc-list">
+          <div className="sc-list-header">
+            <span>{items.length} session{items.length !== 1 ? "s" : ""}</span>
+            <button type="button" onClick={() => setSelectedId("")}>+ New</button>
+          </div>
+          <div className="sc-list-items">
+            {!selectedId && (
+              <div className="sc-item active">
+                <span className="sc-status-badge draft">Draft</span>
+                <strong>New session</strong>
+                <span className="sc-item-meta">Unsaved</span>
+              </div>
+            )}
+            {items.map((item) => (
+              <div key={item.id} className={`sc-item${selectedId === item.id ? " active" : ""}`} onClick={() => setSelectedId(item.id)}>
+                <span className={`sc-status-badge ${(item.status || "draft").toLowerCase()}`}>{item.status || "Draft"}</span>
+                <strong>{item.title}</strong>
+                <span className="sc-item-meta">{item.date || "No date set"}{item.time ? ` · ${item.time}` : ""}</span>
+              </div>
+            ))}
+            {!items.length && <div className="sc-list-empty">No sessions yet.</div>}
+          </div>
+        </div>
+
+        <form className="sc-detail" onSubmit={handleSubmit}>
+          <div className="sc-detail-header">
             <div>
-              <span className="content-type">{selectedItem ? "Editing session" : "New session"}</span>
-              <h3>{selectedItem ? draft.title || "Edit professional learning session" : "Create professional learning session"}</h3>
-              <p>Keep the setup simple: add the session basics, paste the registration and information links, then publish it to teachers.</p>
+              <span className="content-type">{selectedItem ? "Editing" : "New"}</span>
+              <h3>{selectedItem ? (draft.title || "Edit session") : "New PL session"}</h3>
             </div>
-            <div className="content-flow-toolbar-actions">
-              <label className="content-quick-select">
-                Continue editing
-                <select value={selectedId} onChange={(event) => setSelectedId(event.target.value)}>
-                  <option value="">Start a new session</option>
-                  {items.map((item) => <option key={item.id} value={item.id}>{item.title}</option>)}
-                </select>
-              </label>
-              <button type="button" className="secondary-button" onClick={() => setSelectedId("")}>New session</button>
+            <div className="sc-detail-actions">
+              {selectedItem ? <button type="button" className="delete-button" onClick={handleDelete}>Delete</button> : null}
+              <button type="button" className="secondary-button" onClick={() => setSelectedId("")}>Clear</button>
+              <button type="submit" disabled={saveState === "saving"}>{saveState === "saving" ? "Saving…" : selectedItem ? "Update" : "Save"}</button>
             </div>
           </div>
 
-          <div className="content-flow-main">
-            <section className="content-step-card">
-              <div className="content-step-header">
-                <span className="content-step-badge">1</span>
-                <div>
-                  <h4>Session details</h4>
-                  <p>Add the details teachers need to understand the event at a glance.</p>
-                </div>
-              </div>
-              <div className="content-editor-fields">
-                <label>Title<input type="text" required value={draft.title} onChange={(event) => setDraft((current) => ({ ...current, title: event.target.value }))} /></label>
-                <label>Status<select value={draft.status} onChange={(event) => setDraft((current) => ({ ...current, status: event.target.value }))}><option>Draft</option><option>Published</option></select></label>
-                <label>Date<input type="date" value={draft.date} onChange={(event) => setDraft((current) => ({ ...current, date: event.target.value }))} /></label>
-                <label>Time<input type="text" value={draft.time} onChange={(event) => setDraft((current) => ({ ...current, time: event.target.value }))} placeholder="4:00 PM AEST" /></label>
-                <label className="wide-field">Summary<input type="text" value={draft.summary} onChange={(event) => setDraft((current) => ({ ...current, summary: event.target.value }))} /></label>
-                <label className="wide-field">Description<textarea value={draft.description} onChange={(event) => setDraft((current) => ({ ...current, description: event.target.value }))}></textarea></label>
-              </div>
-            </section>
-
-            <section className="content-step-card">
-              <div className="content-step-header">
-                <span className="content-step-badge">2</span>
-                <div>
-                  <h4>Links and files</h4>
-                  <p>Put everything teachers may need to register or prepare in one place.</p>
-                </div>
-              </div>
-              <div className="content-editor-fields">
-                <label>Registration link<input type="url" value={draft.registrationUrl} onChange={(event) => setDraft((current) => ({ ...current, registrationUrl: event.target.value }))} placeholder="https://..." /></label>
-                <label>Information link<input type="url" value={draft.infoUrl} onChange={(event) => setDraft((current) => ({ ...current, infoUrl: event.target.value }))} placeholder="https://..." /></label>
-                <label className="wide-field">PDF link<input type="url" value={draft.pdfUrl} onChange={(event) => setDraft((current) => ({ ...current, pdfUrl: event.target.value }))} placeholder="https://..." /></label>
-                <label className="wide-field">Download links<textarea placeholder="One per line: Label | URL" value={draft.downloadLinks} onChange={(event) => setDraft((current) => ({ ...current, downloadLinks: event.target.value }))}></textarea></label>
-              </div>
-            </section>
-
-            <section className="content-step-card">
-              <div className="content-step-header">
-                <span className="content-step-badge">3</span>
-                <div>
-                  <h4>Teacher experience</h4>
-                  <p>Published sessions will automatically surface in the right teacher-facing places.</p>
-                </div>
-              </div>
-              <div className="editor-meta-list">
-                <span>Professional Learning page</span>
-                <span>Teacher calendar</span>
-                <span>Notification bell</span>
-              </div>
-            </section>
-
-            <section className="content-step-card review-card">
-              <div className="content-step-header">
-                <span className="content-step-badge">4</span>
-                <div>
-                  <h4>Review and publish</h4>
-                  <p>Check the session summary, then save it to Firestore.</p>
-                </div>
-              </div>
-              <div className="content-review-grid">
-                <div className="content-review-preview">
-                  <img className="content-thumb" src={assets.gorilla} alt="" />
-                  <div>
-                    <span className="content-type">{draft.status}</span>
-                    <h5>{draft.title || "Untitled professional learning session"}</h5>
-                    <p>{draft.summary || "Add a short summary so teachers can scan the focus of the session."}</p>
-                    <div className="material-tags">
-                      {draft.date ? <span>{draft.date}</span> : null}
-                      {draft.time ? <span>{draft.time}</span> : null}
-                      <span>{selectedItem ? "Existing session" : "New session"}</span>
-                    </div>
-                  </div>
-                </div>
-                <div className="content-review-meta">
-                  <h5>Teacher visibility</h5>
-                  <div className="editor-meta-list">
-                    <span>Registration CTA</span>
-                    <span>Calendar event</span>
-                    <span>Notification item</span>
-                  </div>
-                  <div className="content-form-actions">
-                    {selectedItem ? <button type="button" className="delete-button editor-delete-button" onClick={handleDelete}>Delete</button> : null}
-                    <button type="button" className="secondary-button" onClick={() => setSelectedId("")}>Clear form</button>
-                    <button type="submit" disabled={saveState === "saving"}>{saveState === "saving" ? "Saving..." : selectedItem ? "Update session" : "Save session"}</button>
-                  </div>
-                </div>
-              </div>
-            </section>
+          <div className="sc-tabs">
+            {plFormTabs.map((tab) => (
+              <button key={tab.id} type="button" className={`sc-tab${formTab === tab.id ? " active" : ""}`} onClick={() => setFormTab(tab.id)}>{tab.label}</button>
+            ))}
           </div>
-        </form>
 
-        <section className="content-library-section">
-          <div className="content-library-section-header">
-            <div>
-              <span className="content-type">Professional Learning</span>
-              <h3>Existing sessions</h3>
-              <p>Choose a session to edit, or stay in the flow above to create a new one.</p>
-            </div>
-            <button type="button" className="secondary-button" onClick={() => setSelectedId("")}>New session</button>
-          </div>
-          <div className="content-library-grid">
-            {items.length ? items.map((item) => (
-              <article className={`content-mini-card ${selectedId === item.id ? "selected" : ""}`} key={item.id} onClick={() => setSelectedId(item.id)}>
-                <img className="content-thumb" src={assets.gorilla} alt="" />
-                <div>
-                  <span className="content-type">{item.status}</span>
-                  <h4>{item.title}</h4>
-                  <p>{item.summary}</p>
-                  <small>{item.date}{item.time ? ` - ${item.time}` : ""}</small>
+          <div className="sc-form-body">
+            {formTab === "details" && (
+              <div className="sc-fields">
+                <div className="sc-field-row">
+                  <div className="sc-field"><label>Title</label><input type="text" required value={draft.title} onChange={(e) => setDraft((c) => ({ ...c, title: e.target.value }))} /></div>
+                  <div className="sc-field"><label>Status</label><select value={draft.status} onChange={(e) => setDraft((c) => ({ ...c, status: e.target.value }))}><option>Draft</option><option>Published</option></select></div>
                 </div>
-              </article>
-            )) : (
-              <article className="empty-content-card">
-                <Icon type="plus" className="" />
-                <h4>No sessions yet</h4>
-                <p>Create the first professional learning session using the steps above.</p>
-              </article>
+                <div className="sc-field-row">
+                  <div className="sc-field"><label>Date</label><input type="date" value={draft.date} onChange={(e) => setDraft((c) => ({ ...c, date: e.target.value }))} /></div>
+                  <div className="sc-field"><label>Time</label><input type="text" value={draft.time} onChange={(e) => setDraft((c) => ({ ...c, time: e.target.value }))} placeholder="4:00 PM AEST" /></div>
+                </div>
+                <div className="sc-field"><label>Summary</label><input type="text" value={draft.summary} onChange={(e) => setDraft((c) => ({ ...c, summary: e.target.value }))} placeholder="One-line description teachers will see" /></div>
+                <div className="sc-field"><label>Description</label><textarea value={draft.description} rows={5} onChange={(e) => setDraft((c) => ({ ...c, description: e.target.value }))} /></div>
+              </div>
+            )}
+
+            {formTab === "links" && (
+              <div className="sc-fields">
+                <div className="sc-field"><label>Registration link</label><input type="url" value={draft.registrationUrl} onChange={(e) => setDraft((c) => ({ ...c, registrationUrl: e.target.value }))} placeholder="https://..." /></div>
+                <div className="sc-field"><label>Information link</label><input type="url" value={draft.infoUrl} onChange={(e) => setDraft((c) => ({ ...c, infoUrl: e.target.value }))} placeholder="https://..." /></div>
+                <div className="sc-field"><label>PDF link</label><input type="url" value={draft.pdfUrl} onChange={(e) => setDraft((c) => ({ ...c, pdfUrl: e.target.value }))} placeholder="https://..." /></div>
+                <div className="sc-field"><label>Download links</label><textarea placeholder="One per line: Label | URL" value={draft.downloadLinks} rows={4} onChange={(e) => setDraft((c) => ({ ...c, downloadLinks: e.target.value }))} /></div>
+                <p style={{margin:0,padding:"12px 14px",borderRadius:8,background:"#f0f6f0",color:"#3a5244",fontSize:13}}>Published sessions appear in the Professional Learning page, teacher calendar and notification bell.</p>
+              </div>
             )}
           </div>
-        </section>
+        </form>
       </div>
     </section>
   );
@@ -4927,6 +5365,7 @@ function FirestoreStatus({ status, saveState }) {
   const messages = {
     loading: "Loading Firestore dashboard config...",
     missing: "Firestore connected. dashboardConfig/main has not been published yet.",
+    fallback: "Firestore denied access. Showing the built-in dashboard defaults until rules are updated.",
     error: "Firestore config could not load. Check Firestore is enabled and rules allow access.",
     saving: "Publishing dashboard config to Firestore...",
     saved: "Dashboard config published to Firestore.",
@@ -4952,6 +5391,7 @@ function ContentFirestoreStatus({
   const messages = {
     loading: loadingLabel || `Loading Firestore ${collectionLabel}...`,
     missing: emptyLabel || `Firestore ${collectionName} is empty. Showing fallback content until you seed or add content.`,
+    fallback: `Firestore denied access to ${collectionName}. Showing built-in demo ${collectionLabel} until rules are updated.`,
     error: errorLabel || `Firestore ${collectionLabel} could not load. Check rules allow access to ${collectionName}.`,
     saving: savingLabel || "Writing content to Firestore...",
     saved: savedLabel || "Content saved to Firestore.",
