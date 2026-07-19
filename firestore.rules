@@ -63,6 +63,11 @@ service cloud.firestore {
       allow write: if publicContentWrite();
     }
 
+    match /upcomingEvents/{docId} {
+      allow read: if true;
+      allow write: if isStaff();
+    }
+
     match /liveSessions/{docId} {
       allow read: if true;
       allow create: if signedIn();

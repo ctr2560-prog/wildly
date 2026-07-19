@@ -1053,24 +1053,143 @@ function AboutYouPage() {
 }
 
 function SiteHeader({ active = "" }) {
+  const [menuOpen, setMenuOpen] = useState(false);
   const navItems = [
-    ["about", "About"],
-    ["subjects", "Subjects"],
+    ["subjects", "Explore"],
     ["learning-paths", "Learning Paths"],
     ["tracka", "Taronga Tracka"],
-    ["schools", "Schools"],
+    ["about", "About"],
   ];
 
   return (
-    <header className="site-header">
+    <header className={`site-header ${menuOpen ? "menu-open" : ""}`}>
+      <a className="skip-link" href="#main-content">Skip to main content</a>
       <a className="site-logo" href={routePath()} aria-label="Wildly by Taronga home"><img src={assets.wildlyLogo} alt="Wildly by Taronga" /></a>
       <nav className="site-nav" aria-label="Main navigation">
         {navItems.map(([path, label]) => (
           <a key={path} className={active === path ? "selected" : ""} href={routePath(path)}>{label}</a>
         ))}
       </nav>
-      <div className="header-actions"><a className="join-action header-join-action" href={studentRoute()}>Join lesson</a><a className="login-link" href={loginRoute()}>Log in</a><a className="start-link" href={signupRoute()}>Get started</a></div>
+      <div className="header-actions"><a className="login-link" href={loginRoute()}>Log in</a><a className="start-link" href={signupRoute()}>Get started free</a></div>
+      <button
+        className="public-menu-toggle"
+        type="button"
+        aria-label={menuOpen ? "Close navigation" : "Open navigation"}
+        aria-expanded={menuOpen}
+        aria-controls="public-mobile-navigation"
+        onClick={() => setMenuOpen((current) => !current)}
+      >
+        <span></span><span></span><span></span>
+      </button>
+      <div className="public-mobile-menu" id="public-mobile-navigation">
+        <nav aria-label="Mobile navigation">
+          {navItems.map(([path, label]) => (
+            <a key={path} className={active === path ? "selected" : ""} href={routePath(path)}>{label}</a>
+          ))}
+        </nav>
+        <div className="public-mobile-actions"><a className="login-link" href={loginRoute()}>Log in</a><a className="start-link" href={signupRoute()}>Get started free</a></div>
+      </div>
     </header>
+  );
+}
+
+function ProductBrowserFrame({ src, alt, children, className = "" }) {
+  return (
+    <div className={`product-browser-frame ${className}`.trim()}>
+      <div className="product-browser-bar" aria-hidden="true">
+        <span></span><span></span><span></span>
+        <strong>Wildly teacher workspace</strong>
+      </div>
+      <img src={src} alt={alt} width="2922" height="1592" fetchPriority="high" />
+      {children}
+    </div>
+  );
+}
+
+const landingFlagshipSteps = [
+  ["01", "Discover the challenge", "Meet a real conservation question through Taronga stories and species."],
+  ["02", "Investigate systems", "Build curriculum knowledge with structured lessons, media and teacher prompts."],
+  ["03", "Gather evidence", "Use observations from Taronga Tracka, a zoo visit or a digital experience."],
+  ["04", "Design for change", "Turn evidence into a student-led response, prototype or action project."],
+  ["05", "Reflect and act", "Consolidate learning and connect classroom choices to conservation impact."],
+];
+
+const landingTeachingFlow = [
+  ["01", "Find", "Browse by subject, stage or teaching goal and see exactly what is ready to use.", "Resources"],
+  ["02", "Prepare", "Open the sequence, outcomes, teacher notes and supporting materials before you teach.", "Learning Paths"],
+  ["03", "Experience", "Connect learning with a zoo visit or a Taronga digital experience through Tracka.", "Taronga Tracka"],
+  ["04", "Extend", "Return to Wildly for relevant follow-up resources, reflection and conservation action.", "Recommended next steps"],
+];
+
+const trackaModes = [
+  { id: "zoo", label: "Zoo", tagline: "GPS-guided animal tracking and live missions during your Taronga Zoo excursion.", img: assetPath("assets/tracka/mode-zoo.jpg"), width: 1200, height: 772 },
+  { id: "zoosnooz", label: "ZooSnooz", tagline: "Taronga's overnight experience with after-dark keeper missions and documentary making.", img: assetPath("assets/tracka/mode-zoosnooz.jpg"), width: 1200, height: 750 },
+  { id: "school", label: "School", tagline: "A virtual zoo that brings the full Taronga experience into your classroom.", img: assetPath("assets/tracka/mode-school.jpg"), width: 1200, height: 675, comingSoon: true },
+];
+
+const trackaFeatures = [
+  { title: "GPS Technology", sub: "Find every animal, every time.", desc: "Live GPS guides students to each animal zone across the zoo, helping the class stay oriented and make every encounter count.", img: assetPath("assets/tracka/app-map.jpg"), width: 1400, height: 1173, mediaClass: "map" },
+  { title: "Missions & Games", sub: "Learning through play.", desc: "Students engage through observation games, hands-on activities and documentary making at each animal.", imgs: [1, 2, 3, 4].map((number) => assetPath(`assets/tracka/mission-${number}.jpg`)), mediaClass: "missions" },
+  { title: "Badge Collection", sub: "Every visit tells a story.", desc: "Completed missions unlock animal badges that build each student's personal wildlife collection.", img: assetPath("assets/tracka/app-collection.jpg"), width: 1400, height: 761, mediaClass: "collection" },
+  { title: "Wildly Recommendations", sub: "Extend the impact beyond the visit.", desc: "Tracka passes the experience context to Wildly, helping teachers find relevant curriculum resources for what students explored.", img: assetPath("assets/tracka/app-wildly.jpg"), width: 1600, height: 869, mediaClass: "wildly" },
+];
+
+const trackaSteps = [
+  { num: "01", who: "teacher", title: "Create a Class", desc: "Set up your class in the teacher portal and receive a unique join code in seconds." },
+  { num: "02", who: "student", title: "Students Join", desc: "Students enter the class code on arrival to connect instantly to your group." },
+  { num: "03", who: "student", title: "Explore the Zoo", desc: "GPS technology guides students to each animal zone at their own pace." },
+  { num: "04", who: "student", title: "Complete Missions", desc: "Students engage through games, hands-on activities and documentary making." },
+  { num: "05", who: "student", title: "Earn Badges", desc: "Completed missions unlock badges that build each student's wildlife collection." },
+  { num: "06", who: "teacher", title: "Extend the Learning", desc: "Use the experience context to move into recommended Wildly resources, reflection and classroom action." },
+];
+
+const trackaPortalSlides = [
+  { title: "Class Overview", desc: "See how students are progressing across animal missions.", img: assetPath("assets/tracka/portal-slide-4.jpg"), width: 1600, height: 866 },
+  { title: "Student Writing", desc: "Review student writing from observation and documentary tasks.", img: assetPath("assets/tracka/portal-slide-1.jpg"), width: 1600, height: 801 },
+  { title: "Student Observations", desc: "Review individual student observations, images and responses from the zoo.", img: assetPath("assets/tracka/portal-slide-2.jpg"), width: 1600, height: 787 },
+  { title: "ZooSnooz Portal", desc: "Manage overnight groups, keeper interactions and mission updates.", img: assetPath("assets/tracka/portal-slide-3.jpg"), width: 1600, height: 866 },
+];
+
+const trackaAnimals = [
+  { img: assetPath("assets/tracka/lion.jpg"), name: "African Lion", badge: assetPath("assets/tracka/badge-lion.png") },
+  { img: assetPath("assets/tracka/giraffe.jpg"), name: "Giraffe", badge: assetPath("assets/tracka/badge-giraffe.png") },
+  { img: assetPath("assets/tracka/gorilla.jpg"), name: "Gorilla", badge: assetPath("assets/tracka/badge-gorilla.png") },
+  { img: assetPath("assets/tracka/koala.jpg"), name: "Koala", badge: assetPath("assets/tracka/badge-koala.png") },
+  { img: assetPath("assets/tracka/tiger.jpg"), name: "Sumatran Tiger", badge: assetPath("assets/tracka/badge-tiger.png") },
+  { img: assetPath("assets/tracka/rhino.jpg"), name: "White Rhino", badge: assetPath("assets/tracka/badge-rhino.png") },
+];
+
+function SiteFooter() {
+  return (
+    <footer className="public-footer">
+      <div className="public-footer-main">
+        <div className="public-footer-brand">
+          <img src={assets.wildlyLogo} alt="Wildly by Taronga" />
+          <p>Curriculum-connected learning through nature, backed by Taronga.</p>
+        </div>
+        <div className="public-footer-column">
+          <strong>Explore</strong>
+          <a href={routePath("subjects")}>Resources</a>
+          <a href={routePath("learning-paths")}>Learning Paths</a>
+          <a href={routePath("tracka")}>Taronga Tracka</a>
+        </div>
+        <div className="public-footer-column">
+          <strong>Wildly</strong>
+          <a href={routePath("about")}>About</a>
+          <a href={routePath("schools")}>For schools</a>
+          <a href={appLinks.excursions} target="_blank" rel="noreferrer">Taronga excursions</a>
+        </div>
+        <div className="public-footer-cta">
+          <strong>Ready for your next lesson?</strong>
+          <a className="start-link" href={signupRoute()}>Get started free</a>
+          <a href={loginRoute()}>Already have an account? Log in</a>
+        </div>
+      </div>
+      <div className="public-footer-bottom">
+        <span>© Taronga Conservation Society Australia</span>
+        <a className="staff-login" href={routePath("staff")}>Taronga staff login</a>
+      </div>
+    </footer>
   );
 }
 
@@ -1183,91 +1302,115 @@ function LandingPage() {
   return (
     <>
       <SiteHeader />
-      <main>
-        <section className="hero-section" id="about">
+      <main className="public-home" id="main-content" tabIndex="-1">
+        <section className="hero-section public-home-hero" id="about">
           <div className="hero-copy">
-            <span className="audience-pill">For teachers and schools</span>
+            <span className="audience-pill">Wildly by Taronga · For educators</span>
             <h1>Learning through nature</h1>
-            <p className="hero-subtitle">Inspire curiosity. Create change.</p>
-            <p>Curriculum-aligned lessons, real-world experiences and conservation connections - for every learner, everywhere.</p>
-            <div className="hero-actions"><a className="primary-action" href={signupRoute()}>Get started free</a><a className="secondary-action" href={routePath("subjects")}>Explore subjects</a></div>
-            <div className="alignment-list" aria-label="Curriculum alignment">
-              <p className="alignment-note"><Icon type="book" className="alignment-icon" />Aligned to NSW and Australian curriculums (Early Stage 1 - Stage 6)</p>
-              <p className="alignment-note"><Icon type="blocks" className="alignment-icon" />Aligned to the Early Years Learning Framework (Pre-School)</p>
-              <p className="alignment-note"><Icon type="leaf" className="alignment-icon" />Quality pedagogy including inquiry-based and student-led learning to support deep understanding.</p>
+            <p className="hero-subtitle">A complete teacher platform for bringing real conservation into the curriculum.</p>
+            <p>Find classroom-ready resources, plan connected learning and extend Taronga zoo or digital experiences without piecing the journey together yourself.</p>
+            <div className="hero-actions">
+              <a className="primary-action" href={signupRoute()}>Get started free</a>
+              <a className="secondary-action" href={routePath("subjects")}>Explore resources</a>
+            </div>
+            <div className="public-proof-list" aria-label="Wildly learning approach">
+              <span><Icon type="book" />Curriculum-connected</span>
+              <span><Icon type="leaf" />Built with Taronga</span>
+              <span><Icon type="blocks" />Ready for teachers</span>
             </div>
           </div>
-          <div className="device-stage" aria-label="Wildly teacher dashboard preview">
-            <div className="screenshot-showcase">
-              <img className="teacher-preview-image" src={assets.dashboardScreenshot} alt="Wildly teacher dashboard preview" />
-            </div>
-          </div>
-        </section>
-        <section className="marketing-band">
-          <div className="section-heading">
-            <div>
-              <h2>Live student learning</h2>
-              <p>Teachers can present lessons, launch them live to a class, or let students work at their own pace. Every response feeds back into classroom analytics.</p>
-            </div>
-          </div>
-          <div className="marketing-split">
-            <div className="marketing-split-copy">
-              <ul className="marketing-list">
-                <li>Students join with a code and see their own version of the lesson on their device.</li>
-                <li>Teachers can build in slides, quizzes, polls and extended response tasks.</li>
-                <li>Presentation mode, live mode and student-paced mode can all sit inside the same lesson.</li>
-                <li>Designed for teacher-led classroom use without adding friction for students.</li>
-              </ul>
-            </div>
-            <div className="student-side-showcase">
-              <StudentHeroPhonePreview variant="live" />
-              <div className="student-side-copy">
-                <strong>Student experience</strong>
-                <p>Clean, guided lesson screens with prompts, media, quick checks and space for longer thinking.</p>
+          <div className="wildly-product-stage" aria-label="Wildly teacher platform preview">
+            <ProductBrowserFrame src={assets.dashboardScreenshot} alt="Wildly teacher dashboard showing learning paths, subject resources and Taronga connections">
+              <div className="product-context-chip"><Icon type="leaf" /><span><strong>Taronga-connected</strong>Real conservation context</span></div>
+              <div className="product-path-float">
+                <span className="product-path-label">Continue learning</span>
+                <strong>Sustainable Futures</strong>
+                <div><span>Stage 4–5</span><span>Technology &amp; STEM</span></div>
               </div>
+            </ProductBrowserFrame>
+          </div>
+        </section>
+
+        <section className="homepage-trust-bar" aria-label="Why teachers use Wildly">
+          {[
+            ["leaf", "Built with Taronga educators", "Conservation expertise shaped for teaching"],
+            ["book", "Curriculum-connected", "Clear subject, stage and learning purpose"],
+            ["link", "Classroom · Zoo · Digital", "One journey across every learning context"],
+          ].map(([icon, title, copy]) => (
+            <div key={title} className="homepage-trust-item">
+              <Icon type={icon} />
+              <span><strong>{title}</strong><small>{copy}</small></span>
+            </div>
+          ))}
+        </section>
+
+        <section className="flagship-path-section">
+          <div className="flagship-path-intro">
+            <span className="audience-pill">Featured pathway preview</span>
+            <h2>One question. A complete learning journey.</h2>
+            <p><strong>Sustainable Futures</strong> shows how Wildly can connect curriculum, Taronga experiences and student action in one coherent sequence.</p>
+            <div className="flagship-path-tags"><span>Systems thinking</span><span>Inquiry learning</span><span>Conservation action</span></div>
+            <a className="text-action" href={routePath("learning-paths")}>Explore Learning Paths</a>
+          </div>
+          <div className="flagship-path-panel">
+            <div className="flagship-path-cover">
+              <img src={assets.giraffe} alt="Giraffes at Taronga" width="710" height="400" loading="lazy" />
+              <div><span>Technology &amp; STEM · Stages 4–5</span><h3>Sustainable Futures</h3></div>
+            </div>
+            <div className="flagship-path-steps">
+              {landingFlagshipSteps.map(([number, title, copy]) => (
+                <article key={number}><span>{number}</span><div><h3>{title}</h3><p>{copy}</p></div></article>
+              ))}
             </div>
           </div>
         </section>
-        <section className="subjects-section" id="subjects">
-          <div className="section-heading"><h2>Explore by subject</h2><a href={routePath("subjects")}>Learn more</a></div>
-          <LandingSubjectStrip />
-        </section>
-        <section className="journey-section" id="paths">
-          <div className="section-heading"><div><h2>A learning journey, connected to nature</h2><p>Wildly supports complete teaching sequences, whether learning starts in the classroom, at the zoo, or through digital exploration.</p></div></div>
-          <div className="journey-line">{[
-            ["Pre-visit learning", "Build background knowledge, vocabulary and curiosity before students begin the sequence."],
-            ["At the zoo or at school", "Use the same learning flow whether students are on-site, in class, or accessing content remotely."],
-            ["Taronga Tracka missions", "Extend learning through Tracka missions, games, tools, observation tasks and citizen science experiences."],
-            ["Fully built learning paths", "Access complete programs with assessments, lesson plans and resources connected to nature to save teacher time."],
-            ["Reflection and action", "Bring the learning together through discussion, evidence, action projects and curriculum-aligned assessment."],
-          ].map(([title, copy], index) => <article key={title}><span>{String(index + 1).padStart(2, "0")}</span><h3>{title}</h3><p>{copy}</p></article>)}</div>
-        </section>
-        <section className="marketing-band">
-          <div className="marketing-split">
-            <div className="marketing-split-copy">
-              <div className="section-heading compact-heading">
-                <div>
-                  <h2>Taronga TV</h2>
-                  <p>A classroom-ready video library blending educational kids shows for preschool and early learning with explanation videos that build understanding across the years.</p>
-                </div>
-              </div>
-              <ul className="marketing-list">
-                <li>Educational kids shows for preschool and early education that introduce animals, habitats and nature concepts in accessible ways.</li>
-                <li>Explanation videos that support understanding, vocabulary development and deeper classroom discussion.</li>
-                <li>Linked outcomes, talking points, lessons and learning pathways so video becomes part of a real teaching sequence.</li>
-              </ul>
-            </div>
-            <LandingTarongaTvPreview />
+
+        <section className="teacher-flow-section premium-teacher-flow">
+          <div className="public-section-heading">
+            <span className="audience-pill">One connected workflow</span>
+            <h2>From the first search to the next meaningful step.</h2>
+            <p>Wildly keeps the planning experience calm while connecting everything a teacher needs around the learning.</p>
+          </div>
+          <div className="teaching-flow-rail">
+            {landingTeachingFlow.map(([number, title, copy, output]) => (
+              <article key={number}>
+                <div className="teaching-flow-index"><span>{number}</span><i aria-hidden="true"></i></div>
+                <div className="teaching-flow-copy"><small>{output}</small><h3>{title}</h3><p>{copy}</p></div>
+              </article>
+            ))}
           </div>
         </section>
-        <section className="marketing-band">
+
+        <section className="ecosystem-section">
+          <div className="ecosystem-visual">
+            <img src={assets.aboutBottom} alt="Students extending their learning outdoors with Wildly" width="1672" height="941" loading="lazy" />
+            <div className="ecosystem-product-mark">
+              <img className="tracka-mark" src={assetPath("assets/tracka/tracka-logo.png")} alt="Taronga Tracka" />
+              <span>connected with</span>
+              <img src={assets.wildlyLogo} alt="Wildly by Taronga" />
+            </div>
+          </div>
+          <div className="ecosystem-copy">
+            <span className="audience-pill">Wildly + Taronga Tracka</span>
+            <h2>The experience becomes the start of what comes next.</h2>
+            <p>Tracka captures the context of a zoo or Taronga digital experience. Wildly uses that context to recommend relevant resources and extend the learning back in the classroom.</p>
+            <div className="ecosystem-loop">
+              <article><span>1</span><div><h3>Experience</h3><p>Students explore animals, complete missions and make observations through Tracka.</p></div></article>
+              <article><span>2</span><div><h3>Connect</h3><p>Tracka shares the learning context with Wildly, including the experience and species explored.</p></div></article>
+              <article><span>3</span><div><h3>Extend</h3><p>Wildly recommends curriculum-connected follow-up resources, reflection and action.</p></div></article>
+            </div>
+            <a className="text-action" href={routePath("tracka")}>See how Tracka connects</a>
+          </div>
+        </section>
+
+        <section className="marketing-band homepage-pl-band">
           <div className="marketing-split professional-learning-band">
-            <img className="marketing-split-image" src={assets.teacherPl} alt="Taronga teacher professional learning session" />
+            <img className="marketing-split-image" src={assets.teacherPl} alt="Taronga teacher professional learning session" width="1448" height="1086" loading="lazy" />
             <div className="marketing-split-copy">
               <div className="section-heading compact-heading">
                 <div>
                   <h2>Exclusive professional learning opportunities</h2>
-                  <p>Support teachers and leaders with professional learning designed around nature-connected pedagogy, curriculum planning and classroom implementation.</p>
+                  <p>Learn with Taronga educators through practical sessions grounded in nature-connected pedagogy, curriculum planning and classroom implementation.</p>
                 </div>
               </div>
               <div className="professional-learning-cards">
@@ -1275,7 +1418,7 @@ function LandingPage() {
                   ["Virtual sessions", "Online professional learning for schools, teams and teacher networks."],
                   ["At your school", "Face-to-face workshops tailored to your staff and local context."],
                   ["At Taronga", "On-site learning at Taronga Zoo Sydney and Taronga Western Plains Zoo Dubbo."],
-                  ["Practical workshops", "Focused on pedagogy, planning, Wildly content and Taronga Tracka integration."],
+                  ["Practical workshops", "Focused on pedagogy, planning, Wildly resources and Taronga Tracka connections."],
                 ].map(([title, copy]) => (
                   <article className="marketing-card professional-learning-card" key={title}>
                     <h3>{title}</h3>
@@ -1286,8 +1429,20 @@ function LandingPage() {
             </div>
           </div>
         </section>
-        <section className="cta-section" id="schools"><img src={assets.heroKoala} alt="Koala with joey" /><div><h2>Bring learning to life through nature</h2><p>Join thousands of educators using Wildly to inspire the next generation to care for nature - together.</p><div className="hero-actions"><a className="primary-action" href={signupRoute()}>Get started free</a><a className="secondary-action" href={appLinks.demoBooking}>Book a demo</a></div></div></section>
-        <footer className="site-footer"><div className="footer-links"><a className="staff-login" href={routePath("staff")}>TARONGA STAFF LOGIN</a></div></footer>
+
+        <section className="homepage-final-cta" id="schools">
+          <img src={assets.heroKoala} alt="Koala with joey" className="homepage-cta-image" width="710" height="400" loading="lazy" />
+          <div className="homepage-cta-content">
+            <h2>Bring learning to life through nature.</h2>
+            <p>Start with a classroom-ready resource, then build towards a deeper Taronga-connected learning journey.</p>
+            <div className="hero-actions">
+              <a className="primary-action" href={signupRoute()}>Get started free</a>
+              <a className="secondary-action" href={routePath("subjects")}>Explore resources</a>
+            </div>
+          </div>
+        </section>
+
+        <SiteFooter />
       </main>
     </>
   );
@@ -1296,73 +1451,40 @@ function LandingPage() {
 function TrackaMarketingPage() {
   const [activeMode, setActiveMode] = useState("zoo");
   const [activeSlide, setActiveSlide] = useState(0);
-
-  const MODES = [
-    { id: "zoo", label: "Zoo", tagline: "GPS-guided animal tracking and live missions during your Taronga Zoo excursion.", img: assetPath("assets/tracka/mode-zoo.jpg") },
-    { id: "zoosnooz", label: "ZooSnooz", tagline: "Taronga's overnight experience with after-dark keeper missions and documentary making.", img: assetPath("assets/tracka/mode-zoosnooz.jpg") },
-    { id: "school", label: "School", tagline: "A virtual zoo that brings the full Taronga experience into your classroom.", img: assetPath("assets/tracka/mode-school.jpg"), comingSoon: true },
-  ];
-
-  const FEATURES = [
-    { title: "GPS Technology", sub: "Find every animal, every time.", desc: "Live GPS guides students to each animal zone across the zoo — no getting lost, no missed encounters.", img: assetPath("assets/tracka/app-map.jpg") },
-    { title: "Missions & Games", sub: "Learning through play.", desc: "Students engage through observation games, hands-on activities and documentary making at each animal.", imgs: [1,2,3,4].map(n => assetPath(`assets/tracka/mission-${n}.jpg`)) },
-    { title: "Badge Collection", sub: "Every visit tells a story.", desc: "Completed missions unlock animal badges that build each student's personal wildlife collection.", img: assetPath("assets/tracka/app-collection.jpg") },
-    { title: "Wildly Integration", sub: "Extending the impact beyond the visit.", desc: "Connect zoo observations to classroom curriculum through Wildly — before, during and after every excursion.", img: assetPath("assets/tracka/app-wildly.jpg") },
-  ];
-
-  const STEPS = [
-    { num: "01", who: "teacher", title: "Create a Class", desc: "Set up your class in the teacher portal and receive a unique join code in seconds." },
-    { num: "02", who: "student", title: "Students Join", desc: "Students enter the class code on arrival to connect instantly to your group." },
-    { num: "03", who: "student", title: "Explore the Zoo", desc: "GPS technology guides students to each animal zone at their own pace." },
-    { num: "04", who: "student", title: "Complete Missions", desc: "Students engage through games, hands-on activities and documentary making." },
-    { num: "05", who: "student", title: "Earn Badges", desc: "Completed missions unlock badges that build each student's wildlife collection." },
-    { num: "06", who: "teacher", title: "Review Student Data", desc: "Review observation scores, mission progress and curriculum-aligned learning reports from your teacher portal." },
-  ];
-
-  const PORTAL_SLIDES = [
-    { title: "Class Overview", desc: "See every student's progress across all animal missions in real time.", img: assetPath("assets/tracka/portal-slide-4.jpg") },
-    { title: "Writing Analytics", desc: "Track student writing quality scores from observation and documentary tasks.", img: assetPath("assets/tracka/portal-slide-1.jpg") },
-    { title: "Student Observations", desc: "Review individual student observations, images and responses from the zoo.", img: assetPath("assets/tracka/portal-slide-2.jpg") },
-    { title: "ZooSnooz Portal", desc: "Manage overnight groups, keeper interactions and real-time mission updates.", img: assetPath("assets/tracka/portal-slide-3.jpg") },
-  ];
-
-  const ANIMALS = [
-    { img: assetPath("assets/tracka/lion.jpg"), name: "African Lion", badge: assetPath("assets/tracka/badge-lion.png") },
-    { img: assetPath("assets/tracka/giraffe.jpg"), name: "Giraffe", badge: assetPath("assets/tracka/badge-giraffe.png") },
-    { img: assetPath("assets/tracka/gorilla.jpg"), name: "Gorilla", badge: assetPath("assets/tracka/badge-gorilla.png") },
-    { img: assetPath("assets/tracka/koala.jpg"), name: "Koala", badge: assetPath("assets/tracka/badge-koala.png") },
-    { img: assetPath("assets/tracka/tiger.jpg"), name: "Sumatran Tiger", badge: assetPath("assets/tracka/badge-tiger.png") },
-    { img: assetPath("assets/tracka/rhino.jpg"), name: "White Rhino", badge: assetPath("assets/tracka/badge-rhino.png") },
-  ];
-
-  const currentMode = MODES.find(m => m.id === activeMode);
+  const currentMode = trackaModes.find((mode) => mode.id === activeMode) || trackaModes[0];
 
   return (
     <>
       <SiteHeader active="tracka" />
-      <main className="tracka-page">
+      <main className="tracka-page premium-tracka-page" id="main-content" tabIndex="-1">
 
         <section className="tracka-hero">
           <div className="tracka-hero-copy">
-            <img className="tracka-logo-hero" src={assetPath("assets/tracka/tracka-logo.png")} alt="Taronga Tracka" />
+            <div className="tracka-hero-brand"><div className="tracka-logo-hero-wrap"><img className="tracka-logo-hero" src={assetPath("assets/tracka/tracka-logo.png")} alt="" width="500" height="500" /></div><span>Taronga Tracka</span></div>
             <h1>Real animals.<br />Real missions.<br />Real learning.</h1>
-            <p className="tracka-hero-lead">GPS-guided discovery missions at Taronga Zoo — connecting students to wildlife through observation, data and hands-on challenges.</p>
+            <p className="tracka-hero-lead">A guided discovery experience for the zoo and the classroom, with Wildly ready to recommend what teachers can explore next.</p>
             <div className="hero-actions">
               <a className="primary-action" href={appLinks.tracka} target="_blank" rel="noopener noreferrer">Open Taronga Tracka</a>
               <a className="secondary-action" href={appLinks.excursions}>Plan an excursion</a>
             </div>
+            <p className="tracka-hero-note"><Icon type="pin" />Designed around real Taronga places, species and learning moments.</p>
           </div>
-          <div className="tracka-hero-app">
-            <img src={assetPath("assets/tracka/app-home.jpg")} alt="Taronga Tracka app" className="tracka-hero-app-img" />
+          <div className="tracka-hero-scene" aria-label="Students using Taronga Tracka at the zoo">
+            <img className="tracka-hero-photo" src={assetPath("assets/tracka/mode-zoo.jpg")} alt="Students using Taronga Tracka while observing a tiger at Taronga Zoo" width="1200" height="772" fetchPriority="high" />
+            <div className="tracka-phone-device">
+              <span className="tracka-phone-speaker" aria-hidden="true"></span>
+              <img src={assetPath("assets/tracka/app-home.jpg")} alt="Taronga Tracka app home screen" width="647" height="1400" />
+            </div>
+            <div className="tracka-scene-label"><span>Zoo mode</span><strong>Observe · Complete missions · Earn badges</strong></div>
           </div>
         </section>
 
         <section className="tracka-stats-bar">
           {[
-            ["K–12", "Curriculum-aligned for every stage"],
-            ["3 modes", "Zoo, ZooSnooz & School"],
-            ["12 badges", "Per-student achievement system"],
-            ["Live data", "Real-time observation capture"],
+            ["At the zoo", "Guided wildlife missions"],
+            ["Digital", "Taronga experiences from school"],
+            ["Observe", "Evidence gathered in context"],
+            ["Extend", "Recommended Wildly resources"],
           ].map(([stat, desc]) => (
             <div key={stat} className="tracka-stat">
               <strong>{stat}</strong>
@@ -1373,46 +1495,52 @@ function TrackaMarketingPage() {
 
         <section className="tracka-modes-section">
           <div className="tracka-section-header">
-            <span className="audience-pill">3 Experience Modes</span>
+            <span className="audience-pill">Choose the experience</span>
             <h2>One app. Every Taronga experience.</h2>
-            <p>Taronga Tracka adapts to how your class visits Taronga — from a day excursion to an overnight ZooSnooz or a virtual classroom journey.</p>
+            <p>Tracka adapts to how your class meets Taronga, from a day excursion to an overnight ZooSnooz or a digital classroom journey.</p>
           </div>
-          <div className="tracka-mode-tabs">
-            {MODES.map(m => (
-              <button key={m.id} className={`tracka-mode-tab${activeMode === m.id ? " active" : ""}`} onClick={() => setActiveMode(m.id)}>
+          <div className="tracka-mode-tabs" role="tablist" aria-label="Taronga Tracka experience modes">
+            {trackaModes.map(m => (
+              <button key={m.id} id={`tracka-mode-${m.id}`} type="button" role="tab" aria-selected={activeMode === m.id} aria-controls="tracka-mode-panel" className={`tracka-mode-tab${activeMode === m.id ? " active" : ""}`} onClick={() => setActiveMode(m.id)}>
                 {m.label}{m.comingSoon && <span className="tracka-coming-soon">Soon</span>}
               </button>
             ))}
           </div>
-          <div className="tracka-mode-display">
+          <div className="tracka-mode-display" id="tracka-mode-panel" role="tabpanel" aria-labelledby={`tracka-mode-${currentMode.id}`}>
             <div className="tracka-mode-img-wrap">
-              <img src={currentMode.img} alt={currentMode.label} />
+              <img src={currentMode.img} alt={`${currentMode.label} mode experience`} width={currentMode.width} height={currentMode.height} loading="lazy" />
             </div>
             <div className="tracka-mode-desc">
-              <h3>{currentMode.label} Mode</h3>
+              <span>{currentMode.comingSoon ? "In development" : "Available experience"}</span>
+              <h3>{currentMode.label} mode</h3>
               <p>{currentMode.tagline}</p>
+              <div className="tracka-mode-points">
+                {(currentMode.id === "zoo" ? ["Location-aware discovery", "Animal missions", "Class progress"] : currentMode.id === "zoosnooz" ? ["After-dark exploration", "Documentary making", "Keeper-led context"] : ["Digital wildlife encounters", "School-ground missions", "Wildly follow-up"]).map((point) => <span key={point}><Icon type="plus" />{point}</span>)}
+              </div>
             </div>
           </div>
         </section>
 
         <section className="tracka-features-section">
           <div className="tracka-section-header">
-            <span className="audience-pill">App Features</span>
-            <h2>Everything students need to explore</h2>
+            <span className="audience-pill">Inside Tracka</span>
+            <h2>The app turns looking into active discovery.</h2>
+            <p>Every feature has a learning purpose: orient the class, focus observation, invite a response and carry useful context forward.</p>
           </div>
           <div className="tracka-features-showcase">
-            {FEATURES.map((f, i) => (
+            {trackaFeatures.map((f, i) => (
               <article key={f.title} className={`tracka-feature-showcase-card${i % 2 === 1 ? " reversed" : ""}`}>
-                <div className="tracka-feature-showcase-media">
+                <div className={`tracka-feature-showcase-media ${f.mediaClass}`}>
                   {f.imgs ? (
                     <div className="tracka-mission-grid">
-                      {f.imgs.map((src, j) => <img key={j} src={src} alt={`Mission ${j + 1}`} />)}
+                      {f.imgs.map((src, j) => <img key={j} src={src} alt={`Tracka mission interface ${j + 1}`} loading="lazy" />)}
                     </div>
                   ) : (
-                    <img src={f.img} alt={f.title} />
+                    <img src={f.img} alt={`${f.title} interface in Taronga Tracka`} width={f.width} height={f.height} loading="lazy" />
                   )}
                 </div>
                 <div className="tracka-feature-showcase-copy">
+                  <span className="tracka-feature-number">0{i + 1}</span>
                   <h3>{f.title}</h3>
                   <p className="tracka-feature-sub">{f.sub}</p>
                   <p>{f.desc}</p>
@@ -1424,11 +1552,11 @@ function TrackaMarketingPage() {
 
         <section className="tracka-steps-section">
           <div className="tracka-section-header">
-            <span className="audience-pill">How It Works</span>
+            <span className="audience-pill">From setup to follow-up</span>
             <h2>Six steps from classroom to collection</h2>
           </div>
           <div className="tracka-steps-grid">
-            {STEPS.map(s => (
+            {trackaSteps.map(s => (
               <article key={s.num} className="tracka-step-card">
                 <div className="tracka-step-top">
                   <span className="tracka-step-num">{s.num}</span>
@@ -1446,19 +1574,19 @@ function TrackaMarketingPage() {
             <div className="tracka-section-header light">
               <span className="audience-pill">For Educators</span>
               <h2>Teacher Portal</h2>
-              <p>Live analytics, student observations, and wildlife documentaries — all in one place.</p>
+              <p>Student observations, mission progress and wildlife documentaries in one place.</p>
             </div>
             <div className="tracka-portal-demo">
-              <div className="tracka-portal-tabs">
-                {PORTAL_SLIDES.map((s, i) => (
-                  <button key={i} className={`tracka-portal-tab${activeSlide === i ? " active" : ""}`} onClick={() => setActiveSlide(i)}>
+              <div className="tracka-portal-tabs" role="tablist" aria-label="Tracka teacher portal views">
+                {trackaPortalSlides.map((s, i) => (
+                  <button key={s.title} id={`tracka-portal-tab-${i}`} type="button" role="tab" aria-selected={activeSlide === i} aria-controls="tracka-portal-panel" className={`tracka-portal-tab${activeSlide === i ? " active" : ""}`} onClick={() => setActiveSlide(i)}>
                     {s.title}
                   </button>
                 ))}
               </div>
-              <div className="tracka-portal-slide">
-                <img src={PORTAL_SLIDES[activeSlide].img} alt={PORTAL_SLIDES[activeSlide].title} />
-                <p className="tracka-portal-caption">{PORTAL_SLIDES[activeSlide].desc}</p>
+              <div className="tracka-portal-slide" id="tracka-portal-panel" role="tabpanel" aria-labelledby={`tracka-portal-tab-${activeSlide}`}>
+                <img src={trackaPortalSlides[activeSlide].img} alt={`${trackaPortalSlides[activeSlide].title} view in the Tracka teacher portal`} width={trackaPortalSlides[activeSlide].width} height={trackaPortalSlides[activeSlide].height} loading="lazy" />
+                <p className="tracka-portal-caption">{trackaPortalSlides[activeSlide].desc}</p>
               </div>
             </div>
           </div>
@@ -1473,11 +1601,11 @@ function TrackaMarketingPage() {
             <a href={appLinks.tracka} target="_blank" rel="noopener noreferrer">Open Tracka</a>
           </div>
           <div className="tracka-animal-grid">
-            {ANIMALS.map(a => (
+            {trackaAnimals.map(a => (
               <article key={a.name} className="tracka-animal-card">
                 <div className="tracka-animal-img-wrap">
-                  <img src={a.img} alt={a.name} />
-                  <img src={a.badge} alt={`${a.name} badge`} className="tracka-animal-badge" />
+                  <img src={a.img} alt={a.name} loading="lazy" />
+                  <img src={a.badge} alt={`${a.name} badge`} className="tracka-animal-badge" loading="lazy" />
                 </div>
                 <div className="tracka-animal-info">
                   <strong>{a.name}</strong>
@@ -1491,45 +1619,50 @@ function TrackaMarketingPage() {
           <div className="tracka-integration-inner">
             <div className="tracka-integration-copy">
               <span className="audience-pill">Wildly + Tracka</span>
-              <h2>Two products. One connected learning experience.</h2>
-              <p>Wildly is the teacher planning and curriculum delivery layer. Tracka is the field discovery and mission environment. Together they give every student a seamless journey from classroom to zoo and back again.</p>
-              <ul className="marketing-list">
-                <li>Use Wildly to plan your excursion sequence and pre-load student knowledge.</li>
-                <li>Students join Tracka with a class code and complete missions at the zoo.</li>
-                <li>Return to Wildly lessons to consolidate, assess and take conservation action.</li>
-                <li>Teacher dashboard shows engagement across both platforms in one view.</li>
-              </ul>
-              <div className="hero-actions" style={{marginTop: "28px"}}>
+              <h2>Tracka captures the experience. Wildly helps teachers take it further.</h2>
+              <p>Whether students explore at the zoo or through a Taronga digital experience, Tracka gives Wildly the context needed to recommend relevant next steps.</p>
+              <div className="tracka-learning-loop">
+                <article><span>1</span><div><h3>Explore with Tracka</h3><p>Students complete missions, encounter species and gather observations in context.</p></div></article>
+                <article><span>2</span><div><h3>Share the context</h3><p>Tracka tells Wildly which experience, animals and themes the class explored.</p></div></article>
+                <article><span>3</span><div><h3>Continue in Wildly</h3><p>Teachers receive curriculum-connected resource recommendations for reflection, inquiry and action.</p></div></article>
+              </div>
+              <div className="hero-actions tracka-integration-actions">
                 <a className="primary-action" href={signupRoute()}>Get started with Wildly</a>
                 <a className="secondary-action" href={appLinks.tracka} target="_blank" rel="noopener noreferrer">Open Tracka</a>
               </div>
             </div>
-            <div className="tracka-integration-logos">
-              <div className="tracka-logo-card">
-                <img src={assets.wildlyLogo} alt="Wildly by Taronga" />
-                <span>Curriculum planning &amp; delivery</span>
+            <div className="tracka-recommendation-preview" aria-label="Example Tracka to Wildly recommendation">
+              <div className="tracka-recommendation-header">
+                <div><img src={assetPath("assets/tracka/tracka-logo.png")} alt="" width="500" height="500" /><span>Tracka experience</span></div>
+                <Icon type="link" />
+                <div><img src={assets.wildlyLogo} alt="" width="320" height="86" /><span>Wildly recommendation</span></div>
               </div>
-              <div className="tracka-plus">+</div>
-              <div className="tracka-logo-card">
-                <img src={assetPath("assets/tracka/tracka-logo.png")} alt="Taronga Tracka" />
-                <span>Field missions &amp; discovery</span>
+              <div className="tracka-context-panel">
+                <span className="tracka-preview-label">Experience context received</span>
+                <h3>Zoo discovery · Tiger Trek</h3>
+                <div><span>Sumatran tiger</span><span>Habitat</span><span>Threats</span><span>Observation</span></div>
+              </div>
+              <div className="tracka-preview-connector" aria-hidden="true"><span></span><Icon type="link" /><span></span></div>
+              <div className="tracka-resource-recommendation">
+                <img src={assets.giraffe} alt="Giraffe representing a Wildly learning recommendation" width="710" height="400" loading="lazy" />
+                <div><span className="tracka-preview-label">Recommended in Wildly</span><h3>How habitats support survival</h3><p>Science · Stage 2 · Classroom resource</p><strong>Continue the learning</strong></div>
               </div>
             </div>
           </div>
         </section>
 
         <section className="cta-section" id="excursions">
-          <img src={assets.heroKoala} alt="Koala with joey" />
+          <img src={assets.heroKoala} alt="Koala with joey" width="710" height="400" loading="lazy" />
           <div>
             <h2>Ready to take your class to the zoo?</h2>
-            <p>Book an excursion and unlock the full Tracka experience — with Wildly lessons before and after to make every moment count.</p>
+            <p>Explore with Tracka, then let Wildly help you turn the experience into deeper classroom learning.</p>
             <div className="hero-actions">
               <a className="primary-action" href={appLinks.excursions}>Book an excursion</a>
               <a className="secondary-action" href={appLinks.tracka} target="_blank" rel="noopener noreferrer">Open Taronga Tracka</a>
             </div>
           </div>
         </section>
-        <footer className="site-footer"><div className="footer-links"><a className="staff-login" href={routePath("staff")}>TARONGA STAFF LOGIN</a></div></footer>
+        <SiteFooter />
       </main>
     </>
   );
@@ -1575,42 +1708,31 @@ function LearningPathsMarketingPage() {
   return (
     <>
       <SiteHeader active="learning-paths" />
-      <main className="lp-page">
+      <main className="lp-page" id="main-content" tabIndex="-1">
 
         <section className="lp-hero">
           <div className="lp-hero-copy">
             <span className="audience-pill">Learning Paths</span>
-            <h1>Build full teaching sequences,<br />not just isolated resources.</h1>
-            <p className="lp-hero-lead">A learning path is the unit structure that connects lessons, resources and outcomes — giving teachers a clean way to move from long-term planning into week-by-week delivery.</p>
+            <h1>Plan the whole unit. Teach one lesson at a time.</h1>
+            <p className="lp-hero-lead">Learning Paths connect outcomes, lessons and resources into a sequence teachers can understand at a glance and use week by week.</p>
             <div className="hero-actions">
-              <a className="primary-action" href={teacherRoute("paths")}>View learning paths</a>
-              <a className="secondary-action" href={signupRoute()}>Get started free</a>
+              <a className="primary-action" href={signupRoute()}>Get started free</a>
+              <a className="secondary-action" href={routePath("subjects")}>Explore resources</a>
             </div>
           </div>
-          <div className="lp-hero-visual">
-            <img src={assets.dashboardScreenshot} alt="Wildly teacher dashboard" className="lp-hero-screenshot" />
-          </div>
-        </section>
-
-        <section className="tracka-stats-bar">
-          {[
-            ["K–12", "Curriculum-aligned for every stage"],
-            ["All subjects", "Science, HSIE, English & more"],
-            ["3 layers", "Paths, lessons & resources linked"],
-            ["Free", "For all registered teachers"],
-          ].map(([stat, desc]) => (
-            <div key={stat} className="tracka-stat">
-              <strong>{stat}</strong>
-              <span>{desc}</span>
+          <div className="lp-hero-visual path-sequence-preview">
+            <div className="path-sequence-header"><span>Technology &amp; STEM · Stages 4–5</span><h2>Sustainable Futures</h2><p>A connected inquiry from conservation challenge to student action.</p></div>
+            <div className="path-sequence-list">
+              {["Discover the challenge", "Investigate systems", "Gather real-world evidence", "Design for change", "Reflect and act"].map((title, index) => <div key={title}><span>{index + 1}</span><strong>{title}</strong>{index < 4 ? <i></i> : null}</div>)}
             </div>
-          ))}
+          </div>
         </section>
 
         <section className="lp-arch-section">
           <div className="tracka-section-header">
-            <span className="audience-pill">Content Architecture</span>
-            <h2>One system. Three simple layers.</h2>
-            <p>The structure is intentionally simple — a path contains lessons, and lessons contain resources. Teachers can enter at any level and always find what they need.</p>
+            <span className="audience-pill">Clear by design</span>
+            <h2>One journey. Three useful layers.</h2>
+            <p>A path gives the big picture, each lesson makes the next teaching move clear, and each resource sits where it will actually be used.</p>
           </div>
           <div className="lp-arch-flow">
             {ARCH.map((item, i) => (
@@ -1647,13 +1769,18 @@ function LearningPathsMarketingPage() {
           </div>
         </section>
 
-        <section className="tracka-steps-section">
+        <section className="tracka-steps-section lp-connection-section">
           <div className="tracka-section-header">
-            <span className="audience-pill">How It Works</span>
-            <h2>From planning to teaching in minutes</h2>
+            <span className="audience-pill">Classroom to Taronga and back</span>
+            <h2>A sequence that can move beyond the classroom</h2>
+            <p>Learning Paths can prepare students for a zoo or digital Tracka experience, then use that experience as evidence for deeper inquiry.</p>
           </div>
-          <div className="tracka-steps-grid">
-            {STEPS.map(s => (
+          <div className="tracka-steps-grid lp-three-step-grid">
+            {[
+              { num: "01", who: "teacher", title: "Before", desc: "Build vocabulary, background knowledge and a clear question worth investigating." },
+              { num: "02", who: "teacher", title: "During", desc: "Use Tracka at the zoo or through a digital experience to observe, explore and gather context." },
+              { num: "03", who: "teacher", title: "After", desc: "Continue in Wildly with recommended resources, reflection and student action." },
+            ].map(s => (
               <article key={s.num} className="tracka-step-card">
                 <div className="tracka-step-top">
                   <span className="tracka-step-num">{s.num}</span>
@@ -1663,19 +1790,6 @@ function LearningPathsMarketingPage() {
                 <p>{s.desc}</p>
               </article>
             ))}
-          </div>
-        </section>
-
-        <section className="lp-dashboard-section">
-          <div className="lp-dashboard-inner">
-            <div className="tracka-section-header light">
-              <span className="audience-pill">In the dashboard</span>
-              <h2>Built into your teacher workspace</h2>
-              <p>Learning paths live inside the Wildly teacher dashboard — no extra tool, no extra login. Plan, teach and explore from one place.</p>
-            </div>
-            <div className="lp-dashboard-screenshot">
-              <img src={assets.dashboardScreenshot} alt="Wildly teacher dashboard" />
-            </div>
           </div>
         </section>
 
@@ -1691,7 +1805,209 @@ function LearningPathsMarketingPage() {
           </div>
         </section>
 
-        <footer className="site-footer"><div className="footer-links"><a className="staff-login" href={routePath("staff")}>TARONGA STAFF LOGIN</a></div></footer>
+        <SiteFooter />
+      </main>
+    </>
+  );
+}
+
+function SchoolsMarketingPage() {
+  return (
+    <>
+      <SiteHeader />
+      <main className="marketing-page marketing-page-schools public-schools-page" id="main-content" tabIndex="-1">
+        <section className="schools-hero public-schools-hero">
+          <div className="schools-hero-copy">
+            <span className="audience-pill">For schools</span>
+            <h1>Bring Taronga-connected learning to your school.</h1>
+            <p className="hero-subtitle">Give teachers a clear place to find trusted resources, plan connected learning and extend zoo or digital experiences.</p>
+            <p>Start with individual teacher access. Build shared practice over time through consistent curriculum resources, learning paths and professional learning.</p>
+            <div className="hero-actions"><a className="primary-action" href={signupRoute()}>Get started free</a><a className="secondary-action" href={teacherPreviewRoute()}>Preview teacher workspace</a></div>
+          </div>
+          <div className="schools-hero-visual"><img src={assets.aboutTop} alt="Teacher using Wildly with a class" /></div>
+        </section>
+
+        <section className="schools-stats-strip public-schools-values">
+          {["Teacher-first", "Curriculum-connected", "Taronga-backed", "Flexible to use"].map((value) => <div className="schools-stat" key={value}><Icon type="leaf" /><strong>{value}</strong></div>)}
+        </section>
+
+        <section className="schools-steps-band">
+          <div className="schools-steps-header"><span className="about-kicker">A simple starting point</span><h2>Useful from the first lesson.</h2><p>Wildly can begin as a practical teacher resource and become a shared way for your school to connect curriculum with nature.</p></div>
+          <div className="schools-steps-grid">
+            {[
+              ["01", "Access", "Teachers create an account and enter a calm workspace built for finding and planning learning."],
+              ["02", "Find", "Browse by subject and stage, then open the teaching notes and resources that are ready now."],
+              ["03", "Extend", "Connect classroom work with Taronga Tracka, zoo experiences, digital exploration and professional learning."],
+            ].map(([number, title, copy]) => <article className="schools-step-card" key={number}><span className="schools-step-number">{number}</span><h3>{title}</h3><p>{copy}</p></article>)}
+          </div>
+        </section>
+
+        <section className="schools-why-band public-schools-why">
+          <div className="schools-why-media"><img src={assets.heroKoala} alt="Koala with joey at Taronga" /></div>
+          <div className="schools-why-copy">
+            <span className="about-kicker">Why it belongs in schools</span><h2>Real context. Less planning friction.</h2>
+            <ul className="about-checklist">
+              {["Resources make their subject, stage and purpose clear.", "Learning paths connect individual materials into a coherent sequence.", "Taronga expertise gives familiar curriculum ideas a compelling real-world context.", "Tracka can recommend the right Wildly follow-up after zoo and digital experiences.", "Professional learning supports teachers to use nature-connected pedagogy with confidence."].map((reason) => <li key={reason}><span><Icon type="plus" className="about-check-icon" /></span><p>{reason}</p></li>)}
+            </ul>
+          </div>
+        </section>
+
+        <section className="schools-cta-band">
+          <div className="schools-cta-copy"><h2>Start with your next lesson.</h2><p>Create a teacher account and explore the published Wildly collection. No student login is needed to begin.</p></div>
+          <div className="hero-actions"><a className="primary-action schools-cta-primary" href={signupRoute()}>Get started free</a><a className="secondary-action schools-cta-secondary" href={routePath("subjects")}>Explore resources</a></div>
+        </section>
+        <SiteFooter />
+      </main>
+    </>
+  );
+}
+
+function LegacySchoolsMarketingPage() {
+  const audiences = [
+    {
+      icon: "book",
+      role: "Classroom teachers",
+      copy: "Fast access to curriculum-aligned lessons, learning paths and resources. Assign content to classes, run live sessions and track progress without extra setup.",
+      cta: "Explore teacher view",
+      href: teacherPreviewRoute(),
+      tone: "green",
+    },
+    {
+      icon: "report",
+      role: "School leaders",
+      copy: "Visibility across curriculum coverage, content alignment and professional learning activity. Use Wildly to support consistent teaching standards school-wide.",
+      cta: "Book a demo",
+      href: appLinks.demoBooking,
+      tone: "teal",
+    },
+    {
+      icon: "users",
+      role: "Education teams",
+      copy: "A central staff console for publishing and managing content across subjects, stages and learning types. Keep the platform current as your curriculum priorities evolve.",
+      cta: "Get started",
+      href: signupRoute(),
+      tone: "sand",
+    },
+  ];
+
+  const steps = [
+    {
+      number: "01",
+      title: "Teachers get access",
+      copy: "Teachers log in and immediately find assignable, curriculum-aligned content sorted by subject and stage. No training or configuration required.",
+    },
+    {
+      number: "02",
+      title: "Leaders see alignment",
+      copy: "Professional learning sessions, curriculum coverage and resource activity become visible to school leadership through the same platform.",
+    },
+    {
+      number: "03",
+      title: "The platform deepens",
+      copy: "Connect excursions, Taronga TV, citizen science and student-facing pathways as your use of Wildly grows and your context matures.",
+    },
+  ];
+
+  const reasons = [
+    "Curriculum-aligned across 9 subject areas and all stages.",
+    "Professional learning built into the same platform — not an add-on.",
+    "Excursions, Taronga TV and Tracka connect classroom learning to real conservation experiences.",
+    "A live session mode so teachers can run interactive lessons directly from Wildly.",
+    "Cloud-based and accessible — works for in-school, excursion and remote learning contexts.",
+  ];
+
+  return (
+    <>
+      <SiteHeader active="schools" />
+      <main className="marketing-page marketing-page-schools">
+        <section className="schools-hero">
+          <div className="schools-hero-copy">
+            <span className="audience-pill">For schools</span>
+            <h1>Wildly works for your whole school.</h1>
+            <p className="hero-subtitle">From classroom teachers to school leaders — one platform that grows with your school.</p>
+            <p>Wildly gives teachers fast access to curriculum-aligned content, gives leaders visibility across professional learning and curriculum coverage, and gives education teams the tools to publish and manage content centrally.</p>
+            <div className="hero-actions">
+              <a className="primary-action" href={appLinks.demoBooking}>Book a school demo</a>
+              <a className="secondary-action" href={signupRoute()}>Get started free</a>
+            </div>
+          </div>
+          <div className="schools-hero-visual">
+            <img src={assets.dashboardScreenshot} alt="Wildly teacher dashboard" />
+          </div>
+        </section>
+
+        <section className="schools-audience-grid">
+          {audiences.map((audience) => (
+            <article className={`schools-audience-card ${audience.tone}`} key={audience.role}>
+              <span className="schools-audience-icon"><Icon type={audience.icon} className="schools-card-icon" /></span>
+              <h3>{audience.role}</h3>
+              <p>{audience.copy}</p>
+              <a className="schools-card-cta" href={audience.href}>{audience.cta} →</a>
+            </article>
+          ))}
+        </section>
+
+        <section className="schools-stats-strip">
+          {[
+            ["9", "Subject areas"],
+            ["NSW + EYLF", "Curriculum aligned"],
+            ["3", "Content types"],
+            ["Live + async", "Delivery modes"],
+          ].map(([value, label]) => (
+            <div className="schools-stat" key={label}>
+              <strong>{value}</strong>
+              <span>{label}</span>
+            </div>
+          ))}
+        </section>
+
+        <section className="schools-steps-band">
+          <div className="schools-steps-header">
+            <span className="about-kicker">How it grows in your school</span>
+            <h2>Start simple. Scale with confidence.</h2>
+            <p>Wildly is designed to have a low-friction entry point for teachers while offering enough structure for school-wide rollout and curriculum planning.</p>
+          </div>
+          <div className="schools-steps-grid">
+            {steps.map((step) => (
+              <article className="schools-step-card" key={step.number}>
+                <span className="schools-step-number">{step.number}</span>
+                <h3>{step.title}</h3>
+                <p>{step.copy}</p>
+              </article>
+            ))}
+          </div>
+        </section>
+
+        <section className="schools-why-band">
+          <div className="schools-why-media">
+            <img src={assets.heroKoala} alt="Learning through nature at Taronga" />
+          </div>
+          <div className="schools-why-copy">
+            <span className="about-kicker">Why schools choose Wildly</span>
+            <h2>Built for the way teachers actually work.</h2>
+            <ul className="about-checklist">
+              {reasons.map((reason) => (
+                <li key={reason}>
+                  <span><Icon type="plus" className="about-check-icon" /></span>
+                  <p>{reason}</p>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </section>
+
+        <section className="schools-cta-band">
+          <div className="schools-cta-copy">
+            <h2>Get Wildly in your school.</h2>
+            <p>Book a 30-minute demo and see how Wildly fits your curriculum priorities and school context. Or get started free and let teachers explore today.</p>
+          </div>
+          <div className="hero-actions">
+            <a className="primary-action schools-cta-primary" href={appLinks.demoBooking}>Book a school demo</a>
+            <a className="secondary-action schools-cta-secondary" href={signupRoute()}>Get started free</a>
+          </div>
+        </section>
+
+        <footer className="site-footer"><div className="footer-links"><a className="staff-login" href={routePath("staff")}>TARONGA STAFF LOGIN</a></div><span className="footer-copy">© Taronga Conservation Society Australia</span></footer>
       </main>
     </>
   );
@@ -1702,6 +2018,7 @@ function MarketingPage({ page = "about" }) {
   if (page === "subjects") return <SubjectsMarketingPage />;
   if (page === "tracka") return <TrackaMarketingPage />;
   if (page === "learning-paths") return <LearningPathsMarketingPage />;
+  if (page === "schools") return <SchoolsMarketingPage />;
 
   const pageConfig = {
     "learning-paths": {
@@ -1831,7 +2148,7 @@ function MarketingPage({ page = "about" }) {
   return (
     <>
       <SiteHeader active={page} />
-      <main className={`marketing-page marketing-page-${page}`}>
+      <main className={`marketing-page marketing-page-${page}`} id="main-content" tabIndex="-1">
         <section className={`marketing-hero marketing-hero-${page}`}>
           <div className="marketing-hero-copy">
             <span className="audience-pill">{pageConfig.eyebrow}</span>
@@ -1914,6 +2231,64 @@ function MarketingPage({ page = "about" }) {
 }
 
 function AboutMarketingPage() {
+  const principles = [
+    ["Teacher-first", "Useful content should be easy to scan, understand and take into a real classroom."],
+    ["Learning through nature", "Animals, habitats and conservation make curriculum ideas tangible and worth caring about."],
+    ["Connected experiences", "Classroom resources, zoo visits and Taronga digital experiences should strengthen one another."],
+    ["Action with purpose", "Learning is deeper when students can reflect, make decisions and contribute to positive change."],
+  ];
+
+  return (
+    <>
+      <SiteHeader active="about" />
+      <main className="marketing-page marketing-page-about-rich public-about-page" id="main-content" tabIndex="-1">
+        <section className="about-hero public-about-hero">
+          <div className="about-hero-copy">
+            <span className="audience-pill">About Wildly</span>
+            <h1>Built by educators. Inspired by nature.</h1>
+            <p className="hero-subtitle">Wildly helps teachers turn Taronga’s conservation knowledge and experiences into purposeful classroom learning.</p>
+            <p>It brings curriculum-connected resources, coherent learning sequences and meaningful next steps together in one teacher workspace.</p>
+            <div className="hero-actions"><a className="primary-action" href={signupRoute()}>Get started free</a><a className="secondary-action" href={routePath("subjects")}>Explore resources</a></div>
+          </div>
+          <div className="about-hero-media"><img src={assets.aboutTop} alt="Teacher and students learning with Wildly" /></div>
+        </section>
+
+        <section className="about-purpose-band">
+          <div><span className="audience-pill">Why Wildly exists</span><h2>Nature gives learning a reason to matter.</h2></div>
+          <div><p>Teachers do not need another folder of disconnected downloads. They need trusted content, clear curriculum context and a practical way to move from a compelling idea into a complete learning experience.</p><p>Wildly is Taronga’s place to make that connection: from conservation expertise and real animal stories to lessons that work in classrooms.</p></div>
+        </section>
+
+        <section className="about-principles-section">
+          <div className="public-section-heading"><span className="audience-pill">Our approach</span><h2>Designed around what makes learning work</h2></div>
+          <div className="about-principles-grid">
+            {principles.map(([title, copy], index) => <article key={title}><span>0{index + 1}</span><h3>{title}</h3><p>{copy}</p></article>)}
+          </div>
+        </section>
+
+        <section className="about-ecosystem public-about-ecosystem">
+          <div className="about-ecosystem-media"><img src={assets.aboutBottom} alt="Students learning outdoors with Wildly" /></div>
+          <div className="about-ecosystem-copy">
+            <span className="about-kicker">The Taronga connection</span>
+            <h2>From experience to understanding.</h2>
+            <p>Taronga Tracka supports discovery during zoo and digital experiences. Wildly extends that experience by recommending relevant curriculum resources for what the class encountered.</p>
+            <ul className="about-checklist">
+              {["Prepare students before an experience.", "Connect observations to curriculum ideas.", "Continue with reflection, inquiry and conservation action."].map((point) => <li key={point}><span><Icon type="plus" className="about-check-icon" /></span><p>{point}</p></li>)}
+            </ul>
+            <a className="text-action" href={routePath("tracka")}>Explore Wildly + Tracka</a>
+          </div>
+        </section>
+
+        <section className="about-taronga-band">
+          <img src={assets.teacherPl} alt="Educators learning with Taronga" />
+          <div><span className="audience-pill">Backed by Taronga</span><h2>Conservation expertise, shaped for education.</h2><p>Wildly grows from Taronga’s work with wildlife, educators and communities. The goal is not to replace a teacher’s judgement, but to give it stronger material: real contexts, thoughtful sequences and practical resources.</p><a className="primary-action" href={signupRoute()}>Start exploring Wildly</a></div>
+        </section>
+        <SiteFooter />
+      </main>
+    </>
+  );
+}
+
+function LegacyAboutMarketingPage() {
   const impactStats = [
     ["Teacher-first", "Built for scanning, planning, assigning and adapting without extra setup."],
     ["Curriculum aligned", "Supports NSW, Australian Curriculum and Early Years implementation."],
@@ -2085,6 +2460,116 @@ function AboutMarketingPage() {
 }
 
 function SubjectsMarketingPage() {
+  const { items: contentItems, status } = useContentItems();
+  const [activeSubject, setActiveSubject] = useState("Technology & STEM");
+  const imageBySubject = {
+    Science: assets.heroKoala,
+    English: assets.koala,
+    "Literacy & Numeracy": assets.aboutBottom,
+    Mathematics: assets.giraffe,
+    HSIE: assets.rhino,
+    PDHPE: assets.aboutBottom,
+    CAPA: assets.binturong,
+    "Technology & STEM": assets.aboutTop,
+    "Early Years": assets.teacherPl,
+  };
+  const publishedItems = useMemo(() => contentItems.filter((item) => (
+    normalizeEditorialStatus(item.status, "Draft") === "Published"
+    && !/^test\b/i.test(String(item.title || "").trim())
+  )), [contentItems]);
+  const firstAvailableSubject = subjects.find(([label]) => publishedItems.some((item) => item.subject === label))?.[0] || "";
+
+  useEffect(() => {
+    if (firstAvailableSubject && !publishedItems.some((item) => item.subject === activeSubject)) {
+      setActiveSubject(firstAvailableSubject);
+    }
+  }, [activeSubject, firstAvailableSubject, publishedItems]);
+
+  const visibleItems = publishedItems.filter((item) => item.subject === activeSubject);
+  const availableCount = (label) => publishedItems.filter((item) => item.subject === label).length;
+
+  return (
+    <>
+      <SiteHeader active="subjects" />
+      <main className="marketing-page subjects-page public-subjects-page" id="main-content" tabIndex="-1">
+        <section className="subjects-hero public-subjects-hero">
+          <div className="subjects-hero-copy">
+            <span className="audience-pill">Explore Wildly</span>
+            <h1>Find a meaningful place to begin.</h1>
+            <p className="hero-subtitle">Browse classroom-ready learning connected to nature, curriculum and Taronga expertise.</p>
+            <p>Wildly is growing subject by subject. What you see here reflects the published collection available to teachers now, with new pathways, lessons and resources added as they are ready.</p>
+            <div className="hero-actions">
+              <a className="primary-action" href={signupRoute()}>Get started free</a>
+              <a className="secondary-action" href={routePath("learning-paths")}>See Learning Paths</a>
+            </div>
+          </div>
+          <div className="public-subjects-media">
+            <img src={assets.aboutBottom} alt="Students exploring nature with Wildly" />
+            <div><span>Explore by</span><strong>subject · stage · resource type</strong></div>
+          </div>
+        </section>
+
+        <section className="subjects-filter-band public-subject-filter">
+          <div className="public-section-heading">
+            <span className="audience-pill">Published collection</span>
+            <h2>Explore by subject</h2>
+            <p>Choose a curriculum area to see what is available now. Subjects still being developed are shown clearly.</p>
+          </div>
+          <div className="subjects-filter-row" role="tablist" aria-label="Subjects">
+            {subjects.map(([label, cls]) => {
+              const count = availableCount(label);
+              return (
+                <button key={label} type="button" role="tab" aria-selected={activeSubject === label} className={`subjects-filter-chip ${cls} ${activeSubject === label ? "active" : ""}`} onClick={() => setActiveSubject(label)}>
+                  <Icon type={subjectIconType(label)} className="subjects-filter-icon" />
+                  <span>{label}</span>
+                  <small>{count ? `${count} available` : "Coming soon"}</small>
+                </button>
+              );
+            })}
+          </div>
+        </section>
+
+        <section className="public-catalogue-section" aria-live="polite">
+          <div className="public-catalogue-heading">
+            <div><span className="about-kicker">{activeSubject}</span><h2>{visibleItems.length ? "Ready to explore" : "Growing this collection"}</h2></div>
+            <span className="catalogue-status">{status === "loading" ? "Loading collection" : `${visibleItems.length} published ${visibleItems.length === 1 ? "item" : "items"}`}</span>
+          </div>
+          {visibleItems.length ? (
+            <div className="public-resource-grid">
+              {visibleItems.map((item) => (
+                <article className="public-resource-card" key={item.id}>
+                  <img src={item.image || imageBySubject[item.subject] || assets.heroKoala} alt="" />
+                  <div className="public-resource-card-body">
+                    <div className="subjects-preview-topline"><span className="subjects-type-chip">{item.type}</span><span>{item.stage || "All stages"}</span></div>
+                    <h3>{item.title}</h3>
+                    <p>{item.summary || item.description || "A Taronga-connected teaching resource ready to explore in Wildly."}</p>
+                    <a className="text-action" href={signupRoute()}>Open in teacher workspace</a>
+                  </div>
+                </article>
+              ))}
+            </div>
+          ) : (
+            <div className="public-subject-empty">
+              <img src={imageBySubject[activeSubject] || assets.heroKoala} alt="" />
+              <div><h3>{activeSubject} resources are being prepared.</h3><p>We are building this collection carefully with curriculum and classroom use in mind. Explore a published subject now or create an account to follow Wildly as it grows.</p><a className="secondary-action" href={signupRoute()}>Get started free</a></div>
+            </div>
+          )}
+        </section>
+
+        <section className="subjects-principles-band">
+          {[
+            ["Clear before you open", "See the subject, stage and resource type before entering the teacher workspace."],
+            ["Connected, not isolated", "Resources can sit inside lessons and complete learning paths."],
+            ["Grounded in the real world", "Taronga stories and experiences give curriculum learning a meaningful context."],
+          ].map(([title, copy]) => <article key={title}><Icon type="leaf" /><h3>{title}</h3><p>{copy}</p></article>)}
+        </section>
+        <SiteFooter />
+      </main>
+    </>
+  );
+}
+
+function LegacySubjectsMarketingPage() {
   const [activeSubject, setActiveSubject] = useState("Science");
 
   const previewCards = useMemo(() => {
@@ -2261,7 +2746,7 @@ function SubjectsMarketingPage() {
   );
 }
 
-function TeacherDashboard({ config, contentItems = defaultContentItems.map(resolveContentItem), professionalLearningItems = defaultProfessionalLearningItems, tarongaTvVideos = defaultTarongaTvVideos.map(resolveTarongaTvVideo), page = "dashboard", subject = "", contentId = "", tvVideoId = "", profile = null, onSignOut = null, preview = false, workspace = createDefaultTeacherWorkspace(), onToggleSaved = () => {}, onAssignContent = () => {}, onCreateClass = () => {} }) {
+function TeacherDashboard({ config, contentItems = defaultContentItems.map(resolveContentItem), professionalLearningItems = defaultProfessionalLearningItems, tarongaTvVideos = defaultTarongaTvVideos.map(resolveTarongaTvVideo), page = "dashboard", subject = "", contentId = "", tvVideoId = "", profile = null, onSignOut = null, preview = false, workspace = createDefaultTeacherWorkspace(), onToggleSaved = () => {}, onAssignContent = () => {}, onCreateClass = () => {}, upcomingEvents = [] }) {
   const [activeSubject, setActiveSubject] = useState(subjectFromSlug(subject));
   const [activeTvCategory, setActiveTvCategory] = useState("All");
   const [query, setQuery] = useState("");
@@ -2285,6 +2770,25 @@ function TeacherDashboard({ config, contentItems = defaultContentItems.map(resol
   }, [page, routeSubject]);
 
   const publishedItems = useMemo(() => contentItems.filter((item) => normalizeEditorialStatus(item.status, "Draft") === "Published"), [contentItems]);
+
+  const [recentIds, setRecentIds] = useState(() => {
+    try { return JSON.parse(localStorage.getItem("wildly_recent_items") || "[]"); }
+    catch { return []; }
+  });
+  useEffect(() => {
+    if (page !== "content" || !contentId) return;
+    setRecentIds((prev) => {
+      const updated = [contentId, ...prev.filter((id) => id !== contentId)].slice(0, 3);
+      localStorage.setItem("wildly_recent_items", JSON.stringify(updated));
+      return updated;
+    });
+  }, [page, contentId]);
+  const recentItems = recentIds.map((id) => publishedItems.find((item) => item.id === id)).filter(Boolean);
+  const newestItems = useMemo(() =>
+    [...publishedItems].sort((a, b) => (b.updatedAt?.seconds || 0) - (a.updatedAt?.seconds || 0)).slice(0, 3),
+    [publishedItems],
+  );
+
   const learningPaths = useMemo(() => publishedItems.filter((item) => item.type === "Learning Path"), [publishedItems]);
   const lessons = useMemo(() => publishedItems.filter((item) => item.type === "Lesson"), [publishedItems]);
   const resources = useMemo(() => publishedItems.filter((item) => item.type === "Resource"), [publishedItems]);
@@ -2293,11 +2797,6 @@ function TeacherDashboard({ config, contentItems = defaultContentItems.map(resol
     const haystack = `${item.title} ${item.subject} ${item.stage} ${item.type} ${item.summary} ${item.description}`.toLowerCase();
     return matchesSubject && haystack.includes(query.toLowerCase());
   }), [activeSubject, publishedItems, query]);
-  const visibleResources = useMemo(() => publishedItems.filter((item) => {
-    const matchesSubject = !activeSubject || item.subject === activeSubject;
-    const haystack = `${item.title} ${item.subject} ${item.stage} ${item.type}`.toLowerCase();
-    return matchesSubject && haystack.includes(query.toLowerCase());
-  }).slice(0, 3), [activeSubject, publishedItems, query]);
   const contentDetail = publishedItems.find((item) => item.id === contentId) || null;
   const contentActivityBlocks = contentDetail ? buildLessonActivityBlocks(contentDetail) : [];
   const teacherVisibleTarongaTvVideos = useMemo(() => sortTarongaTvVideos(tarongaTvVideos), [tarongaTvVideos]);
@@ -2343,8 +2842,6 @@ function TeacherDashboard({ config, contentItems = defaultContentItems.map(resol
       date: item.dueDate,
     }));
   const notificationItems = [...publishedProfessionalLearningItems.slice(0, 2), ...assignmentNotifications].slice(0, 4);
-  const showContinue = config.showContinueLearning;
-  const showUpcoming = config.showUpcomingPanel;
   const showTracka = config.showTrackaCard;
   const teacherClasses = classes.map((classroom) => {
     const studentCount = classStudents.filter((student) => student.classId === classroom.id).length;
@@ -2442,22 +2939,33 @@ function TeacherDashboard({ config, contentItems = defaultContentItems.map(resol
     const item = contentById[launchDraft.itemId];
     const classroom = classes.find((entry) => entry.id === launchDraft.classId);
     if (!item || !classroom) return;
+    if (user?.isDemo) {
+      setNotice("Live sessions are not available in demo mode. Sign up for a free account to launch lessons.");
+      closeLaunchFlow();
+      return;
+    }
     const code = generateSessionCode();
-    const sessionRef = await addDoc(liveSessionsCollection, {
-      code,
-      state: "active",
-      mode: launchDraft.mode,
-      contentId: item.id,
-      contentTitle: item.title,
-      classId: classroom.id,
-      classTitle: classroom.title,
-      teacherName: displayName,
-      currentStep: 0,
-      createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp(),
-    });
-    closeLaunchFlow();
-    window.location.hash = `#teacher/live/${sessionRef.id}`;
+    try {
+      const sessionRef = await addDoc(liveSessionsCollection, {
+        code,
+        state: "active",
+        mode: launchDraft.mode,
+        contentId: item.id,
+        contentTitle: item.title,
+        classId: classroom.id,
+        classTitle: classroom.title,
+        teacherName: displayName,
+        currentStep: 0,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      });
+      closeLaunchFlow();
+      window.location.hash = `#teacher/live/${sessionRef.id}`;
+    } catch (error) {
+      console.error("Unable to create live session", error);
+      setNotice("Unable to start the session. Please check your connection and try again.");
+      closeLaunchFlow();
+    }
   }
 
   function exportStudentsCsv() {
@@ -2658,115 +3166,58 @@ function TeacherDashboard({ config, contentItems = defaultContentItems.map(resol
             </section>
 
             <div className="dashboard-columns">
-              <section className="content-column">
-                {showContinue && (
-                  <>
-                    <div className="section-title-row">
-                      <h2>Continue Learning</h2>
-                      <a className="text-link" href={teacherRoute("resources")}>View all</a>
-                    </div>
-                    <section className="learning-grid" aria-live="polite">
-                      {visibleResources.map((resource, index) => (
-                        <article className="learning-card" key={resource.title}>
-                          <img src={resource.image} alt="" />
-                          <div className="learning-body">
-                            <span className="pill">{resource.subject}</span>
-                            <h3>{index === 0 ? config.featuredResourceTitle : resource.title}</h3>
-                            <p>{resource.type} - {resource.stage}</p>
-                            <div className="progress-row">
-                              <div className="progress-track"><span style={{ width: `${resource.progress}%` }}></span></div>
-                              <small>{resource.progress}% Complete</small>
-                            </div>
-                            <a className="inline-action" href={teacherContentRoute(resource.id)}>Continue</a>
-                          </div>
-                        </article>
-                      ))}
-                    </section>
-                  </>
+              <section className="dashboard-col">
+                <h2 className="col-heading">Continue Learning</h2>
+                {recentItems.length === 0 ? (
+                  <p className="col-empty">Resources you open will appear here so you can pick up where you left off.</p>
+                ) : (
+                  <div className="col-items">
+                    {recentItems.map((item) => (
+                      <a key={item.id} href={teacherContentRoute(item.id)} className="dash-item-card">
+                        <span className="content-type">{item.type}</span>
+                        <strong>{item.title}</strong>
+                        <span className="dash-item-meta">{item.subject}{item.stage ? ` · ${item.stage}` : ""}</span>
+                      </a>
+                    ))}
+                  </div>
                 )}
-
-                <div className="section-title-row news-title">
-                  <h2>What's New on Wildly</h2>
-                  <a className="text-link" href={teacherRoute("resources")}>View all</a>
-                </div>
-                <section className="news-grid">
-                  <a className="news-card blue" href={teacherContentRoute((resources[0] || publishedItems[0])?.id || "")}>
-                    <img src={assets.rhino} alt="" />
-                    <div>
-                      <span>New Resource</span>
-                      <h3>Voices for Country</h3>
-                      <p>First Nations perspectives for Stage 3 inquiry.</p>
-                    </div>
-                  </a>
-                  <a className="news-card purple" href={teacherRoute("professional-learning")}>
-                    <img src={assets.gorilla} alt="" />
-                    <div>
-                      <span>Professional Learning</span>
-                      <h3>Learning with Impact</h3>
-                      <p>Plan lessons around conservation action.</p>
-                    </div>
-                  </a>
-                  <a className="news-card green" href={teacherContentRoute((learningPaths[0] || publishedItems[0])?.id || "")}>
-                    <img src={assets.binturong} alt="" />
-                    <div>
-                      <span>New Learning Path</span>
-                      <h3>Sustainable Futures</h3>
-                      <p>Build a full sequence across Science and HSIE.</p>
-                    </div>
-                  </a>
-                </section>
               </section>
 
-              {showUpcoming && (
-                <aside className="upcoming-panel" aria-labelledby="upcoming-title">
-                  <div className="section-title-row">
-                    <h2 id="upcoming-title">Upcoming</h2>
-                    <a className="text-link" href={teacherRoute("calendar")}>View Calendar</a>
+              <section className="dashboard-col">
+                <h2 className="col-heading">What's New</h2>
+                {newestItems.length === 0 ? (
+                  <p className="col-empty">Newly published resources from Taronga will appear here.</p>
+                ) : (
+                  <div className="col-items">
+                    {newestItems.map((item) => (
+                      <a key={item.id} href={teacherContentRoute(item.id)} className="dash-item-card">
+                        <span className="content-type">{item.type}</span>
+                        <strong>{item.title}</strong>
+                        <span className="dash-item-meta">{item.subject}{item.stage ? ` · ${item.stage}` : ""}</span>
+                      </a>
+                    ))}
                   </div>
-                  <a className="event-card" href={appLinks.excursions}>
-                    <img src={assets.giraffe} alt="" />
-                    <div>
-                      <span className="event-tag">Excursion</span>
-                      <h3>Taronga Zoo Visit - Biodiversity in Action</h3>
-                      <p>Tue 8 Jun - 9:30am</p>
-                    </div>
-                  </a>
-                  <a className="event-card icon-event" href={appLinks.tracka || appLinks.excursions}>
-                    <span className="target-icon"></span>
-                    <div>
-                      <span className="event-tag live">Live</span>
-                      <h3>Tracka Mission - Citizen Science Challenge</h3>
-                      <p>Fri 21 Jun - 11:00am</p>
-                    </div>
-                  </a>
-                  <a className="event-card icon-event" href={teacherContentRoute((lessons[0] || publishedItems[0])?.id || "")}>
-                    <span className="leaf-badge"></span>
-                    <div>
-                      <span className="event-tag due">Due</span>
-                      <h3>Creative Writing: Inspired by Nature</h3>
-                      <p>Mon 24 Jun - 11:59pm</p>
-                    </div>
-                  </a>
-                  {nextProfessionalLearning ? (
-                    <a className="event-card icon-event" href={teacherRoute("professional-learning")}>
-                      <span className="target-icon"></span>
-                      <div>
-                        <span className="event-tag live">PL</span>
-                        <h3>{nextProfessionalLearning.title}</h3>
-                        <p>{nextProfessionalLearning.date}{nextProfessionalLearning.time ? ` - ${nextProfessionalLearning.time}` : ""}</p>
+                )}
+              </section>
+
+              <section className="dashboard-col">
+                <h2 className="col-heading">Upcoming</h2>
+                {upcomingEvents.length === 0 ? (
+                  <p className="col-empty">Events and sessions added by Taronga staff will appear here.</p>
+                ) : (
+                  <div className="col-items">
+                    {upcomingEvents.map((event) => (
+                      <div key={event.id} className="dash-upcoming-item">
+                        <time className="upcoming-date">{formatDisplayDate(event.date)}</time>
+                        <strong>{event.title}</strong>
+                        {event.description && <p className="upcoming-description">{event.description}</p>}
                       </div>
-                    </a>
-                  ) : null}
-                  <article className="difference-card">
-                    <span className="mini-mark" aria-hidden="true"></span>
-                    <div>
-                      <h3>Learning that makes a difference</h3>
-                      <p>Inspiring the next generation to care for nature - together.</p>
-                    </div>
-                  </article>
-                </aside>
-              )}
+                    ))}
+                  </div>
+                )}
+              </section>
             </div>
+
           </>
         )}
 
@@ -3415,8 +3866,6 @@ const defaultDashboardConfig = {
   heroSubtitle: "Inspire curiosity. Create change.",
   heroImageUrl: assets.heroKoala,
   featuredResourceTitle: "Sustainable Futures",
-  showContinueLearning: true,
-  showUpcomingPanel: true,
   showTrackaCard: true,
 };
 
@@ -3427,6 +3876,7 @@ const tarongaTvCollection = collection(db, "tarongaTvVideos");
 const liveSessionsCollection = collection(db, "liveSessions");
 const liveResponsesCollection = collection(db, "liveResponses");
 const usersCollection = collection(db, "users");
+const upcomingEventsCollection = collection(db, "upcomingEvents");
 
 function collectionForContentType(type) {
   return {
@@ -3761,11 +4211,29 @@ function useDashboardConfig() {
   return { config, status };
 }
 
+function useUpcomingEvents() {
+  const [events, setEvents] = useState([]);
+  useEffect(() => {
+    return onSnapshot(upcomingEventsCollection, (snap) => {
+      const today = new Date().toISOString().split("T")[0];
+      setEvents(
+        snap.docs
+          .map((d) => ({ id: d.id, ...d.data() }))
+          .filter((e) => e.date >= today)
+          .sort((a, b) => a.date.localeCompare(b.date))
+          .slice(0, 8),
+      );
+    }, () => {});
+  }, []);
+  return { events };
+}
+
 function TeacherPage({ page = "dashboard", subject = "", contentId = "", tvVideoId = "", preview = false }) {
   const { config, status } = useDashboardConfig();
   const { items: contentItems, status: contentStatus } = useContentItems();
   const { items: professionalLearningItems } = useProfessionalLearningItems();
   const { items: tarongaTvVideos } = useTarongaTvVideos();
+  const { events: upcomingEvents } = useUpcomingEvents();
   const { status: sessionStatus, user, profile } = useSessionUser();
   const { workspace, toggleSavedItem, assignContentToClass, createClass } = useTeacherWorkspace(user, profile);
 
@@ -3800,29 +4268,56 @@ function TeacherPage({ page = "dashboard", subject = "", contentId = "", tvVideo
 
   return (
     <>
-      <TeacherDashboard config={config} contentItems={contentItems} professionalLearningItems={professionalLearningItems} tarongaTvVideos={tarongaTvVideos} page={page} subject={subject} contentId={contentId} tvVideoId={tvVideoId} profile={profile} onSignOut={handleSignOut} preview={preview} workspace={workspace} onToggleSaved={toggleSavedItem} onAssignContent={assignContentToClass} onCreateClass={createClass} />
+      <TeacherDashboard config={config} contentItems={contentItems} professionalLearningItems={professionalLearningItems} tarongaTvVideos={tarongaTvVideos} page={page} subject={subject} contentId={contentId} tvVideoId={tvVideoId} profile={profile} onSignOut={handleSignOut} preview={preview} workspace={workspace} onToggleSaved={toggleSavedItem} onAssignContent={assignContentToClass} onCreateClass={createClass} upcomingEvents={upcomingEvents} />
     </>
   );
 }
 
 function StaffPage() {
   const [isUnlocked, setIsUnlocked] = useState(() => window.sessionStorage.getItem(staffSessionKey) === "unlocked");
+  const [firebaseUser, setFirebaseUser] = useState(null);
+  const [authChecked, setAuthChecked] = useState(false);
+
+  useEffect(() => {
+    return onAuthStateChanged(auth, (user) => {
+      setFirebaseUser(user);
+      setAuthChecked(true);
+    });
+  }, []);
 
   function unlock() {
     window.sessionStorage.setItem(staffSessionKey, "unlocked");
     setIsUnlocked(true);
   }
 
-  function lock() {
+  async function lock() {
     window.sessionStorage.removeItem(staffSessionKey);
     setIsUnlocked(false);
+    if (auth.currentUser) {
+      await signOut(auth);
+    }
   }
 
   if (!isUnlocked) {
     return <StaffPasswordScreen onUnlock={unlock} />;
   }
 
-  return <StaffConsole onLock={lock} />;
+  if (!authChecked) {
+    return (
+      <main className="staff-auth-page">
+        <section className="staff-auth-card">
+          <img src={assets.wildlyLogo} alt="Wildly by Taronga" />
+          <p style={{ marginTop: 16 }}>Checking authentication…</p>
+        </section>
+      </main>
+    );
+  }
+
+  if (!firebaseUser) {
+    return <StaffFirebaseLoginScreen onLock={lock} />;
+  }
+
+  return <StaffConsole onLock={lock} firebaseUser={firebaseUser} />;
 }
 
 function StaffPasswordScreen({ onUnlock }) {
@@ -3855,12 +4350,54 @@ function StaffPasswordScreen({ onUnlock }) {
   );
 }
 
-function StaffConsole({ onLock }) {
+function StaffFirebaseLoginScreen({ onLock }) {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  async function handleSubmit(event) {
+    event.preventDefault();
+    setError("");
+    setLoading(true);
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
+    } catch (err) {
+      setError(
+        err.code === "auth/invalid-credential" || err.code === "auth/wrong-password" || err.code === "auth/user-not-found"
+          ? "Incorrect email or password."
+          : "Sign-in failed. Check your connection and try again.",
+      );
+      setLoading(false);
+    }
+  }
+
+  return (
+    <main className="staff-auth-page">
+      <section className="staff-auth-card" aria-label="Taronga staff sign in">
+        <img src={assets.wildlyLogo} alt="Wildly by Taronga" />
+        <span>Taronga Staff Console</span>
+        <h1>Sign in to enable saves</h1>
+        <p>Content writes require your Taronga Firebase account. Use the email and password set up for your staff account.</p>
+        <form onSubmit={handleSubmit}>
+          <label>Email<input type="email" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" autoFocus /></label>
+          <label>Password<input type="password" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="current-password" /></label>
+          {error && <p className="auth-error">{error}</p>}
+          <button type="submit" disabled={loading}>{loading ? "Signing in…" : "Sign in"}</button>
+        </form>
+        <button type="button" className="auth-back-link" onClick={onLock}>← Back to staff password</button>
+      </section>
+    </main>
+  );
+}
+
+function StaffConsole({ onLock, firebaseUser }) {
   const [panel, setPanel] = useState("overview");
   const { config: savedConfig, status } = useDashboardConfig();
   const { items: contentItems, status: contentStatus } = useContentItems();
   const { items: professionalLearningItems, status: professionalLearningStatus } = useProfessionalLearningItems();
   const { items: tarongaTvVideos, status: tarongaTvStatus } = useTarongaTvVideos();
+  const { events: upcomingEvents } = useUpcomingEvents();
   const { items: liveSessions, status: liveSessionsStatus } = useLiveSessions();
   const { items: liveResponses, status: liveResponsesStatus } = useLiveResponses();
   const { users, status: usersStatus } = useUsers();
@@ -4139,6 +4676,33 @@ function StaffConsole({ onLock }) {
     }
   }
 
+  async function saveUpcomingEvent(event) {
+    try {
+      const payload = {
+        title: event.title || "",
+        date: event.date || "",
+        description: event.description || "",
+        updatedAt: serverTimestamp(),
+      };
+      if (event.id) {
+        await setDoc(doc(db, "upcomingEvents", event.id), payload, { merge: true });
+      } else {
+        await addDoc(upcomingEventsCollection, { ...payload, createdAt: serverTimestamp() });
+      }
+    } catch (error) {
+      console.error("Unable to save upcoming event", error);
+    }
+  }
+
+  async function deleteUpcomingEvent(event) {
+    if (!event?.id) return;
+    try {
+      await deleteDoc(doc(db, "upcomingEvents", event.id));
+    } catch (error) {
+      console.error("Unable to delete upcoming event", error);
+    }
+  }
+
   return (
     <div className="staff-shell">
       <aside className="staff-sidebar">
@@ -4151,13 +4715,14 @@ function StaffConsole({ onLock }) {
             ["content", "report", "Content"],
             ["taronga-tv", "play", "Taronga TV"],
             ["professional-learning", "book", "Professional Learning"],
+            ["upcoming-events", "calendar", "Upcoming Events"],
             ["dashboard", "monitor", "Edit Dashboard"],
           ].map(([id, icon, label]) => <button className={panel === id ? "active" : ""} type="button" data-panel={id} key={id} onClick={() => setPanel(id)}><Icon type={icon} className="" />{label}</button>)}
         </nav>
         <article className="tracka-mini"><img src={assets.trackaLogo} alt="Taronga Tracka" /><p>Staff editing is unlocked for this browser session. Tracka data connector ready for staff review.</p></article>
       </aside>
       <main className="staff-workspace">
-        <header className="staff-topbar"><div><span>Taronga Staff Console</span><h1>Wildly learning operations</h1></div><div className="staff-actions"><a href={routePath("teacher")}>Teacher view</a><button type="button" onClick={publishUpdates}>Publish updates</button><button type="button" className="sign-out-button" onClick={onLock}>Lock staff view</button></div></header>
+        <header className="staff-topbar"><div><span>Taronga Staff Console</span><h1>Wildly learning operations</h1></div><div className="staff-actions">{firebaseUser && <span className="staff-signed-in">Signed in as {firebaseUser.email}</span>}<a href={routePath("teacher")}>Teacher view</a><button type="button" onClick={publishUpdates}>Publish updates</button><button type="button" className="sign-out-button" onClick={onLock}>Sign out</button></div></header>
         <NoticeBanner notice={notice} onClose={() => setNotice("")} />
         {panel === "overview" && <OverviewPanel contentItems={contentItems} tvVideos={tarongaTvVideos} plItems={professionalLearningItems} liveSessions={liveSessions} liveResponses={liveResponses} />}
         {panel === "users" && <UsersPanel users={users} usersStatus={usersStatus} onPlaceholder={(message) => setNotice(message)} />}
@@ -4165,6 +4730,7 @@ function StaffConsole({ onLock }) {
         {panel === "content" && <ContentPanel contentItems={contentItems} status={contentStatus} saveState={contentSaveState} seedContentItems={seedContentItems} addContentItem={addContentItem} deleteContentItem={deleteContentItem} />}
         {panel === "taronga-tv" && <TarongaTvPanel items={tarongaTvVideos} contentItems={contentItems} status={tarongaTvStatus} saveState={tarongaTvSaveState} saveVideo={saveTarongaTvVideo} deleteVideo={deleteTarongaTvVideo} />}
         {panel === "professional-learning" && <ProfessionalLearningPanel items={professionalLearningItems} status={professionalLearningStatus} saveState={professionalLearningSaveState} saveItem={saveProfessionalLearningItem} deleteItem={deleteProfessionalLearningItem} />}
+        {panel === "upcoming-events" && <UpcomingEventsPanel events={upcomingEvents} saveEvent={saveUpcomingEvent} deleteEvent={deleteUpcomingEvent} />}
         {panel === "dashboard" && <DashboardEditor config={config} contentItems={contentItems} updateConfig={updateConfig} reset={() => { setConfig(defaultDashboardConfig); setPreviewKey((key) => key + 1); }} previewKey={previewKey} publish={publishDashboardConfig} status={status} saveState={saveState} />}
       </main>
     </div>
@@ -5354,9 +5920,76 @@ function ProfessionalLearningPanel({ items, status, saveState, saveItem, deleteI
   );
 }
 
+function UpcomingEventsPanel({ events = [], saveEvent, deleteEvent }) {
+  const emptyDraft = { title: "", date: "", description: "" };
+  const [draft, setDraft] = useState(emptyDraft);
+  const [editing, setEditing] = useState(null);
+
+  function updateDraft(patch) { setDraft((d) => ({ ...d, ...patch })); }
+
+  async function handleSave() {
+    if (!draft.title.trim() || !draft.date) return;
+    await saveEvent(editing ? { ...draft, id: editing } : draft);
+    setDraft(emptyDraft);
+    setEditing(null);
+  }
+
+  function startEdit(event) {
+    setEditing(event.id);
+    setDraft({ title: event.title, date: event.date, description: event.description || "" });
+  }
+
+  function cancelEdit() {
+    setEditing(null);
+    setDraft(emptyDraft);
+  }
+
+  return (
+    <section className="staff-section staff-panel active">
+      <div className="section-heading">
+        <div><h2>Upcoming Events</h2><p>Add events and sessions that appear on every teacher's dashboard. Past events are hidden automatically.</p></div>
+      </div>
+      <div className="upcoming-editor">
+        <div className="upcoming-form-card">
+          <h3>{editing ? "Edit event" : "Add new event"}</h3>
+          <form className="editor-form" onSubmit={(e) => { e.preventDefault(); handleSave(); }}>
+            <label>Event title<input type="text" value={draft.title} onChange={(e) => updateDraft({ title: e.target.value })} placeholder="e.g. Wildlife Photography Workshop" required /></label>
+            <label>Date<input type="date" value={draft.date} onChange={(e) => updateDraft({ date: e.target.value })} required /></label>
+            <label>Description (optional)<textarea value={draft.description} onChange={(e) => updateDraft({ description: e.target.value })} rows={2} placeholder="Short note for teachers about this event" /></label>
+            <div className="form-actions">
+              <button type="submit" className="primary-action">{editing ? "Update event" : "Add event"}</button>
+              {editing && <button type="button" className="secondary-action" onClick={cancelEdit}>Cancel</button>}
+            </div>
+          </form>
+        </div>
+        <div className="upcoming-list">
+          <h3>Current upcoming events ({events.length})</h3>
+          {events.length === 0 ? (
+            <p className="col-empty">No upcoming events added yet. Events you add will appear on teacher dashboards.</p>
+          ) : (
+            events.map((event) => (
+              <div key={event.id} className="upcoming-event-row">
+                <div className="upcoming-event-info">
+                  <time className="upcoming-date">{event.date}</time>
+                  <strong>{event.title}</strong>
+                  {event.description && <p>{event.description}</p>}
+                </div>
+                <div className="upcoming-event-actions">
+                  <button type="button" onClick={() => startEdit(event)}>Edit</button>
+                  <button type="button" className="delete-btn" onClick={() => deleteEvent(event)}>Delete</button>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+      </div>
+    </section>
+  );
+}
+
 function DashboardEditor({ config, contentItems, updateConfig, reset, previewKey, publish, status, saveState }) {
   const saveText = saveState === "saving" ? "Publishing..." : "Publish changes";
-  return <section className="staff-section staff-panel active"><div className="section-heading"><div><h2>Edit teacher dashboard</h2><p>Live-edit teacher-facing dashboard text, imagery and visibility flags before publishing.</p></div><div className="heading-actions"><button type="button" onClick={reset}>Reset preview</button><button type="button" onClick={publish} disabled={saveState === "saving"}>{saveText}</button></div></div><article className="dashboard-editor live-dashboard-editor"><div className="editor-copy"><span className="content-type">Teacher Dashboard Editor</span><h3>Update teacher-facing dashboard content</h3><p>Changes below update the preview immediately. Publishing writes the values to Firestore at dashboardConfig/main.</p><FirestoreStatus status={status} saveState={saveState} /></div><form className="editor-form"><label>Hero headline<input type="text" value={config.heroTitle} onChange={(event) => updateConfig({ heroTitle: event.target.value })} /></label><label>Hero subheading<input type="text" value={config.heroSubtitle} onChange={(event) => updateConfig({ heroSubtitle: event.target.value })} /></label><label>Hero image<select value={config.heroImageUrl} onChange={(event) => updateConfig({ heroImageUrl: event.target.value })}><option value={assets.heroKoala}>Koala with joey</option><option value={assets.giraffe}>Giraffe at Taronga</option><option value={assets.binturong}>Binturong encounter</option><option value={assets.gorilla}>Gorilla habitat</option></select></label><label>Featured resource title<select value={config.featuredResourceTitle} onChange={(event) => updateConfig({ featuredResourceTitle: event.target.value })}>{contentItems.map((item) => <option key={item.id || item.title}>{item.title}</option>)}</select></label></form><div className="flag-grid" aria-label="Teacher dashboard content flags"><label><input type="checkbox" checked={config.showContinueLearning} onChange={(event) => updateConfig({ showContinueLearning: event.target.checked })} /> Show Continue Learning</label><label><input type="checkbox" checked={config.showUpcomingPanel} onChange={(event) => updateConfig({ showUpcomingPanel: event.target.checked })} /> Show Upcoming panel</label><label><input type="checkbox" checked={config.showTrackaCard} onChange={(event) => updateConfig({ showTrackaCard: event.target.checked })} /> Feature Taronga Tracka card</label><label><input type="checkbox" /> Show beta student insights</label><label><input type="checkbox" defaultChecked /> Display new resource badges</label><label><input type="checkbox" /> Lock subject cards during review</label></div><div className="teacher-live-preview"><div className="preview-toolbar"><span>Live teacher dashboard preview</span><a href={routePath("teacher")} target="_blank" rel="noreferrer">Open full view</a></div><div className="preview-frame" key={previewKey}><TeacherDashboard config={config} contentItems={contentItems} /></div></div></article></section>;
+  return <section className="staff-section staff-panel active"><div className="section-heading"><div><h2>Edit teacher dashboard</h2><p>Live-edit teacher-facing dashboard text, imagery and visibility flags before publishing.</p></div><div className="heading-actions"><button type="button" onClick={reset}>Reset preview</button><button type="button" onClick={publish} disabled={saveState === "saving"}>{saveText}</button></div></div><article className="dashboard-editor live-dashboard-editor"><div className="editor-copy"><span className="content-type">Teacher Dashboard Editor</span><h3>Update teacher-facing dashboard content</h3><p>Changes below update the preview immediately. Publishing writes the values to Firestore at dashboardConfig/main.</p><FirestoreStatus status={status} saveState={saveState} /></div><form className="editor-form"><label>Hero headline<input type="text" value={config.heroTitle} onChange={(event) => updateConfig({ heroTitle: event.target.value })} /></label><label>Hero subheading<input type="text" value={config.heroSubtitle} onChange={(event) => updateConfig({ heroSubtitle: event.target.value })} /></label><label>Hero image<select value={config.heroImageUrl} onChange={(event) => updateConfig({ heroImageUrl: event.target.value })}><option value={assets.heroKoala}>Koala with joey</option><option value={assets.giraffe}>Giraffe at Taronga</option><option value={assets.binturong}>Binturong encounter</option><option value={assets.gorilla}>Gorilla habitat</option></select></label><label>Featured resource title<select value={config.featuredResourceTitle} onChange={(event) => updateConfig({ featuredResourceTitle: event.target.value })}>{contentItems.map((item) => <option key={item.id || item.title}>{item.title}</option>)}</select></label></form><div className="flag-grid" aria-label="Teacher dashboard content flags"><label><input type="checkbox" checked={config.showTrackaCard} onChange={(event) => updateConfig({ showTrackaCard: event.target.checked })} /> Feature Taronga Tracka card</label><label><input type="checkbox" /> Show beta student insights</label><label><input type="checkbox" defaultChecked /> Display new resource badges</label><label><input type="checkbox" /> Lock subject cards during review</label></div><div className="teacher-live-preview"><div className="preview-toolbar"><span>Live teacher dashboard preview</span><a href={routePath("teacher")} target="_blank" rel="noreferrer">Open full view</a></div><div className="preview-frame" key={previewKey}><TeacherDashboard config={config} contentItems={contentItems} /></div></div></article></section>;
 }
 
 function FirestoreStatus({ status, saveState }) {

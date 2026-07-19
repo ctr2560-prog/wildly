@@ -156,6 +156,29 @@ textarea {
   font-weight: 800;
 }
 
+.auth-back-link {
+  display: block;
+  width: 100%;
+  margin-top: 14px;
+  padding: 0;
+  border: 0;
+  color: var(--muted);
+  background: transparent;
+  font-size: 13px;
+  text-align: center;
+  cursor: pointer;
+}
+
+.auth-back-link:hover {
+  color: var(--green-900);
+}
+
+.staff-signed-in {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+
 .staff-shell {
   display: grid;
   grid-template-columns: 260px minmax(0, 1fr);
@@ -2755,5 +2778,131 @@ td {
 
   .sc-type-tabs {
     flex-wrap: wrap;
+  }
+}
+
+/* ── Upcoming Events Panel ── */
+.upcoming-editor {
+  display: grid;
+  grid-template-columns: 360px 1fr;
+  gap: 32px;
+  margin-top: 8px;
+}
+
+.upcoming-form-card {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 22px 20px;
+  align-self: start;
+}
+
+.upcoming-form-card h3,
+.upcoming-list h3 {
+  margin: 0 0 18px;
+  color: var(--green-950);
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.upcoming-list {
+  padding-top: 2px;
+}
+
+.upcoming-event-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.upcoming-event-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.upcoming-event-info time {
+  display: inline-block;
+  margin-bottom: 5px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: var(--green-100);
+  color: var(--green-800);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.upcoming-event-info strong {
+  display: block;
+  color: var(--green-950);
+  font-size: 14px;
+  margin-bottom: 3px;
+}
+
+.upcoming-event-info p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.upcoming-event-actions {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.upcoming-event-actions button {
+  padding: 5px 12px;
+  border-radius: 6px;
+  border: 1px solid var(--line);
+  background: #fff;
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.upcoming-event-actions .delete-btn {
+  color: #c0392b;
+  border-color: #f5c6c2;
+  background: #fff5f5;
+}
+
+.upcoming-event-actions .delete-btn:hover {
+  background: #fee;
+}
+
+.form-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.form-actions .primary-action,
+.form-actions .secondary-action {
+  padding: 9px 20px;
+  border-radius: 7px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  text-decoration: none;
+}
+
+.form-actions .primary-action {
+  background: var(--green-800);
+  color: #fff;
+}
+
+.form-actions .secondary-action {
+  background: var(--canvas);
+  color: var(--ink);
+  border: 1px solid var(--line);
+}
+
+@media (max-width: 860px) {
+  .upcoming-editor {
+    grid-template-columns: 1fr;
   }
 }
