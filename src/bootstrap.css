@@ -1,0 +1,25 @@
+.app-route-loader {
+  display: grid;
+  place-items: center;
+  min-height: 100vh;
+  color: #123f2e;
+  background: #f8faf7;
+  font: 800 14px/1.4 Arial, sans-serif;
+}
+
+.app-route-loader span::after {
+  display: inline-block;
+  width: 1.2em;
+  overflow: hidden;
+  vertical-align: bottom;
+  animation: wildly-loading 1.2s steps(4, end) infinite;
+  content: "...";
+}
+
+@keyframes wildly-loading {
+  from { width: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app-route-loader span::after { animation: none; }
+}
