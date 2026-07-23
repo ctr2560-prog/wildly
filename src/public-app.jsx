@@ -409,43 +409,60 @@ const homePlatformViews = [
   },
 ];
 
-function HomePlatformShowcase() {
-  const [activeView, setActiveView] = useState(homePlatformViews[0].id);
-  const activeIndex = homePlatformViews.findIndex((view) => view.id === activeView);
-  const currentView = homePlatformViews[activeIndex] || homePlatformViews[0];
+function HomeExtendPreview() {
+  return (
+    <div className="home-extend-preview" aria-label="Wildly follow-up recommendation preview">
+      <div className="home-extend-preview-top">
+        <strong>Wildly</strong>
+        <span>Recommended next</span>
+      </div>
+      <div className="home-extend-preview-context">
+        <span>From your Taronga Tracka visit</span>
+        <strong>Giraffe habitat mission</strong>
+      </div>
+      <div className="home-extend-preview-resource">
+        <img src={assets.giraffe} alt="" width="710" height="400" />
+        <div>
+          <span>Stage 2 · Science</span>
+          <h4>How habitats support survival</h4>
+          <small>Lesson · 45 minutes</small>
+        </div>
+      </div>
+      <div className="home-extend-preview-sequence" aria-hidden="true">
+        <span>Observe</span><Icon type="arrowRight" /><span>Explain</span><Icon type="arrowRight" /><span>Act</span>
+      </div>
+    </div>
+  );
+}
 
+function HomePlatformShowcase() {
   return (
     <section className="home-platform-section" aria-labelledby="home-platform-heading">
-      <Reveal className="home-platform-heading">
+      <div className="home-platform-heading">
         <span className="audience-pill">Inside Wildly</span>
-        <h2 id="home-platform-heading">A platform that follows the whole learning journey.</h2>
-        <p>Wildly connects the work teachers do before, during and after a meaningful nature experience.</p>
-      </Reveal>
-      <Reveal delay={80}>
-        <AccessibleTabs
-          id="home-platform"
-          items={homePlatformViews}
-          activeId={activeView}
-          onChange={setActiveView}
-          ariaLabel="Wildly learning journey"
-          className="home-platform-tabs"
-          getClassName={(_, selected) => selected ? "active" : ""}
-          renderItem={(view) => <><span>{view.step}</span><strong>{view.label}</strong></>}
-        />
-      </Reveal>
-      <Reveal key={currentView.id} delay={120} variant="scale" className={`home-platform-panel tone-${currentView.tone}`} id="home-platform-panel" role="tabpanel" aria-labelledby={tabDomId("home-platform", currentView.id)} tabIndex="0">
-        <div className="home-platform-media">
-          <img src={currentView.image} alt={currentView.imageAlt} width={currentView.width} height={currentView.height} loading="lazy" />
-          <div className="home-platform-media-label"><span>Wildly ecosystem</span><strong>{currentView.label}</strong></div>
-        </div>
-        <div className="home-platform-copy">
-          <span className="home-platform-eyebrow">{currentView.eyebrow}</span>
-          <h3>{currentView.title}</h3>
-          <p>{currentView.copy}</p>
-          <ul>{currentView.points.map((point) => <li key={point}><Icon type="plus" />{point}</li>)}</ul>
-          <a className="home-platform-action animated-link" href={currentView.href}><span>{currentView.action}</span><Icon type="arrowRight" /></a>
-        </div>
-      </Reveal>
+        <h2 id="home-platform-heading">One platform. <span>The whole learning journey.</span></h2>
+        <p>Plan clearly, make every experience count and carry the learning into what comes next.</p>
+      </div>
+      <div className="home-platform-journey" aria-label="Wildly learning journey">
+        {homePlatformViews.map((view) => (
+          <article className={`home-platform-chapter tone-${view.tone}`} key={view.id}>
+            <div className="home-platform-chapter-media">
+              {view.id === "extend" ? (
+                <HomeExtendPreview />
+              ) : (
+                <img src={view.image} alt={view.imageAlt} width={view.width} height={view.height} loading="lazy" />
+              )}
+            </div>
+            <div className="home-platform-chapter-label">
+              <span>{view.step}</span>
+              <strong>{view.label}</strong>
+            </div>
+            <h3>{view.title}</h3>
+            <p>{view.copy}</p>
+            <a className="home-platform-action animated-link" href={view.href}><span>{view.action}</span><Icon type="arrowRight" /></a>
+          </article>
+        ))}
+      </div>
     </section>
   );
 }
@@ -671,6 +688,59 @@ function LandingTarongaTvPreview() {
   );
 }
 
+function HomeTrustPanel({ icon, title, copy }) {
+  const panelRef = useRef(null);
+  const boundsRef = useRef(null);
+  const frameRef = useRef(0);
+
+  useEffect(() => () => cancelAnimationFrame(frameRef.current), []);
+
+  function handlePointerEnter(event) {
+    if (event.pointerType === "touch" || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    boundsRef.current = panelRef.current?.getBoundingClientRect() || null;
+    panelRef.current?.setAttribute("data-active", "true");
+  }
+
+  function handlePointerMove(event) {
+    const panel = panelRef.current;
+    const bounds = boundsRef.current;
+    if (!panel || !bounds || event.pointerType === "touch") return;
+
+    const horizontal = ((event.clientX - bounds.left) / bounds.width) - 0.5;
+    const vertical = ((event.clientY - bounds.top) / bounds.height) - 0.5;
+
+    cancelAnimationFrame(frameRef.current);
+    frameRef.current = requestAnimationFrame(() => {
+      panel.style.setProperty("--trust-rotate-x", `${(-vertical * 4).toFixed(2)}deg`);
+      panel.style.setProperty("--trust-rotate-y", `${(horizontal * 4).toFixed(2)}deg`);
+    });
+  }
+
+  function handlePointerLeave() {
+    cancelAnimationFrame(frameRef.current);
+    boundsRef.current = null;
+    const panel = panelRef.current;
+    if (!panel) return;
+    panel.setAttribute("data-active", "false");
+    panel.style.setProperty("--trust-rotate-x", "0deg");
+    panel.style.setProperty("--trust-rotate-y", "0deg");
+  }
+
+  return (
+    <article
+      ref={panelRef}
+      className="homepage-trust-item"
+      data-active="false"
+      onPointerEnter={handlePointerEnter}
+      onPointerMove={handlePointerMove}
+      onPointerLeave={handlePointerLeave}
+    >
+      <span className="homepage-trust-icon" aria-hidden="true"><Icon type={icon} /></span>
+      <span><strong>{title}</strong><small>{copy}</small></span>
+    </article>
+  );
+}
+
 function LandingPage() {
   const videoRef = useRef(null);
   const [isVideoPaused, setIsVideoPaused] = useState(() => (
@@ -726,18 +796,15 @@ function LandingPage() {
           </button>
         </section>
 
-        <Reveal as="section" className="homepage-trust-bar" aria-label="Why teachers use Wildly">
+        <section className="homepage-trust-bar" aria-label="Why teachers use Wildly">
           {[
             ["leaf", "Built with Taronga educators", "Conservation expertise shaped for teaching"],
             ["book", "Curriculum-connected", "Clear subject, stage and learning purpose"],
             ["link", "Classroom · Zoo · Digital", "One journey across every learning context"],
           ].map(([icon, title, copy]) => (
-            <div key={title} className="homepage-trust-item">
-              <Icon type={icon} />
-              <span><strong>{title}</strong><small>{copy}</small></span>
-            </div>
+            <HomeTrustPanel key={title} icon={icon} title={title} copy={copy} />
           ))}
-        </Reveal>
+        </section>
 
         <HomePlatformShowcase />
 
