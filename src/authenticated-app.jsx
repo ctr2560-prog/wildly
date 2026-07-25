@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { createUserWithEmailAndPassword, onAuthStateChanged, signInWithEmailAndPassword, signOut } from "firebase/auth";
-import { addDoc, collection, deleteDoc, doc, getDoc, onSnapshot, orderBy, query, serverTimestamp, setDoc, updateDoc, where } from "firebase/firestore";
+import { addDoc, arrayUnion, collection, deleteDoc, doc, getDoc, onSnapshot, orderBy, query, serverTimestamp, setDoc, updateDoc, where } from "firebase/firestore";
 import { auth, db } from "./firebase";
 import "../landing.css";
 import "../styles.css";
@@ -22,6 +22,7 @@ const demoSessionKey = "wildly-demo-session";
 const assets = {
   wildlyLogo: assetPath("assets/wildly-logo-transparent.png"),
   trackaLogo: assetPath("assets/taronga-tracka-logo-colour.png"),
+  trackaLogoFull: assetPath("assets/tracka-logo-full.png"),
   heroKoala: assetPath("assets/hero-koala.jpg"),
   koala: assetPath("assets/koala.jpg"),
   river: assetPath("assets/river.png"),
@@ -832,7 +833,9 @@ function useSessionUser() {
       }
 
       try {
-        const profileSnapshot = await getDoc(doc(db, "users", firebaseUser.uid));
+        // Shared "Taronga Education" identity — teachers/{email}, not users/{uid}.
+        // Same doc Taronga Tracka reads/writes, keyed by the Auth account's email.
+        const profileSnapshot = await getDoc(doc(db, "teachers", firebaseUser.email.toLowerCase()));
         setState({
           status: "ready",
           user: firebaseUser,
@@ -858,7 +861,10 @@ function AuthScreen({ mode = "login" }) {
 
   useEffect(() => {
     if (status !== "ready" || !user) return;
-    window.location.hash = profile || user.isDemo ? "#teacher" : "#about-you";
+    // Route through About You until the Wildly-specific fields (role, in particular)
+    // are actually set — an existing Tracka-only teacher's doc exists but has no
+    // role yet, and would otherwise skip this step forever.
+    window.location.hash = profile?.role || user.isDemo ? "#teacher" : "#about-you";
   }, [status, user, profile]);
 
   async function handleSubmit(event) {
@@ -886,8 +892,13 @@ function AuthScreen({ mode = "login" }) {
         return;
       }
 
-      await signInWithEmailAndPassword(auth, email.trim(), password);
-      window.location.hash = "#teacher";
+      const credential = await signInWithEmailAndPassword(auth, email.trim(), password);
+      const teacherEmail = credential.user.email.toLowerCase();
+      setDoc(doc(db, "teachers", teacherEmail), { products: arrayUnion("wildly") }, { merge: true }).catch(() => {});
+      // Existing Tracka-only teachers have a doc but no Wildly-specific fields yet —
+      // send them through About You once, same rule as the useSessionUser redirect above.
+      const profileSnapshot = await getDoc(doc(db, "teachers", teacherEmail));
+      window.location.hash = profileSnapshot.data()?.role ? "#teacher" : "#about-you";
     } catch (error) {
       console.error("Auth flow failed", error);
       setNotice(error.message || "Unable to complete authentication.");
@@ -899,12 +910,15 @@ function AuthScreen({ mode = "login" }) {
   return (
     <main className="auth-page">
       <section className="auth-card">
-        <a className="site-logo auth-logo" href={routePath()} aria-label="Wildly home">
-          <img src={assets.wildlyLogo} alt="Wildly by Taronga" />
-        </a>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "1.25rem", marginBottom: "1.5rem" }}>
+          <img src={assets.trackaLogoFull} alt="Taronga Tracka" style={{ height: "72px", width: "auto" }} />
+          <span style={{ color: "#D4D4D8", fontSize: "1.6rem", fontWeight: 200 }}>+</span>
+          <img src={assets.wildlyLogo} alt="Wildly by Taronga" style={{ height: "64px", width: "auto" }} />
+        </div>
+        <h1 style={{ fontFamily: '"Taronga Headline", "Avenir Next", Avenir, sans-serif', fontWeight: 400 }}>Taronga Education</h1>
+        <p style={{ fontSize: "0.78rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.09em", color: "#71717A" }}>Multiple applications, one log-in</p>
         <span className="audience-pill">{isSignup ? "Create account" : "Welcome back"}</span>
-        <h1>{isSignup ? "Get started with Wildly" : "Log in to Wildly"}</h1>
-        <p>{isSignup ? "Create your account first, then complete your educator profile on the next page." : "Use your email and password to access your teacher workspace."}</p>
+        <p>{isSignup ? "Create one account for Taronga Tracka, Wildly by Taronga, and more." : "Sign in to access Taronga Tracka, Wildly by Taronga, and more."}</p>
         <form className="auth-form" onSubmit={handleSubmit}>
           <label>
             Email
@@ -942,14 +956,18 @@ function AboutYouPage() {
 
   useEffect(() => {
     if (profile) {
+      // schoolName (not school) — the shared field name Taronga Tracka's teacher
+      // docs already use, so a teacher who signed up on Tracka first sees their
+      // school pre-filled here too.
+      const school = profile.schoolName || "";
       setForm((current) => ({
         ...current,
         name: profile.name || "",
         country: profile.country || "Australia",
         role: profile.role || "Teacher",
-        schoolSearch: schoolOptions.includes(profile.school) ? profile.school : "",
-        schoolManual: schoolOptions.includes(profile.school) ? "" : (profile.school || ""),
-        cantFindSchool: profile.school ? !schoolOptions.includes(profile.school) : false,
+        schoolSearch: schoolOptions.includes(school) ? school : "",
+        schoolManual: schoolOptions.includes(school) ? "" : school,
+        cantFindSchool: school ? !schoolOptions.includes(school) : false,
       }));
     }
   }, [profile]);
@@ -977,12 +995,13 @@ function AboutYouPage() {
     setNotice("");
 
     try {
-      await setDoc(doc(db, "users", user.uid), {
+      await setDoc(doc(db, "teachers", user.email.toLowerCase()), {
         name: form.name.trim(),
         country: form.country.trim(),
         role: form.role,
-        school,
-        email: user.email,
+        schoolName: school,
+        email: user.email.toLowerCase(),
+        products: arrayUnion("wildly"),
         updatedAt: serverTimestamp(),
       }, { merge: true });
 
@@ -1002,11 +1021,13 @@ function AboutYouPage() {
   return (
     <main className="auth-page">
       <section className="auth-card auth-card-wide">
-        <a className="site-logo auth-logo" href={routePath()} aria-label="Wildly home">
-          <img src={assets.wildlyLogo} alt="Wildly by Taronga" />
-        </a>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "1.25rem", marginBottom: "1.5rem" }}>
+          <img src={assets.trackaLogoFull} alt="Taronga Tracka" style={{ height: "72px", width: "auto" }} />
+          <span style={{ color: "#D4D4D8", fontSize: "1.6rem", fontWeight: 200 }}>+</span>
+          <img src={assets.wildlyLogo} alt="Wildly by Taronga" style={{ height: "64px", width: "auto" }} />
+        </div>
+        <h1 style={{ fontFamily: '"Taronga Headline", "Avenir Next", Avenir, sans-serif', fontWeight: 400 }}>Taronga Education</h1>
         <span className="audience-pill">About you</span>
-        <h1>Tell us about you</h1>
         <p>This profile shapes the teacher experience and helps us personalise school content.</p>
         <form className="auth-form" onSubmit={handleSubmit}>
           <div className="auth-grid">
@@ -2182,7 +2203,7 @@ const professionalLearningCollection = collection(db, "professionalLearning");
 const tarongaTvCollection = collection(db, "tarongaTvVideos");
 const liveSessionsCollection = collection(db, "liveSessions");
 const liveResponsesCollection = collection(db, "liveResponses");
-const usersCollection = collection(db, "users");
+const teachersCollection = collection(db, "teachers");
 const upcomingEventsCollection = collection(db, "upcomingEvents");
 
 function collectionForContentType(type) {
@@ -2384,10 +2405,15 @@ function useUsers() {
   const [status, setStatus] = useState("loading");
 
   useEffect(() => {
+    // Shared teachers/{email} collection — sorted client-side rather than via
+    // Firestore orderBy("name"), since Tracka-only teacher docs have no "name"
+    // field yet and orderBy would silently exclude them from the query entirely.
     return onSnapshot(
-      query(usersCollection, orderBy("name")),
+      teachersCollection,
       (snapshot) => {
-        setUsers(snapshot.docs.map((d) => ({ id: d.id, ...d.data() })));
+        const docs = snapshot.docs.map((d) => ({ id: d.id, ...d.data() }));
+        docs.sort((a, b) => (a.name || a.email || "").localeCompare(b.name || b.email || ""));
+        setUsers(docs);
         setStatus(snapshot.empty ? "empty" : "live");
       },
       (error) => {
@@ -3117,7 +3143,7 @@ function UsersPanel({ users = [], usersStatus = "loading", onPlaceholder }) {
   const allRoles = [...new Set(users.map((u) => u.role).filter(Boolean))].sort();
 
   const visibleUsers = users.filter((u) => {
-    const haystack = `${u.name || ""} ${u.role || ""} ${u.school || ""} ${u.email || ""}`.toLowerCase();
+    const haystack = `${u.name || ""} ${u.role || ""} ${u.schoolName || ""} ${u.email || ""}`.toLowerCase();
     const matchesSearch = !search || haystack.includes(search.toLowerCase());
     const matchesRole = roleFilter === "All roles" || u.role === roleFilter;
     return matchesSearch && matchesRole;
@@ -3219,7 +3245,7 @@ function UsersPanel({ users = [], usersStatus = "loading", onPlaceholder }) {
                       {u.role || "No role"}
                     </span>
                   </td>
-                  <td>{u.school || "—"}</td>
+                  <td>{u.schoolName || "—"}</td>
                   <td style={{ fontSize: 13, color: "#666" }}>{u.email || "—"}</td>
                   <td style={{ fontSize: 13, color: "#888" }}>{formatDate(u.updatedAt)}</td>
                 </tr>
