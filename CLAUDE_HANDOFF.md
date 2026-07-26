@@ -1,5 +1,11 @@
 # Claude Code Handoff: Wildly Platform
 
+> **⚠️ STALE — see `CLAUDE.md` instead.** This file is dated 2026-06-15 and describes a file
+> layout (`src/data/defaults.js`, `src/lib/firebase-hooks.js`) that no longer exists — the app
+> was refactored since into `src/main.jsx` / `src/public-app.jsx` / `src/authenticated-app.jsx`.
+> It also predates the Taronga Education ecosystem work (shared Firebase project, shared
+> `teachers/{email}` identity). Kept for historical context only — `CLAUDE.md` is current.
+
 Date: 2026-06-15  
 Project path: `/Users/cameronrodgers/wildly`  
 Local dev URL: `http://127.0.0.1:5173/`
