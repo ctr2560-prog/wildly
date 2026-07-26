@@ -853,19 +853,27 @@ function useSessionUser() {
 
 function AuthScreen({ mode = "login" }) {
   const isSignup = mode === "signup";
-  const { status, user, profile } = useSessionUser();
+  const { status, user } = useSessionUser();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirm, setConfirm] = useState("");
+  const [schoolSearch, setSchoolSearch] = useState("");
+  const [schoolManual, setSchoolManual] = useState("");
+  const [cantFindSchool, setCantFindSchool] = useState(false);
   const [notice, setNotice] = useState("");
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
     if (status !== "ready" || !user) return;
-    // Route through About You until the Wildly-specific fields (role, in particular)
-    // are actually set — an existing Tracka-only teacher's doc exists but has no
-    // role yet, and would otherwise skip this step forever.
-    window.location.hash = profile?.role || user.isDemo ? "#teacher" : "#about-you";
-  }, [status, user, profile]);
+    // A Tracka account signing into Wildly for the first time already has
+    // everything Wildly needs (email, password, school) — no extra profile
+    // step, straight to the dashboard, same as any other login.
+    window.location.hash = "#teacher";
+  }, [status, user]);
+
+  const school = cantFindSchool ? schoolManual.trim() : schoolSearch.trim();
+  const isLoginValid = email.trim().includes("@") && password.length > 0;
+  const isSignupValid = email.trim().includes("@") && password.length >= 6 && password === confirm && school.length > 1;
 
   async function handleSubmit(event) {
     event.preventDefault();
@@ -881,24 +889,30 @@ function AuthScreen({ mode = "login" }) {
 
       window.localStorage.removeItem(demoSessionKey);
 
+      if (isSignup) {
+        if (!isSignupValid) {
+          setNotice(password !== confirm ? "Passwords do not match." : "Please fill in every field.");
+          return;
+        }
+        const credential = await createUserWithEmailAndPassword(auth, email.trim(), password);
+        await setDoc(doc(db, "teachers", credential.user.email.toLowerCase()), {
+          email: credential.user.email.toLowerCase(),
+          schoolName: school,
+          createdAt: serverTimestamp(),
+          products: arrayUnion("wildly"),
+        }, { merge: true });
+        window.location.hash = "#teacher";
+        return;
+      }
+
       if (!password.trim()) {
         setNotice("Please enter your password.");
         return;
       }
 
-      if (isSignup) {
-        await createUserWithEmailAndPassword(auth, email.trim(), password);
-        window.location.hash = "#about-you";
-        return;
-      }
-
       const credential = await signInWithEmailAndPassword(auth, email.trim(), password);
-      const teacherEmail = credential.user.email.toLowerCase();
-      setDoc(doc(db, "teachers", teacherEmail), { products: arrayUnion("wildly") }, { merge: true }).catch(() => {});
-      // Existing Tracka-only teachers have a doc but no Wildly-specific fields yet —
-      // send them through About You once, same rule as the useSessionUser redirect above.
-      const profileSnapshot = await getDoc(doc(db, "teachers", teacherEmail));
-      window.location.hash = profileSnapshot.data()?.role ? "#teacher" : "#about-you";
+      setDoc(doc(db, "teachers", credential.user.email.toLowerCase()), { products: arrayUnion("wildly") }, { merge: true }).catch(() => {});
+      window.location.hash = "#teacher";
     } catch (error) {
       console.error("Auth flow failed", error);
       setNotice(error.message || "Unable to complete authentication.");
@@ -925,12 +939,37 @@ function AuthScreen({ mode = "login" }) {
             <input type="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder={isSignup ? "you@school.edu" : "Enter your email"} autoComplete="email" required />
           </label>
           <label>
-            Password
+            Password{isSignup ? " (min. 6 characters)" : ""}
             <input type="password" value={password} onChange={(event) => setPassword(event.target.value)} placeholder="Enter your password" autoComplete={isSignup ? "new-password" : "current-password"} />
           </label>
+          {isSignup ? (
+            <>
+              <label>
+                Confirm password
+                <input type="password" value={confirm} onChange={(event) => setConfirm(event.target.value)} placeholder="Re-enter your password" autoComplete="new-password" />
+              </label>
+              <label>
+                Your school
+                <input list="wildly-school-options" value={schoolSearch} onChange={(event) => setSchoolSearch(event.target.value)} placeholder="Start typing your school name" disabled={cantFindSchool} />
+                <datalist id="wildly-school-options">
+                  {schoolOptions.map((s) => <option key={s} value={s} />)}
+                </datalist>
+              </label>
+              <label className="checkbox-row">
+                <input type="checkbox" checked={cantFindSchool} onChange={(event) => setCantFindSchool(event.target.checked)} />
+                Can't find school
+              </label>
+              {cantFindSchool ? (
+                <label>
+                  School name
+                  <input type="text" value={schoolManual} onChange={(event) => setSchoolManual(event.target.value)} placeholder="Type your school name" />
+                </label>
+              ) : null}
+            </>
+          ) : null}
           {!isSignup ? <p className="auth-helper">Use `demo@zoo` to enter the demo teacher account instantly.</p> : null}
           {notice ? <p className="auth-error">{notice}</p> : null}
-          <button type="submit" disabled={busy}>{busy ? "Working..." : isSignup ? "Continue" : "Log in"}</button>
+          <button type="submit" disabled={busy}>{busy ? "Working..." : isSignup ? "Create account" : "Log in"}</button>
         </form>
         <div className="auth-links">
           {isSignup ? <a href={loginRoute()}>Already have an account? Log in</a> : <a href={signupRoute()}>Need an account? Get started</a>}
