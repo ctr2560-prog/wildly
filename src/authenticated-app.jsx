@@ -13,7 +13,6 @@ const teacherRoute = (path = "") => routePath(path ? `teacher/${path}` : "teache
 const teacherContentRoute = (id) => teacherRoute(`content/${id}`);
 const teacherTvRoute = (id = "") => teacherRoute(id ? `taronga-tv/${id}` : "taronga-tv");
 const teacherPreviewRoute = () => teacherRoute("preview");
-const studentRoute = (path = "") => routePath(path ? `student/${path}` : "student");
 const loginRoute = () => routePath("login");
 const signupRoute = () => routePath("get-started");
 const aboutYouRoute = () => routePath("about-you");
@@ -248,22 +247,10 @@ const defaultTeacherClasses = [
 ];
 
 function createDefaultTeacherAssignments() {
-  return [
-    {
-      id: "asg-adaptations-year3",
-      classId: "year-3-blue",
-      contentId: "adaptations-australian-animals",
-      dueDate: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10),
-      assignedAt: new Date().toISOString().slice(0, 10),
-    },
-    {
-      id: "asg-futures-year4",
-      classId: "year-4-green",
-      contentId: "sustainable-futures",
-      dueDate: new Date(Date.now() + 9 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10),
-      assignedAt: new Date().toISOString().slice(0, 10),
-    },
-  ];
+  // Wildly no longer has an "Assign to class" flow (Tracka owns the student-facing
+  // side) — this stays as an empty array rather than seed data so My Classes/
+  // Reports don't show assignments a teacher has no way to create or edit.
+  return [];
 }
 
 function createDefaultTeacherWorkspace() {
@@ -337,10 +324,6 @@ function buildLessonActivityBlocks(item) {
     title: index === 0 ? item.title : block.title,
     prompt: index === 0 ? (item.summary || item.description || block.prompt) : block.prompt,
   }));
-}
-
-function generateSessionCode() {
-  return Math.random().toString(36).slice(2, 8).toUpperCase();
 }
 
 const staffPassword = "admin";
@@ -777,25 +760,6 @@ function useTeacherWorkspace(user, profile) {
     }));
   }
 
-  function assignContentToClass(contentId, classId, dueDate) {
-    setWorkspace((current) => {
-      const existingIndex = current.assignments.findIndex((item) => item.contentId === contentId && item.classId === classId);
-      const nextAssignment = {
-        id: existingIndex >= 0 ? current.assignments[existingIndex].id : `asg-${Date.now()}`,
-        contentId,
-        classId,
-        dueDate,
-        assignedAt: new Date().toISOString().slice(0, 10),
-      };
-
-      const assignments = existingIndex >= 0
-        ? current.assignments.map((item, index) => (index === existingIndex ? nextAssignment : item))
-        : [...current.assignments, nextAssignment];
-
-      return { ...current, assignments };
-    });
-  }
-
   function createClass(title, stage) {
     const classId = `${title.toLowerCase().replace(/[^a-z0-9]+/g, "-")}-${Date.now().toString().slice(-4)}`;
     setWorkspace((current) => ({
@@ -810,7 +774,6 @@ function useTeacherWorkspace(user, profile) {
   return {
     workspace,
     toggleSavedItem,
-    assignContentToClass,
     createClass,
   };
 }
@@ -1113,14 +1076,12 @@ function AboutYouPage() {
   );
 }
 
-function TeacherDashboard({ config, contentItems = defaultContentItems.map(resolveContentItem), professionalLearningItems = defaultProfessionalLearningItems, tarongaTvVideos = defaultTarongaTvVideos.map(resolveTarongaTvVideo), page = "dashboard", subject = "", contentId = "", tvVideoId = "", profile = null, onSignOut = null, preview = false, workspace = createDefaultTeacherWorkspace(), onToggleSaved = () => {}, onAssignContent = () => {}, onCreateClass = () => {}, upcomingEvents = [] }) {
+function TeacherDashboard({ config, contentItems = defaultContentItems.map(resolveContentItem), professionalLearningItems = defaultProfessionalLearningItems, tarongaTvVideos = defaultTarongaTvVideos.map(resolveTarongaTvVideo), page = "dashboard", subject = "", contentId = "", tvVideoId = "", profile = null, onSignOut = null, preview = false, workspace = createDefaultTeacherWorkspace(), onToggleSaved = () => {}, onCreateClass = () => {}, upcomingEvents = [] }) {
   const [activeSubject, setActiveSubject] = useState(subjectFromSlug(subject));
   const [activeTvCategory, setActiveTvCategory] = useState("All");
   const [query, setQuery] = useState("");
   const [notice, setNotice] = useState("");
-  const [assignmentDraft, setAssignmentDraft] = useState({ itemId: "", classId: "", dueDate: "" });
   const [classDraft, setClassDraft] = useState({ title: "", stage: "Stage 2" });
-  const [launchDraft, setLaunchDraft] = useState({ itemId: "", classId: "", mode: "live" });
   const routeSubject = subjectFromSlug(subject);
 
   useEffect(() => {
@@ -1263,76 +1224,12 @@ function TeacherDashboard({ config, contentItems = defaultContentItems.map(resol
     setQuery("");
   }
 
-  function openAssignmentFlow(item) {
-    setAssignmentDraft({
-      itemId: item.id,
-      classId: classes[0]?.id || "",
-      dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10),
-    });
-  }
-
-  function closeAssignmentFlow() {
-    setAssignmentDraft({ itemId: "", classId: "", dueDate: "" });
-  }
-
-  function submitAssignment(event) {
-    event.preventDefault();
-    if (!assignmentDraft.itemId || !assignmentDraft.classId || !assignmentDraft.dueDate) return;
-    onAssignContent(assignmentDraft.itemId, assignmentDraft.classId, assignmentDraft.dueDate);
-    const itemTitle = contentById[assignmentDraft.itemId]?.title || "Content";
-    const classTitle = classes.find((classroom) => classroom.id === assignmentDraft.classId)?.title || "class";
-    setNotice(`${itemTitle} assigned to ${classTitle} for ${formatDisplayDate(assignmentDraft.dueDate)}.`);
-    closeAssignmentFlow();
-  }
-
   function submitNewClass(event) {
     event.preventDefault();
     if (!classDraft.title.trim()) return;
     onCreateClass(classDraft.title.trim(), classDraft.stage);
-    setNotice(`${classDraft.title.trim()} created and ready for assignments.`);
+    setNotice(`${classDraft.title.trim()} created.`);
     setClassDraft({ title: "", stage: "Stage 2" });
-  }
-
-  function openLaunchFlow(item, mode = "live") {
-    setLaunchDraft({ itemId: item.id, classId: classes[0]?.id || "", mode });
-  }
-
-  function closeLaunchFlow() {
-    setLaunchDraft({ itemId: "", classId: "", mode: "live" });
-  }
-
-  async function launchSession(event) {
-    event.preventDefault();
-    const item = contentById[launchDraft.itemId];
-    const classroom = classes.find((entry) => entry.id === launchDraft.classId);
-    if (!item || !classroom) return;
-    if (user?.isDemo) {
-      setNotice("Live sessions are not available in demo mode. Sign up for a free account to launch lessons.");
-      closeLaunchFlow();
-      return;
-    }
-    const code = generateSessionCode();
-    try {
-      const sessionRef = await addDoc(liveSessionsCollection, {
-        code,
-        state: "active",
-        mode: launchDraft.mode,
-        contentId: item.id,
-        contentTitle: item.title,
-        classId: classroom.id,
-        classTitle: classroom.title,
-        teacherName: displayName,
-        currentStep: 0,
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
-      });
-      closeLaunchFlow();
-      window.location.hash = `#teacher/live/${sessionRef.id}`;
-    } catch (error) {
-      console.error("Unable to create live session", error);
-      setNotice("Unable to start the session. Please check your connection and try again.");
-      closeLaunchFlow();
-    }
   }
 
   function exportStudentsCsv() {
@@ -1654,7 +1551,6 @@ function TeacherDashboard({ config, contentItems = defaultContentItems.map(resol
                     <small>{item.subject} - {item.stage}</small>
                     <div className="teacher-card-actions">
                       <a className="primary-action" href={teacherContentRoute(item.id)}>Open</a>
-                      <button type="button" className="secondary-action" onClick={() => openAssignmentFlow(item)}>Assign</button>
                       <button type="button" className="secondary-action" onClick={() => onToggleSaved(item.id)}>{savedItemIds.includes(item.id) ? "Saved" : "Save"}</button>
                     </div>
                   </div>
@@ -1682,7 +1578,6 @@ function TeacherDashboard({ config, contentItems = defaultContentItems.map(resol
                     <small>{item.durationWeeks || 0} weeks · {item.lessonIds?.length || 0} lessons</small>
                     <div className="teacher-card-actions">
                       <a className="primary-action" href={teacherContentRoute(item.id)}>Open path</a>
-                      <button type="button" className="secondary-action" onClick={() => openAssignmentFlow(item)}>Assign</button>
                       <button type="button" className="secondary-action" onClick={() => onToggleSaved(item.id)}>{savedItemIds.includes(item.id) ? "Saved" : "Save"}</button>
                     </div>
                   </div>
@@ -1890,7 +1785,6 @@ function TeacherDashboard({ config, contentItems = defaultContentItems.map(resol
                     <small>{item.subject} - {item.stage}</small>
                     <div className="teacher-card-actions">
                       <a className="primary-action" href={teacherContentRoute(item.id)}>Open</a>
-                      <button type="button" className="secondary-action" onClick={() => openAssignmentFlow(item)}>Assign</button>
                       <button type="button" className="secondary-action" onClick={() => onToggleSaved(item.id)}>{savedItemIds.includes(item.id) ? "Saved" : "Save"}</button>
                     </div>
                   </div>
@@ -2072,7 +1966,6 @@ function TeacherDashboard({ config, contentItems = defaultContentItems.map(resol
                     <small>{item.subject} · {item.stage}</small>
                     <div className="teacher-card-actions">
                       <a className="primary-action" href={teacherContentRoute(item.id)}>Open</a>
-                      <button type="button" className="secondary-action" onClick={() => openAssignmentFlow(item)}>Assign</button>
                       <button type="button" className="secondary-action" onClick={() => onToggleSaved(item.id)}>Remove</button>
                     </div>
                   </div>
@@ -2141,9 +2034,6 @@ function TeacherDashboard({ config, contentItems = defaultContentItems.map(resol
                     <button type="button" className="primary-action" onClick={() => setNotice("Add the main lesson/resource URL in staff content to activate this button.")}>Main link needed</button>
                   )}
                   {contentActivityBlocks.length ? <a className="secondary-action" href={teacherRoute(`present/${contentDetail.id}`)}>Present</a> : null}
-                  {contentActivityBlocks.length ? <button type="button" className="secondary-action" onClick={() => openLaunchFlow(contentDetail, "live")}>Run live</button> : null}
-                  {contentActivityBlocks.length ? <button type="button" className="secondary-action" onClick={() => openLaunchFlow(contentDetail, "student-paced")}>Student-paced</button> : null}
-                  <button type="button" className="secondary-action" onClick={() => openAssignmentFlow(contentDetail)}>Assign</button>
                   <button type="button" className="secondary-action" onClick={() => onToggleSaved(contentDetail.id)}>{savedItemIds.includes(contentDetail.id) ? "Saved" : "Save"}</button>
                 </div>
                 {contentDetail.description ? <div className="detail-list"><h3>Description</h3><p>{contentDetail.description}</p></div> : null}
@@ -2157,72 +2047,6 @@ function TeacherDashboard({ config, contentItems = defaultContentItems.map(resol
           </section>
         )}
 
-        {assignmentDraft.itemId ? (
-          <div className="detail-overlay" role="dialog" aria-modal="true">
-            <form className="assignment-modal" onSubmit={submitAssignment}>
-              <div className="teacher-panel-header">
-                <div>
-                  <span className="content-type">Assign content</span>
-                  <h2>{contentById[assignmentDraft.itemId]?.title || "Assign content"}</h2>
-                  <p>Choose a class and due date to add this item to your teaching workflow.</p>
-                </div>
-                <button type="button" className="secondary-action" onClick={closeAssignmentFlow}>Close</button>
-              </div>
-              <div className="assignment-modal-grid">
-                <label>
-                  Class
-                  <select value={assignmentDraft.classId} onChange={(event) => setAssignmentDraft((current) => ({ ...current, classId: event.target.value }))}>
-                    {classes.map((classroom) => <option key={classroom.id} value={classroom.id}>{classroom.title}</option>)}
-                  </select>
-                </label>
-                <label>
-                  Due date
-                  <input type="date" value={assignmentDraft.dueDate} onChange={(event) => setAssignmentDraft((current) => ({ ...current, dueDate: event.target.value }))} />
-                </label>
-              </div>
-              <div className="teacher-card-actions">
-                <button type="submit" className="primary-action">Save assignment</button>
-                <button type="button" className="secondary-action" onClick={() => onToggleSaved(assignmentDraft.itemId)}>
-                  {savedItemIds.includes(assignmentDraft.itemId) ? "Saved" : "Save while assigning"}
-                </button>
-              </div>
-            </form>
-          </div>
-        ) : null}
-
-        {launchDraft.itemId ? (
-          <div className="detail-overlay" role="dialog" aria-modal="true">
-            <form className="assignment-modal" onSubmit={launchSession}>
-              <div className="teacher-panel-header">
-                <div>
-                  <span className="content-type">Launch lesson</span>
-                  <h2>{contentById[launchDraft.itemId]?.title || "Launch lesson"}</h2>
-                  <p>Create a code-based student session. A class must be selected before students can join.</p>
-                </div>
-                <button type="button" className="secondary-action" onClick={closeLaunchFlow}>Close</button>
-              </div>
-              <div className="assignment-modal-grid">
-                <label>
-                  Delivery mode
-                  <select value={launchDraft.mode} onChange={(event) => setLaunchDraft((current) => ({ ...current, mode: event.target.value }))}>
-                    <option value="live">Live Participation</option>
-                    <option value="student-paced">Student-Paced</option>
-                  </select>
-                </label>
-                <label>
-                  Class
-                  <select value={launchDraft.classId} onChange={(event) => setLaunchDraft((current) => ({ ...current, classId: event.target.value }))}>
-                    {classes.map((classroom) => <option key={classroom.id} value={classroom.id}>{classroom.title}</option>)}
-                  </select>
-                </label>
-              </div>
-              <div className="teacher-card-actions">
-                <button type="submit" className="primary-action">Launch with code</button>
-                <a className="secondary-action" href={teacherRoute(`present/${launchDraft.itemId}`)}>Present only</a>
-              </div>
-            </form>
-          </div>
-        ) : null}
       </main>
     </div>
   );
@@ -2466,96 +2290,6 @@ function useUsers() {
   return { users, status };
 }
 
-function useLiveSessionById(sessionId) {
-  const [item, setItem] = useState(null);
-  const [status, setStatus] = useState("loading");
-
-  useEffect(() => {
-    if (!sessionId) {
-      setItem(null);
-      setStatus("missing");
-      return () => {};
-    }
-
-    return onSnapshot(
-      doc(db, "liveSessions", sessionId),
-      (snapshot) => {
-        if (!snapshot.exists()) {
-          setItem(null);
-          setStatus("missing");
-          return;
-        }
-        setItem({ id: snapshot.id, ...snapshot.data() });
-        setStatus("live");
-      },
-      (error) => {
-        console.error("Unable to load live session", error);
-        setItem(null);
-        setStatus("error");
-      },
-    );
-  }, [sessionId]);
-
-  return { item, status };
-}
-
-function useLiveSessionByCode(code) {
-  const [item, setItem] = useState(null);
-  const [status, setStatus] = useState("loading");
-
-  useEffect(() => {
-    if (!code) {
-      setItem(null);
-      setStatus("missing");
-      return () => {};
-    }
-
-    return onSnapshot(
-      query(liveSessionsCollection, where("code", "==", code.toUpperCase())),
-      (snapshot) => {
-        if (snapshot.empty) {
-          setItem(null);
-          setStatus("missing");
-          return;
-        }
-        const sessionDoc = snapshot.docs[0];
-        setItem({ id: sessionDoc.id, ...sessionDoc.data() });
-        setStatus("live");
-      },
-      (error) => {
-        console.error("Unable to load live session by code", error);
-        setItem(null);
-        setStatus("error");
-      },
-    );
-  }, [code]);
-
-  return { item, status };
-}
-
-function useLiveResponsesForSession(sessionId) {
-  const [items, setItems] = useState([]);
-
-  useEffect(() => {
-    if (!sessionId) {
-      setItems([]);
-      return () => {};
-    }
-
-    return onSnapshot(
-      query(liveResponsesCollection, where("sessionId", "==", sessionId)),
-      (snapshot) => {
-        setItems(snapshot.docs.map((snapshotDoc) => ({ id: snapshotDoc.id, ...snapshotDoc.data() })));
-      },
-      (error) => {
-        console.error("Unable to load session responses", error);
-        setItems([]);
-      },
-    );
-  }, [sessionId]);
-
-  return items;
-}
 
 function withDefaultDashboardConfig(config = {}) {
   return { ...defaultDashboardConfig, ...config };
@@ -2607,7 +2341,7 @@ function TeacherPage({ page = "dashboard", subject = "", contentId = "", tvVideo
   const { items: tarongaTvVideos } = useTarongaTvVideos();
   const { events: upcomingEvents } = useUpcomingEvents();
   const { status: sessionStatus, user, profile } = useSessionUser();
-  const { workspace, toggleSavedItem, assignContentToClass, createClass } = useTeacherWorkspace(user, profile);
+  const { workspace, toggleSavedItem, createClass } = useTeacherWorkspace(user, profile);
 
   async function handleSignOut() {
     window.localStorage.removeItem(demoSessionKey);
@@ -2640,7 +2374,7 @@ function TeacherPage({ page = "dashboard", subject = "", contentId = "", tvVideo
 
   return (
     <>
-      <TeacherDashboard config={config} contentItems={contentItems} professionalLearningItems={professionalLearningItems} tarongaTvVideos={tarongaTvVideos} page={page} subject={subject} contentId={contentId} tvVideoId={tvVideoId} profile={profile} onSignOut={handleSignOut} preview={preview} workspace={workspace} onToggleSaved={toggleSavedItem} onAssignContent={assignContentToClass} onCreateClass={createClass} upcomingEvents={upcomingEvents} />
+      <TeacherDashboard config={config} contentItems={contentItems} professionalLearningItems={professionalLearningItems} tarongaTvVideos={tarongaTvVideos} page={page} subject={subject} contentId={contentId} tvVideoId={tvVideoId} profile={profile} onSignOut={handleSignOut} preview={preview} workspace={workspace} onToggleSaved={toggleSavedItem} onCreateClass={createClass} upcomingEvents={upcomingEvents} />
     </>
   );
 }
@@ -4435,272 +4169,25 @@ function PlaceholderExperiencePage({ eyebrow, title, description, points = [], p
   );
 }
 
-function StudentJoinCard({ compact = false }) {
-  const [code, setCode] = useState("");
-
-  function handleSubmit(event) {
-    event.preventDefault();
-    if (!code.trim()) return;
-    window.location.hash = `#student/code/${code.trim().toUpperCase()}`;
-  }
-
-  return (
-    <form className={`student-code-card ${compact ? "compact" : ""}`} onSubmit={handleSubmit}>
-      <div>
-        <span className="audience-pill">Students</span>
-        <h3>Join with a lesson code</h3>
-        <p>Enter the code from your teacher to join a live lesson or a student-paced activity.</p>
-      </div>
-      <div className="student-code-row">
-        <input type="text" value={code} onChange={(event) => setCode(event.target.value.toUpperCase())} placeholder="ABC123" maxLength={6} />
-        <button type="submit" className="primary-action">Join</button>
-      </div>
-    </form>
-  );
-}
-
-function StudentExperience({ session, contentItem, studentName }) {
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [responseValue, setResponseValue] = useState("");
-  const blocks = buildLessonActivityBlocks(contentItem);
-  const sessionIndex = Math.min(session.currentStep || 0, Math.max(blocks.length - 1, 0));
-  const activeIndex = session.mode === "student-paced" ? currentIndex : sessionIndex;
-  const block = blocks[activeIndex];
-
+function StudentRedirectPage() {
   useEffect(() => {
-    if (session.mode !== "student-paced") {
-      setCurrentIndex(sessionIndex);
-    }
-  }, [session.mode, sessionIndex]);
-
-  useEffect(() => {
-    setResponseValue("");
-  }, [activeIndex, session.id]);
-
-  async function submitResponse(event) {
-    event.preventDefault();
-    if (!block) return;
-
-    const safeStudent = studentName.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-") || "student";
-    await setDoc(doc(db, "liveResponses", `${session.id}_${safeStudent}_${block.id}`), {
-      sessionId: session.id,
-      contentId: contentItem.id,
-      blockId: block.id,
-      blockType: block.type,
-      studentName,
-      response: responseValue,
-      submittedAt: serverTimestamp(),
-    }, { merge: true });
-
-    if (session.mode === "student-paced" && activeIndex < blocks.length - 1) {
-      setCurrentIndex((current) => current + 1);
-    }
-  }
-
-  if (!block) {
-    return <section className="student-shell"><article className="student-panel"><h1>Lesson unavailable</h1><p>This session does not have any student activity blocks yet.</p></article></section>;
-  }
-
-  return (
-    <section className="student-shell">
-      <article className="student-panel">
-        <div className="student-session-meta">
-          <span className="pill">{session.mode === "student-paced" ? "Student-Paced" : "Live lesson"}</span>
-          <small>{contentItem.subject} · {contentItem.stage}</small>
-        </div>
-        <h1>{contentItem.title}</h1>
-        <p>{contentItem.summary || contentItem.description}</p>
-        <div className="student-block-card">
-          <div className="student-block-header">
-            <strong>{block.title}</strong>
-            <small>Step {activeIndex + 1} of {blocks.length}</small>
-          </div>
-          <p>{block.prompt}</p>
-          {block.notes ? <div className="student-teacher-note">{block.notes}</div> : null}
-          {block.type === "slide" ? (
-            <div className="teacher-card-actions">
-              {session.mode === "student-paced" && activeIndex < blocks.length - 1 ? <button type="button" className="primary-action" onClick={() => setCurrentIndex((current) => current + 1)}>Next</button> : null}
-              {session.mode !== "student-paced" ? <p className="mini-empty">Wait for your teacher to move to the next step.</p> : null}
-            </div>
-          ) : (
-            <form className="student-response-form" onSubmit={submitResponse}>
-              {block.type === "extended-response" ? (
-                <textarea value={responseValue} onChange={(event) => setResponseValue(event.target.value)} placeholder="Write your response here" />
-              ) : (
-                <div className="student-options-list">
-                  {(block.options || []).map((option) => (
-                    <label key={option} className="student-option">
-                      <input type="radio" name={`block-${block.id}`} value={option} checked={responseValue === option} onChange={(event) => setResponseValue(event.target.value)} />
-                      <span>{option}</span>
-                    </label>
-                  ))}
-                </div>
-              )}
-              <div className="teacher-card-actions">
-                <button type="submit" className="primary-action">Submit response</button>
-                {session.mode === "student-paced" && activeIndex > 0 ? <button type="button" className="secondary-action" onClick={() => setCurrentIndex((current) => current - 1)}>Back</button> : null}
-              </div>
-            </form>
-          )}
-        </div>
-      </article>
-    </section>
-  );
-}
-
-function StudentPage({ code = "" }) {
-  const [lessonCode, setLessonCode] = useState(code.toUpperCase());
-  const [studentName, setStudentName] = useState("");
-  const [joined, setJoined] = useState(false);
-  const { items: contentItems } = useContentItems();
-  const { item: session, status } = useLiveSessionByCode(lessonCode);
-
-  useEffect(() => {
-    setLessonCode(code.toUpperCase());
-    setJoined(false);
-  }, [code]);
-
-  const contentItem = contentItems.find((item) => item.id === session?.contentId) || null;
-
-  function handleLookup(event) {
-    event.preventDefault();
-    if (!lessonCode.trim()) return;
-    window.location.hash = `#student/code/${lessonCode.trim().toUpperCase()}`;
-  }
-
-  function handleJoin(event) {
-    event.preventDefault();
-    if (!studentName.trim()) return;
-    setJoined(true);
-  }
-
-  if (joined && session && contentItem) {
-    return <StudentExperience session={session} contentItem={contentItem} studentName={studentName.trim()} />;
-  }
+    window.location.href = appLinks.tracka;
+  }, []);
 
   return (
     <main className="auth-page">
-      <section className="auth-card auth-card-wide student-entry-card">
+      <section className="auth-card">
         <a className="site-logo auth-logo" href={routePath()} aria-label="Wildly home">
           <img src={assets.wildlyLogo} alt="Wildly by Taronga" />
         </a>
-        <span className="audience-pill">Student join</span>
-        <h1>Join a Wildly lesson</h1>
-        <p>Enter your lesson code, then add your name to join the live or student-paced experience on your device.</p>
-        <form className="auth-form" onSubmit={handleLookup}>
-          <label>
-            Lesson code
-            <input type="text" value={lessonCode} onChange={(event) => setLessonCode(event.target.value.toUpperCase())} placeholder="ABC123" maxLength={6} />
-          </label>
-          <button type="submit">Find lesson</button>
-        </form>
-        {status === "missing" && lessonCode ? <p className="auth-error">That code is not active right now.</p> : null}
-        {session && contentItem ? (
-          <form className="auth-form" onSubmit={handleJoin}>
-            <label>
-              Your name
-              <input type="text" value={studentName} onChange={(event) => setStudentName(event.target.value)} placeholder="Enter your first name" />
-            </label>
-            <div className="student-session-summary">
-              <strong>{contentItem.title}</strong>
-              <span>{session.classTitle} · {session.mode === "student-paced" ? "Student-Paced" : "Live lesson"}</span>
-            </div>
-            <button type="submit">Join lesson</button>
-          </form>
-        ) : null}
+        <span className="audience-pill">Students</span>
+        <h1>Head to Taronga Tracka</h1>
+        <p>Wildly is a resource library for teachers — student lessons and missions now happen in Taronga Tracka. Redirecting you there now.</p>
+        <div className="hero-actions">
+          <a className="primary-action" href={appLinks.tracka}>Open Taronga Tracka</a>
+        </div>
       </section>
     </main>
-  );
-}
-
-function TeacherLiveSessionPage({ sessionId = "" }) {
-  const { item: session, status } = useLiveSessionById(sessionId);
-  const responses = useLiveResponsesForSession(sessionId);
-  const { items: contentItems } = useContentItems();
-  const contentItem = contentItems.find((item) => item.id === session?.contentId) || null;
-  const blocks = contentItem ? buildLessonActivityBlocks(contentItem) : [];
-  const currentIndex = Math.min(session?.currentStep || 0, Math.max(blocks.length - 1, 0));
-  const activeBlock = blocks[currentIndex];
-  const blockResponses = responses.filter((response) => response.blockId === activeBlock?.id);
-
-  async function updateStep(nextStep) {
-    if (!session) return;
-    await updateDoc(doc(db, "liveSessions", session.id), { currentStep: nextStep, updatedAt: serverTimestamp() });
-  }
-
-  async function endSession() {
-    if (!session) return;
-    await updateDoc(doc(db, "liveSessions", session.id), { state: "ended", endedAt: serverTimestamp(), updatedAt: serverTimestamp() });
-  }
-
-  if (status === "loading") {
-    return <main className="auth-page"><section className="auth-card"><p>Loading live session...</p></section></main>;
-  }
-
-  if (!session || !contentItem) {
-    return <main className="auth-page"><section className="auth-card"><p>Live session not found.</p></section></main>;
-  }
-
-  return (
-    <div className="teacher-live-shell">
-      <aside className="teacher-live-sidebar">
-        <span className="content-type">{session.mode === "student-paced" ? "Student-Paced" : "Live lesson"}</span>
-        <h1>{contentItem.title}</h1>
-        <p>{contentItem.summary || contentItem.description}</p>
-        <div className="teacher-live-session-code">
-          <strong>{session.code}</strong>
-          <small>{session.classTitle}</small>
-          <a className="secondary-action" href={studentRoute(`code/${session.code}`)}>Student join page</a>
-        </div>
-        <div className="teacher-live-step-list">
-          {blocks.map((block, index) => (
-            <button type="button" key={block.id} className={`teacher-live-step ${index === currentIndex ? "active" : ""}`} onClick={() => updateStep(index)}>
-              <span>{index + 1}</span>
-              <div>
-                <strong>{block.title}</strong>
-                <small>{block.type}</small>
-              </div>
-            </button>
-          ))}
-        </div>
-        <div className="teacher-card-actions">
-          <button type="button" className="secondary-action" onClick={() => updateStep(Math.max(currentIndex - 1, 0))}>Previous</button>
-          <button type="button" className="primary-action" onClick={() => updateStep(Math.min(currentIndex + 1, blocks.length - 1))}>Next</button>
-          <button type="button" className="secondary-action" onClick={endSession}>End session</button>
-        </div>
-      </aside>
-      <main className="teacher-live-main">
-        <section className="teacher-live-stage">
-          <span className="pill">{activeBlock?.type || "slide"}</span>
-          <h2>{activeBlock?.title}</h2>
-          <p>{activeBlock?.prompt}</p>
-          {activeBlock?.notes ? <div className="student-teacher-note">{activeBlock.notes}</div> : null}
-          {activeBlock?.options?.length ? <ul className="teacher-live-options">{activeBlock.options.map((option) => <li key={option}>{option}</li>)}</ul> : null}
-        </section>
-        <section className="teacher-live-analytics">
-          <div className="teacher-panel-header">
-            <div>
-              <h2>Live responses</h2>
-              <p>{blockResponses.length} students have responded to this step.</p>
-            </div>
-          </div>
-          <div className="student-card-grid">
-            {blockResponses.length ? blockResponses.map((response) => (
-              <article className="student-card" key={response.id}>
-                <div className="student-card-head">
-                  <div>
-                    <h3>{response.studentName}</h3>
-                    <p>{response.blockType}</p>
-                  </div>
-                  <span className="pill">Response</span>
-                </div>
-                <p>{response.response}</p>
-              </article>
-            )) : <article className="placeholder-card"><h3>No responses yet</h3><p>Students will appear here as they submit answers on their devices.</p></article>}
-          </div>
-        </section>
-      </main>
-    </div>
   );
 }
 
@@ -4771,12 +4258,7 @@ export default function AuthenticatedApp() {
   if (path === "login") return <AuthScreen mode="login" />;
   if (path === "get-started") return <AuthScreen mode="signup" />;
   if (path === "about-you") return <AboutYouPage />;
-  if (path === "/student" || path === "student") return <StudentPage />;
-  if (path.startsWith("student/")) {
-    const [, section = "", third = ""] = path.split("/");
-    if (section === "code") return <StudentPage code={third} />;
-    return <StudentPage />;
-  }
+  if (path === "/student" || path === "student" || path.startsWith("student/")) return <StudentRedirectPage />;
   if (path === "/teacher" || path === "/teacher.html" || path === "teacher" || path === "teacher.html") return <TeacherPage />;
   if (path.startsWith("teacher/")) {
     const [, section = "dashboard", third = ""] = path.split("/");
@@ -4784,7 +4266,6 @@ export default function AuthenticatedApp() {
     if (section === "subjects") return <TeacherPage page="subjects" subject={third} />;
     if (section === "content") return <TeacherPage page="content" contentId={third} />;
     if (section === "taronga-tv") return <TeacherPage page="taronga-tv" tvVideoId={third} />;
-    if (section === "live") return <TeacherLiveSessionPage sessionId={third} />;
     if (section === "present") return <TeacherPresenterPage contentId={third} />;
     if (section === "professional-learning") return <TeacherPage page="professional-learning" />;
     return <TeacherPage page={section || "dashboard"} />;
