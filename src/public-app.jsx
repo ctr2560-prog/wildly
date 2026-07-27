@@ -819,22 +819,35 @@ function LandingPage() {
           <FlagshipPathPreview />
         </Reveal>
 
-        <section className="ecosystem-section">
+        <section className="ecosystem-section ecosystem-band">
           <Reveal className="ecosystem-visual" variant="scale">
             <img src={assets.tarongaBushland} alt="Students learning with a Taronga educator in a bushland habitat classroom" width="1423" height="1067" loading="lazy" />
             <div className="ecosystem-product-mark">
-              <div className="ecosystem-tracka-brand"><img className="tracka-mark" src={assetPath("assets/tracka/tracka-logo.png")} alt="" width="500" height="500" /><strong>Taronga Tracka</strong></div>
-              <span>connected with</span>
-              <img src={assets.wildlyLogo} alt="Wildly by Taronga" width="1144" height="520" />
+              <div className="ecosystem-mark-row">
+                <div className="ecosystem-tracka-brand"><img className="tracka-mark" src={assetPath("assets/tracka/tracka-logo.png")} alt="" width="500" height="500" /><strong>Taronga Tracka</strong></div>
+                <span className="ecosystem-link-icon" aria-hidden="true"><Icon type="link" /></span>
+                <div className="ecosystem-wildly-brand"><img src={assets.wildlyLogo} alt="Wildly by Taronga" width="1144" height="520" /></div>
+              </div>
+              <p className="ecosystem-mark-caption">One login. Every Taronga Education product.</p>
             </div>
           </Reveal>
           <Reveal className="ecosystem-copy" delay={100}>
-            <span className="audience-pill">A connected recommendation</span>
+            <span className="audience-pill">One ecosystem, not two apps</span>
             <h2>What students encounter becomes what teachers can teach next.</h2>
-            <p>After a Tracka experience, Wildly can surface the most relevant classroom follow-up using the animals, habitats and missions the class explored.</p>
-            <div className="ecosystem-example" aria-label="Example Wildly recommendation from Taronga Tracka">
-              <span>For example</span>
-              <p>A giraffe habitat mission can lead directly into a Stage 2 science lesson on how habitats support survival.</p>
+            <p>Tracka and Wildly share one login and one stream of learning. After a Tracka experience, Wildly surfaces the most relevant classroom follow-up using the animals, habitats and missions the class explored.</p>
+            <div className="ecosystem-flow" aria-label="Example: a Taronga Tracka experience connecting to a Wildly lesson">
+              <span className="ecosystem-flow-label">See it in action</span>
+              <div className="ecosystem-flow-nodes">
+                <div className="ecosystem-flow-node tracka">
+                  <span>Taronga Tracka</span>
+                  <strong>Giraffe habitat mission</strong>
+                </div>
+                <Icon type="arrowRight" className="ecosystem-flow-arrow" />
+                <div className="ecosystem-flow-node wildly">
+                  <span>Wildly</span>
+                  <strong>How habitats support survival</strong>
+                </div>
+              </div>
             </div>
             <a className="text-action animated-link" href={routePath("tracka")}><span>See how Tracka connects</span><Icon type="arrowRight" /></a>
           </Reveal>
