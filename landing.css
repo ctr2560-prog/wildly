@@ -8718,14 +8718,12 @@ button:focus-visible {
 /* Inside Wildly: spacious product storytelling inspired by editorial education sites */
 .public-home .home-platform-section {
   display: grid;
-  grid-template-rows: auto minmax(0, 1fr);
+  grid-template-rows: auto auto;
   width: 100vw;
-  height: calc(100svh - 78px);
   min-height: 720px;
-  max-height: 940px;
   margin: 0 0 0 calc(50% - 50vw);
   padding: clamp(46px, 6vh, 72px) max(24px, calc((100vw - 1220px) / 2));
-  overflow: hidden;
+  overflow: visible;
   border: 0;
   background: #fff;
 }
