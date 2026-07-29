@@ -1259,7 +1259,7 @@ function LearningPathsMarketingPage() {
               <a className="secondary-action" href={routePath("subjects")}>Explore resources</a>
             </div>
           </div>
-          <div className="lp-hero-visual lp-product-frame">
+          <Reveal className="lp-hero-visual lp-product-frame" variant="scale">
             <div className="product-browser-bar" aria-hidden="true"><span></span><span></span><span></span><strong>Wildly Learning Path</strong></div>
             <div className="path-sequence-preview">
               <div className="path-sequence-header"><span>Technology &amp; STEM · Stages 4–5</span><h2>Sustainable Futures</h2><p>A connected inquiry from conservation challenge to student action.</p></div>
@@ -1268,19 +1268,19 @@ function LearningPathsMarketingPage() {
               </div>
             </div>
             <div className="lp-product-meta"><span><strong>8</strong> lessons</span><span><strong>5</strong> outcomes</span><span><strong>6 weeks</strong> suggested</span></div>
-          </div>
+          </Reveal>
         </section>
 
         <section className="lp-arch-section">
-          <div className="tracka-section-header">
+          <Reveal className="tracka-section-header">
             <span className="audience-pill">Clear by design</span>
             <h2>One journey. Three useful layers.</h2>
             <p>A path gives the big picture, each lesson makes the next teaching move clear, and each resource sits where it will actually be used.</p>
-          </div>
-          <div className="lp-arch-flow">
+          </Reveal>
+          <InView className="lp-arch-flow">
             {ARCH.map((item, i) => (
               <React.Fragment key={item.label}>
-                <div className="lp-arch-card">
+                <div className="lp-arch-card" style={{ "--card-index": i }}>
                   <div className="lp-arch-icon">{item.icon}</div>
                   <h3>{item.label}</h3>
                   <p>{item.desc}</p>
@@ -1288,17 +1288,17 @@ function LearningPathsMarketingPage() {
                 {i < ARCH.length - 1 && <div className="lp-arch-arrow"><svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg></div>}
               </React.Fragment>
             ))}
-          </div>
+          </InView>
         </section>
 
         <section className="tracka-features-section">
-          <div className="tracka-section-header">
+          <Reveal className="tracka-section-header">
             <span className="audience-pill">How it helps teachers</span>
             <h2>Everything in the right place, every time</h2>
-          </div>
+          </Reveal>
           <div className="tracka-features-showcase">
             {FEATURES.map((f, i) => (
-              <article key={f.title} className={`tracka-feature-showcase-card${i % 2 === 1 ? " reversed" : ""}`}>
+              <Reveal as="article" key={f.title} className={`tracka-feature-showcase-card${i % 2 === 1 ? " reversed" : ""}`}>
                 <div className="tracka-feature-showcase-media">
                   <LearningPathFeaturePreview type={f.preview} />
                 </div>
@@ -1307,24 +1307,24 @@ function LearningPathsMarketingPage() {
                   <p className="tracka-feature-sub">{f.sub}</p>
                   <p>{f.desc}</p>
                 </div>
-              </article>
+              </Reveal>
             ))}
           </div>
         </section>
 
         <section className="tracka-steps-section lp-connection-section">
-          <div className="tracka-section-header">
+          <Reveal className="tracka-section-header">
             <span className="audience-pill">Classroom to Taronga and back</span>
             <h2>A sequence that can move beyond the classroom</h2>
             <p>Learning Paths can prepare students for a zoo or digital Tracka experience, then use that experience as evidence for deeper inquiry.</p>
-          </div>
-          <div className="tracka-steps-grid lp-three-step-grid">
+          </Reveal>
+          <InView className="tracka-steps-grid lp-three-step-grid">
             {[
               { num: "01", who: "teacher", title: "Before", desc: "Build vocabulary, background knowledge and a clear question worth investigating." },
               { num: "02", who: "teacher", title: "During", desc: "Use Tracka at the zoo or through a digital experience to observe, explore and gather context." },
               { num: "03", who: "teacher", title: "After", desc: "Continue in Wildly with recommended resources, reflection and student action." },
-            ].map(s => (
-              <article key={s.num} className="tracka-step-card">
+            ].map((s, i) => (
+              <article key={s.num} className="tracka-step-card" style={{ "--card-index": i }}>
                 <div className="tracka-step-top">
                   <span className="tracka-step-num">{s.num}</span>
                   <span className={`tracka-step-who ${s.who}`}>{s.who === "teacher" ? "Teacher" : "Student"}</span>
@@ -1333,10 +1333,10 @@ function LearningPathsMarketingPage() {
                 <p>{s.desc}</p>
               </article>
             ))}
-          </div>
+          </InView>
         </section>
 
-        <section className="cta-section">
+        <Reveal as="section" className="cta-section" variant="scale">
           <img src={assets.heroKoala} alt="Koala with joey" width="710" height="400" loading="lazy" />
           <div>
             <h2>Ready to plan your next unit?</h2>
@@ -1346,7 +1346,7 @@ function LearningPathsMarketingPage() {
               <a className="secondary-action" href={teacherPreviewRoute()}>Preview the dashboard</a>
             </div>
           </div>
-        </section>
+        </Reveal>
 
         <SiteFooter />
       </main>
