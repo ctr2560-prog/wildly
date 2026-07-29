@@ -7508,7 +7508,9 @@ button:focus-visible {
 
 .flagship-path-section {
   gap: clamp(60px, 8vw, 120px);
-  padding-block: clamp(110px, 12vw, 170px);
+  padding-top: clamp(28px, 3vw, 48px);
+  padding-bottom: clamp(110px, 12vw, 170px);
+  align-items: start;
   border: 0;
 }
 
@@ -8729,7 +8731,6 @@ button:focus-visible {
   display: grid;
   grid-template-rows: auto auto;
   width: 100vw;
-  min-height: 720px;
   margin: 0 0 0 calc(50% - 50vw);
   padding: clamp(46px, 6vh, 72px) max(24px, calc((100vw - 1220px) / 2));
   overflow: visible;
