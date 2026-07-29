@@ -9668,7 +9668,10 @@ button:focus-visible {
 /* ══ Discover Wildly: "The Wildly difference" principles band ════════════════ */
 .subjects-why {
   width: 100vw;
-  margin-left: calc(50% - 50vw);
+  /* Pull up by the page grid's 24px row-gap so this band sits flush against the
+     dark band above it (the gap would otherwise show as a white strip between
+     two full-bleed colour bands). */
+  margin: -24px 0 0 calc(50% - 50vw);
   padding: clamp(64px, 8vw, 104px) max(24px, calc((100vw - 1160px) / 2)) clamp(72px, 9vw, 112px);
   background: linear-gradient(180deg, #f4f9f4 0%, #e9f3ec 100%);
 }
