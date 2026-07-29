@@ -1475,14 +1475,33 @@ function SubjectsMarketingPage() {
     "Technology & STEM": assets.tarongaClassroom,
     "Early Years": assets.tarongaBushland,
   };
-  const publishedItems = useMemo(() => contentItems.filter((item) => (
-    normalizeEditorialStatus(item.status, "Draft") === "Published"
-    && !/^test\b/i.test(String(item.title || "").trim())
-  )), [contentItems]);
-  const firstAvailableSubject = subjects.find(([label]) => publishedItems.some((item) => item.subject === label))?.[0] || "";
-  const selectedSubject = activeSubject || firstAvailableSubject || "Technology & STEM";
-  const visibleItems = publishedItems.filter((item) => item.subject === selectedSubject);
+
+  // Only surface genuinely published Firestore content. Until real content is
+  // uploaded (status is anything other than "live"), the page shows its curated
+  // empty state instead of the hardcoded sample items the shared hook falls back
+  // to for the rest of the app.
+  const publishedItems = useMemo(() => (
+    status === "live"
+      ? contentItems.filter((item) => (
+          normalizeEditorialStatus(item.status, "Draft") === "Published"
+          && !/^test\b/i.test(String(item.title || "").trim())
+        ))
+      : []
+  ), [contentItems, status]);
+
   const availableCount = (label) => publishedItems.filter((item) => item.subject === label).length;
+  const hasContent = publishedItems.length > 0;
+  const firstAvailableSubject = subjects.find(([label]) => availableCount(label) > 0)?.[0] || "";
+  const selectedSubject = activeSubject || firstAvailableSubject;
+  const visibleItems = selectedSubject ? publishedItems.filter((item) => item.subject === selectedSubject) : [];
+
+  function handleSelectSubject(label) {
+    if (availableCount(label) === 0) return;
+    setActiveSubject(label);
+    requestAnimationFrame(() => {
+      document.getElementById("subject-collection-panel")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  }
 
   return (
     <>
@@ -1490,76 +1509,116 @@ function SubjectsMarketingPage() {
       <main className="marketing-page subjects-page public-subjects-page" id="main-content" tabIndex="-1">
         <section className="subjects-hero public-subjects-hero">
           <div className="subjects-hero-copy">
-            <span className="audience-pill">Explore Wildly</span>
+            <span className="audience-pill">Discover Wildly</span>
             <h1>Find a meaningful place to begin.</h1>
-            <p className="hero-subtitle">Browse classroom-ready learning connected to nature, curriculum and Taronga expertise.</p>
+            <p className="hero-subtitle">Nine curriculum areas, each grounded in nature, real conservation and Taronga expertise.</p>
             <div className="hero-actions">
               <a className="primary-action" href={signupRoute()}>Get started free</a>
               <a className="secondary-action" href={routePath("learning-paths")}>See Learning Paths</a>
             </div>
           </div>
-          <div className="public-subjects-media">
+          <Reveal className="public-subjects-media" variant="scale">
             <img src={assets.tarongaOutdoor} alt="Students observing animals during an outdoor learning experience at Taronga" width="2000" height="1335" fetchPriority="high" />
             <div><span>Explore by</span><strong>subject · stage · resource type</strong></div>
-          </div>
+          </Reveal>
         </section>
 
-        <section className="subjects-filter-band public-subject-filter">
-          <div className="public-section-heading">
-            <span className="audience-pill">Published collection</span>
+        <section className="subjects-explorer">
+          <Reveal className="public-section-heading">
+            <span className="audience-pill">Curriculum areas</span>
             <h2>Explore by subject</h2>
-            <p>Choose a curriculum area to see what is available now. Subjects still being developed are shown clearly.</p>
-          </div>
-          <AccessibleTabs
-            id="subject-collection"
-            items={subjects}
-            activeId={selectedSubject}
-            onChange={setActiveSubject}
-            ariaLabel="Subjects"
-            className="subjects-filter-row"
-            getItemId={([label]) => label}
-            getClassName={([, cls], selected) => `subjects-filter-chip ${cls}${selected ? " active" : ""}`}
-            renderItem={([label]) => {
+            <p>Every subject is being built with curriculum and classroom use in mind. Browse what is coming, and open a collection the moment it is ready.</p>
+          </Reveal>
+          <InView className="subjects-explorer-grid" aria-label="Curriculum subjects">
+            {subjects.map(([label, cls, copy], index) => {
               const count = availableCount(label);
-              return <><Icon type={subjectIconType(label)} className="subjects-filter-icon" /><span>{label}</span><small>{count ? `${count} available` : "Coming soon"}</small></>;
-            }}
-          />
+              const interactive = count > 0;
+              const isActive = interactive && selectedSubject === label;
+              const inner = (
+                <>
+                  <span className="subject-explore-icon" aria-hidden="true"><Icon type={subjectIconType(label)} className="" /></span>
+                  <h3>{label}</h3>
+                  <p>{copy}</p>
+                  <span className="subject-explore-status">
+                    {count
+                      ? <>{count} {count === 1 ? "resource" : "resources"}<Icon type="arrowRight" /></>
+                      : <><span className="subject-soon-dot" aria-hidden="true"></span>Coming soon</>}
+                  </span>
+                </>
+              );
+              return interactive ? (
+                <button
+                  type="button"
+                  key={label}
+                  className={`subject-explore-card ${cls} has-content${isActive ? " active" : ""}`}
+                  style={{ "--card-index": index }}
+                  onClick={() => handleSelectSubject(label)}
+                  aria-pressed={isActive}
+                >
+                  {inner}
+                </button>
+              ) : (
+                <div
+                  key={label}
+                  className={`subject-explore-card ${cls} is-soon`}
+                  style={{ "--card-index": index }}
+                  aria-disabled="true"
+                >
+                  {inner}
+                </div>
+              );
+            })}
+          </InView>
         </section>
 
-        <section className="public-catalogue-section" id="subject-collection-panel" role="tabpanel" aria-labelledby={tabDomId("subject-collection", selectedSubject)} tabIndex="0" aria-live="polite">
-          <div className="public-catalogue-heading">
-            <div><span className="about-kicker">{selectedSubject}</span><h2>{visibleItems.length ? "Ready to explore" : "Growing this collection"}</h2></div>
-            <span className="catalogue-status">{status === "loading" ? "Loading collection..." : `${visibleItems.length} published ${visibleItems.length === 1 ? "item" : "items"}`}</span>
-          </div>
-          {visibleItems.length ? (
-            <div className="public-resource-grid">
-              {visibleItems.map((item) => (
-                <article className="public-resource-card" key={item.id}>
-                  <img src={item.image || imageBySubject[item.subject] || assets.heroKoala} alt="" width="1200" height="630" loading="lazy" />
-                  <div className="public-resource-card-body">
-                    <div className="subjects-preview-topline"><span className="subjects-type-chip">{item.type}</span><span>{item.stage || "All stages"}</span></div>
-                    <h3>{item.title}</h3>
-                    <p>{item.summary || item.description || "A Taronga-connected teaching resource ready to explore in Wildly."}</p>
-                    <a className="text-action" href={signupRoute()}>Open in teacher workspace</a>
-                  </div>
-                </article>
-              ))}
+        {hasContent ? (
+          <section className="public-catalogue-section" id="subject-collection-panel" tabIndex="-1" aria-live="polite">
+            <div className="public-catalogue-heading">
+              <div><span className="about-kicker">{selectedSubject}</span><h2>{visibleItems.length ? "Ready to explore" : "Growing this collection"}</h2></div>
+              <span className="catalogue-status">{`${visibleItems.length} published ${visibleItems.length === 1 ? "item" : "items"}`}</span>
             </div>
-          ) : (
-            <div className="public-subject-empty">
-              <img src={imageBySubject[selectedSubject] || assets.heroKoala} alt="" width="1200" height="630" loading="lazy" />
-              <div><h3>{selectedSubject} resources are being prepared.</h3><p>We are building this collection carefully with curriculum and classroom use in mind. Explore a published subject now or create an account to follow Wildly as it grows.</p><a className="secondary-action" href={signupRoute()}>Get started free</a></div>
+            {visibleItems.length ? (
+              <div className="public-resource-grid">
+                {visibleItems.map((item, index) => (
+                  <Reveal as="article" className="public-resource-card" key={item.id} delay={index * 70}>
+                    <img src={item.image || imageBySubject[item.subject] || assets.heroKoala} alt="" width="1200" height="630" loading="lazy" />
+                    <div className="public-resource-card-body">
+                      <div className="subjects-preview-topline"><span className="subjects-type-chip">{item.type}</span><span>{item.stage || "All stages"}</span></div>
+                      <h3>{item.title}</h3>
+                      <p>{item.summary || item.description || "A Taronga-connected teaching resource ready to explore in Wildly."}</p>
+                      <a className="text-action animated-link" href={signupRoute()}><span>Open in teacher workspace</span><Icon type="arrowRight" /></a>
+                    </div>
+                  </Reveal>
+                ))}
+              </div>
+            ) : (
+              <div className="public-subject-empty">
+                <img src={imageBySubject[selectedSubject] || assets.heroKoala} alt="" width="1200" height="630" loading="lazy" />
+                <div><h3>{selectedSubject} resources are being prepared.</h3><p>We are building this collection carefully with curriculum and classroom use in mind. Explore a published subject now or create an account to follow Wildly as it grows.</p><a className="secondary-action" href={signupRoute()}>Get started free</a></div>
+              </div>
+            )}
+          </section>
+        ) : (
+          <Reveal as="section" className="subjects-comingsoon-band" variant="scale">
+            <span className="subjects-soon-badge"><span className="subject-soon-dot" aria-hidden="true"></span>In development</span>
+            <h2>The library is being crafted, subject by subject.</h2>
+            <p>Wildly's resources are built hand-in-hand with curriculum and classroom use — we would rather get them right than get them out fast. Create a free account and you will be first in as each collection opens.</p>
+            <div className="hero-actions">
+              <a className="primary-action animated-link" href={signupRoute()}><span>Get started free</span><Icon type="arrowRight" /></a>
+              <a className="secondary-action" href={routePath("tracka")}>Explore Taronga Tracka</a>
             </div>
-          )}
-        </section>
+          </Reveal>
+        )}
 
-        <section className="subjects-principles-band">
+        <InView className="subjects-principles-band">
           {[
-            ["Clear before you open", "See the subject, stage and resource type before entering the teacher workspace."],
-            ["Connected, not isolated", "Resources can sit inside lessons and complete learning paths."],
-            ["Grounded in the real world", "Taronga stories and experiences give curriculum learning a meaningful context."],
-          ].map(([title, copy]) => <article key={title}><Icon type="leaf" /><h3>{title}</h3><p>{copy}</p></article>)}
-        </section>
+            ["cap", "Clear before you open", "See the subject, stage and resource type before entering the teacher workspace."],
+            ["path", "Connected, not isolated", "Resources sit inside lessons and complete learning paths, not on their own."],
+            ["leaf", "Grounded in the real world", "Taronga stories and experiences give curriculum learning a meaningful context."],
+          ].map(([icon, title, copy], index) => (
+            <article key={title} style={{ "--card-index": index }}><Icon type={icon} /><h3>{title}</h3><p>{copy}</p></article>
+          ))}
+        </InView>
         <SiteFooter />
       </main>
     </>
