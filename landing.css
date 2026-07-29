@@ -9664,3 +9664,145 @@ button:focus-visible {
 .public-subjects-page .subjects-explorer {
   padding-top: clamp(20px, 2.4vw, 32px);
 }
+
+/* ══ Discover Wildly: "The Wildly difference" principles band ════════════════ */
+.subjects-why {
+  width: 100vw;
+  margin-left: calc(50% - 50vw);
+  padding: clamp(64px, 8vw, 104px) max(24px, calc((100vw - 1160px) / 2)) clamp(72px, 9vw, 112px);
+  background: linear-gradient(180deg, #f4f9f4 0%, #e9f3ec 100%);
+}
+
+.subjects-why-heading {
+  max-width: 640px;
+  margin: 0 auto clamp(46px, 5vw, 66px);
+  justify-items: center;
+  text-align: center;
+}
+
+.subjects-why-heading h2 {
+  color: var(--studio-ink);
+}
+
+.subjects-why-grid {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: clamp(22px, 2.4vw, 36px);
+  max-width: 1120px;
+  margin: clamp(16px, 2vw, 26px) auto 0;
+}
+
+/* Connector wire drawn between the three icon nodes — literally the
+   "connected, not isolated" idea. Desktop only (single row). */
+.subjects-why-grid::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 16.66%;
+  right: 16.66%;
+  height: 2px;
+  background: linear-gradient(90deg, #2e7d55, #14988a, #cf9a2b);
+  opacity: 0.4;
+  transform: scaleX(0);
+  transform-origin: center;
+  transition: transform 1000ms cubic-bezier(0.22, 1, 0.36, 1) 140ms;
+  z-index: 0;
+}
+
+.subjects-why-grid.is-visible::before {
+  transform: scaleX(1);
+}
+
+.principle-card {
+  --accent: #2e7d55;
+  --accent-soft: #e7f2ec;
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 0;
+  margin: 0;
+  padding: clamp(52px, 4vw, 64px) clamp(24px, 2.2vw, 34px) clamp(30px, 3vw, 40px);
+  border: 1px solid var(--studio-line);
+  border-radius: 20px;
+  background: #fff;
+  box-shadow: 0 16px 36px -26px rgba(16, 40, 30, 0.32);
+  text-align: center;
+  opacity: 0;
+  transition: transform 460ms cubic-bezier(0.22, 1, 0.36, 1), box-shadow 460ms ease, border-color 320ms ease;
+}
+
+.principle-card.acc-green { --accent: #2e7d55; --accent-soft: #e7f2ec; }
+.principle-card.acc-teal { --accent: #14988a; --accent-soft: #e0f2f0; }
+.principle-card.acc-amber { --accent: #cf9a2b; --accent-soft: #f9f1dd; }
+
+.subjects-why-grid.is-visible .principle-card {
+  animation: home-chapter-in 640ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: calc(var(--card-index, 0) * 130ms);
+}
+
+/* Icon node: straddles the top edge, sitting on the connector wire. */
+.principle-icon {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  width: 74px;
+  height: 74px;
+  border-radius: 50%;
+  color: #fff;
+  background: var(--accent);
+  box-shadow: 0 12px 26px -8px var(--accent), 0 0 0 8px var(--accent-soft), 0 0 0 9px rgba(255, 255, 255, 0.9);
+  transform: translate(-50%, -50%);
+  transition: transform 460ms cubic-bezier(0.22, 1, 0.36, 1), box-shadow 460ms ease;
+}
+
+.principle-icon svg {
+  width: 32px;
+  height: 32px;
+}
+
+.principle-card h3 {
+  margin: 6px 0 12px;
+  color: var(--studio-ink);
+  font-size: clamp(22px, 1.8vw, 27px);
+}
+
+.principle-card p {
+  max-width: 34ch;
+  margin: 0;
+  color: var(--studio-muted);
+  font-size: 15.5px;
+  line-height: 1.6;
+}
+
+@media (hover: hover) {
+  .principle-card:hover {
+    transform: translateY(-6px);
+    border-color: var(--accent);
+    box-shadow: 0 28px 50px -28px var(--accent);
+  }
+  .principle-card:hover .principle-icon {
+    transform: translate(-50%, -50%) scale(1.08);
+    box-shadow: 0 16px 30px -6px var(--accent), 0 0 0 10px var(--accent-soft), 0 0 0 11px rgba(255, 255, 255, 0.9);
+  }
+  .principle-card:hover h3 {
+    color: var(--accent);
+  }
+}
+
+@media (max-width: 860px) {
+  .subjects-why-grid { grid-template-columns: minmax(0, 1fr); max-width: 460px; gap: 56px; }
+  .subjects-why-grid::before { display: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .subjects-why-grid::before { transform: scaleX(1); transition: none; }
+  .subjects-why-grid .principle-card,
+  .subjects-why-grid.is-visible .principle-card { opacity: 1; animation: none; transition: none; }
+  .principle-icon { transition: none; }
+}

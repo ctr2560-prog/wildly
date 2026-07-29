@@ -1610,15 +1610,25 @@ function SubjectsMarketingPage() {
           </Reveal>
         )}
 
-        <InView className="subjects-principles-band">
-          {[
-            ["cap", "Clear before you open", "See the subject, stage and resource type before entering the teacher workspace."],
-            ["path", "Connected, not isolated", "Resources sit inside lessons and complete learning paths, not on their own."],
-            ["leaf", "Grounded in the real world", "Taronga stories and experiences give curriculum learning a meaningful context."],
-          ].map(([icon, title, copy], index) => (
-            <article key={title} style={{ "--card-index": index }}><Icon type={icon} /><h3>{title}</h3><p>{copy}</p></article>
-          ))}
-        </InView>
+        <section className="subjects-why">
+          <Reveal className="public-section-heading subjects-why-heading">
+            <span className="audience-pill">The Wildly difference</span>
+            <h2>Built to be used, not just browsed.</h2>
+          </Reveal>
+          <InView className="subjects-why-grid">
+            {[
+              ["target", "Clear before you open", "See the subject, stage and resource type before entering the teacher workspace.", "acc-green"],
+              ["link", "Connected, not isolated", "Resources sit inside lessons and complete learning paths, not on their own.", "acc-teal"],
+              ["leaf", "Grounded in the real world", "Taronga stories and experiences give curriculum learning a meaningful context.", "acc-amber"],
+            ].map(([icon, title, copy, accent], index) => (
+              <article key={title} className={`principle-card ${accent}`} style={{ "--card-index": index }}>
+                <span className="principle-icon" aria-hidden="true"><Icon type={icon} className="" /></span>
+                <h3>{title}</h3>
+                <p>{copy}</p>
+              </article>
+            ))}
+          </InView>
+        </section>
         <SiteFooter />
       </main>
     </>
