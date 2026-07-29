@@ -7612,7 +7612,16 @@ button:focus-visible {
   border-top: 1px solid var(--studio-line);
   border-bottom: 1px solid var(--studio-line);
   color: var(--studio-ink) !important;
-  font-size: 16px !important;
+  font-size: 18px !important;
+}
+
+.homepage-pl-band .marketing-split-copy p {
+  font-size: 21px;
+  line-height: 1.6;
+}
+
+.homepage-pl-band .marketing-split-copy .text-action {
+  font-size: 18px;
 }
 
 .homepage-final-cta {
