@@ -9297,3 +9297,9 @@ button:focus-visible {
     text-align: center;
   }
 }
+
+/* Shift the crop so the educator and students (right two-thirds of the
+   source photo) stay in frame instead of the empty foliage on the left. */
+.ecosystem-visual > img {
+  object-position: 78% center;
+}

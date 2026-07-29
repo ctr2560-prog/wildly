@@ -27,6 +27,7 @@ const assets = {
   tarongaClassroom: assetPath("assets/taronga-habitat-classroom.jpg"),
   tarongaBushland: assetPath("assets/taronga-bushland-classroom.jpg"),
   tarongaOutdoor: assetPath("assets/taronga-outdoor-learning.jpg"),
+  tarongaPlLectureTheatre: assetPath("assets/taronga-pl-lecture-theatre.jpg"),
 };
 
 const subjects = [
@@ -855,7 +856,7 @@ function LandingPage() {
 
         <Reveal as="section" className="marketing-band homepage-pl-band">
           <div className="marketing-split professional-learning-band">
-            <img className="marketing-split-image" src={assets.tarongaBushland} alt="Taronga educator leading learning in a bushland habitat classroom" width="1423" height="1067" loading="lazy" />
+            <img className="marketing-split-image" src={assets.tarongaPlLectureTheatre} alt="A Taronga educator presenting a professional learning session to teachers in a lecture theatre" width="1120" height="728" loading="lazy" />
             <div className="marketing-split-copy">
               <div className="section-heading compact-heading">
                 <div>
