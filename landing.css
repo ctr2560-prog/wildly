@@ -9649,3 +9649,18 @@ button:focus-visible {
   }
   .subject-soon-dot { animation: none; opacity: 1; }
 }
+
+/* Discover Wildly: tighten the hero so the subject grid isn't pushed a full
+   screen down (scoped to this page — the shared hero rule also drives LP). */
+.public-subjects-page .public-subjects-hero {
+  gap: clamp(28px, 3vw, 42px);
+  padding: clamp(48px, 5vw, 72px) 0 clamp(28px, 3vw, 40px);
+}
+
+.public-subjects-page .public-subjects-media > img {
+  max-height: 440px;
+}
+
+.public-subjects-page .subjects-explorer {
+  padding-top: clamp(20px, 2.4vw, 32px);
+}
