@@ -441,10 +441,10 @@ function HomePlatformShowcase() {
     <section className="home-platform-section" aria-labelledby="home-platform-heading">
       <div className="home-platform-heading">
         <span className="audience-pill">Inside Wildly</span>
-        <h2 id="home-platform-heading">One platform. <span>The whole learning journey.</span></h2>
-        <p>Plan clearly, make every experience count and carry the learning into what comes next.</p>
+        <h2 id="home-platform-heading">One platform. <span>Plan, experience, extend.</span></h2>
+        <p>The tools to plan a lesson, make an experience count and build on it back in the classroom.</p>
       </div>
-      <div className="home-platform-journey" aria-label="Wildly learning journey">
+      <div className="home-platform-journey" aria-label="How Wildly supports teaching">
         {homePlatformViews.map((view) => (
           <article className={`home-platform-chapter tone-${view.tone}`} key={view.id}>
             <div className="home-platform-chapter-media">
@@ -784,9 +784,8 @@ function LandingPage() {
           </video>
           <div className="home-hero-scrim" aria-hidden="true"></div>
           <div className="hero-copy">
-            <span className="audience-pill">Wildly by Taronga</span>
             <h1>Bring the living world into every lesson.</h1>
-            <p className="hero-subtitle">Curriculum-connected learning, real conservation stories and Taronga experiences, brought together for teachers.</p>
+            <p className="hero-subtitle">Real conservation stories, ready-to-teach resources and Taronga experiences, made for your classroom.</p>
             <div className="hero-actions">
               <a className="primary-action animated-link" href={signupRoute()}><span>Get started free</span><Icon type="arrowRight" /></a>
               <a className="secondary-action" href={routePath("subjects")}>Explore resources</a>
@@ -811,9 +810,9 @@ function LandingPage() {
 
         <Reveal as="section" className="flagship-path-section">
           <div className="flagship-path-intro">
-            <span className="audience-pill">Featured pathway preview</span>
-            <h2>One question. A complete learning journey.</h2>
-            <p><strong>Sustainable Futures</strong> shows how Wildly can connect curriculum, Taronga experiences and student action in one coherent sequence.</p>
+            <span className="audience-pill">A featured learning path</span>
+            <h2>One big question, a whole unit of inquiry.</h2>
+            <p><strong>Sustainable Futures</strong> takes a single conservation question and builds it into a full sequence of lessons — from first encounter to student-led action.</p>
             <div className="flagship-path-tags"><span>Systems thinking</span><span>Inquiry learning</span><span>Conservation action</span></div>
             <a className="text-action animated-link" href={routePath("learning-paths")}><span>Explore Learning Paths</span><Icon type="arrowRight" /></a>
           </div>
@@ -873,8 +872,8 @@ function LandingPage() {
         <Reveal as="section" className="homepage-final-cta" id="schools" variant="scale">
           <img src={assets.heroKoala} alt="Koala with joey" className="homepage-cta-image" width="710" height="400" loading="lazy" />
           <div className="homepage-cta-content">
-            <h2>Bring learning to life through nature.</h2>
-            <p>Start with a classroom-ready resource, then build towards a deeper Taronga-connected learning journey.</p>
+            <h2>Start with one lesson. Build from there.</h2>
+            <p>Browse the library, open a lesson that's ready to go, and see where it takes your class.</p>
             <div className="hero-actions">
               <a className="primary-action animated-link" href={signupRoute()}><span>Get started free</span><Icon type="arrowRight" /></a>
               <a className="secondary-action" href={routePath("subjects")}>Explore resources</a>

@@ -7200,9 +7200,9 @@ button:focus-visible {
   display: grid;
   align-items: end;
   width: 100vw;
-  min-height: min(860px, calc(100svh - 78px));
+  min-height: min(600px, calc(100svh - 78px));
   margin-left: calc(50% - 50vw);
-  padding: clamp(80px, 9vw, 128px) max(24px, calc((100vw - 1260px) / 2));
+  padding: clamp(52px, 5vw, 76px) max(24px, calc((100vw - 1260px) / 2));
   overflow: hidden;
   color: #fff;
   background: #173329;
@@ -7270,12 +7270,12 @@ button:focus-visible {
 }
 
 .public-home-hero .hero-copy h1 {
-  max-width: 790px;
-  margin: 16px 0 24px;
+  max-width: 760px;
+  margin: 0 0 22px;
   color: #fff;
-  font-size: clamp(68px, 7.4vw, 106px);
+  font-size: clamp(52px, 5.8vw, 84px);
   font-weight: 400;
-  line-height: 0.91;
+  line-height: 0.94;
   letter-spacing: 0;
   text-wrap: balance;
   text-shadow: 0 2px 18px rgba(0, 0, 0, 0.22);
@@ -7589,7 +7589,7 @@ button:focus-visible {
 }
 
 .homepage-pl-band {
-  padding-block: clamp(110px, 12vw, 170px);
+  padding-block: clamp(72px, 8vw, 112px);
   background: #fff;
 }
 
@@ -7600,7 +7600,7 @@ button:focus-visible {
 
 .homepage-pl-band .marketing-split-image {
   width: 100%;
-  min-height: 620px;
+  min-height: 440px;
   border-radius: 3px;
   object-fit: cover;
   box-shadow: none;
