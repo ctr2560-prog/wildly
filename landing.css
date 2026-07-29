@@ -9550,7 +9550,7 @@ button:focus-visible {
   justify-items: center;
   gap: 20px;
   width: 100vw;
-  margin: clamp(20px, 3vw, 36px) 0 clamp(56px, 7vw, 92px) calc(50% - 50vw);
+  margin: clamp(20px, 3vw, 36px) 0 0 calc(50% - 50vw);
   padding: clamp(56px, 7vw, 96px) max(24px, calc((100vw - 900px) / 2));
   background: radial-gradient(120% 160% at 15% 0%, #0f5d3d 0%, #06301f 60%, #04241a 100%);
   color: #fff;
