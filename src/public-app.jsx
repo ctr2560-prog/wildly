@@ -175,6 +175,39 @@ function Reveal({ as: Tag = "div", children, className = "", delay = 0, variant 
   );
 }
 
+// Adds an `is-visible` class when scrolled into view, without applying any
+// transform/opacity of its own — used to trigger opacity-only child staggers
+// (e.g. the platform cards, which have their own hover/offset transforms that a
+// full motion-reveal would fight with).
+function InView({ as: Tag = "div", children, className = "", ...props }) {
+  const nodeRef = useRef(null);
+  const [isVisible, setIsVisible] = useState(false);
+
+  useEffect(() => {
+    const node = nodeRef.current;
+    if (!node || typeof IntersectionObserver === "undefined") {
+      setIsVisible(true);
+      return undefined;
+    }
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (!entry.isIntersecting) return;
+        setIsVisible(true);
+        observer.disconnect();
+      },
+      { rootMargin: "0px 0px -8%", threshold: 0.12 },
+    );
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, []);
+
+  return (
+    <Tag ref={nodeRef} className={`${className}${isVisible ? " is-visible" : ""}`} {...props}>
+      {children}
+    </Tag>
+  );
+}
+
 function subjectIconType(label) {
   return {
     Science: "leaf",
@@ -275,8 +308,23 @@ function useContentItems() {
 
 function SiteHeader({ active = "" }) {
   const [menuOpen, setMenuOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
   const headerRef = useRef(null);
   const menuToggleRef = useRef(null);
+
+  useEffect(() => {
+    let frame = 0;
+    function onScroll() {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(() => setScrolled(window.scrollY > 16));
+    }
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => {
+      cancelAnimationFrame(frame);
+      window.removeEventListener("scroll", onScroll);
+    };
+  }, []);
   const navItems = [
     ["learning-paths", "Learning Paths"],
     ["tracka", "Taronga Tracka"],
@@ -313,7 +361,7 @@ function SiteHeader({ active = "" }) {
   }
 
   return (
-    <header ref={headerRef} className={`site-header ${menuOpen ? "menu-open" : ""}`}>
+    <header ref={headerRef} className={`site-header ${menuOpen ? "menu-open" : ""} ${scrolled ? "is-scrolled" : ""}`}>
       <a className="skip-link" href="#main-content">Skip to main content</a>
       <a className="site-logo" href={routePath()} aria-label="Wildly by Taronga home"><img src={assets.wildlyLogo} alt="Wildly by Taronga" width="1144" height="520" /></a>
       <nav className="site-nav" aria-label="Main navigation">
@@ -439,12 +487,12 @@ function HomeExtendPreview() {
 function HomePlatformShowcase() {
   return (
     <section className="home-platform-section" aria-labelledby="home-platform-heading">
-      <div className="home-platform-heading">
+      <Reveal className="home-platform-heading">
         <span className="audience-pill">Inside Wildly</span>
         <h2 id="home-platform-heading">One platform. <span>Plan, experience, extend.</span></h2>
         <p>The tools to plan a lesson, make an experience count and build on it back in the classroom.</p>
-      </div>
-      <div className="home-platform-journey" aria-label="How Wildly supports teaching">
+      </Reveal>
+      <InView className="home-platform-journey" aria-label="How Wildly supports teaching">
         {homePlatformViews.map((view) => (
           <article className={`home-platform-chapter tone-${view.tone}`} key={view.id}>
             <div className="home-platform-chapter-media">
@@ -463,7 +511,7 @@ function HomePlatformShowcase() {
             <a className="home-platform-action animated-link" href={view.href}><span>{view.action}</span><Icon type="arrowRight" /></a>
           </article>
         ))}
-      </div>
+      </InView>
     </section>
   );
 }
