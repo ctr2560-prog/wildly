@@ -1162,189 +1162,98 @@ function TrackaMarketingPage() {
   );
 }
 
-function LearningPathFeaturePreview({ type }) {
-  if (type === "lesson") {
-    return (
-      <div className="lp-feature-ui lp-lesson-ui" aria-label="Wildly lesson workspace preview">
-        <div className="lp-ui-toolbar"><span>Lesson 03</span><strong>Gather real-world evidence</strong><small className="lp-ui-action">Teach lesson</small></div>
-        <div className="lp-lesson-meta"><span>60 min</span><span>Stage 4</span><span>Teacher-led</span></div>
-        <div className="lp-lesson-objective"><small>Learning intention</small><p>We are learning to collect and interpret evidence from a real conservation context.</p></div>
-        <div className="lp-lesson-blocks">
-          <div><span>01</span><strong>Launch the question</strong><small>10 minutes</small></div>
-          <div><span>02</span><strong>Investigate the evidence</strong><small>30 minutes</small></div>
-          <div><span>03</span><strong>Reflect and connect</strong><small>20 minutes</small></div>
-        </div>
-      </div>
-    );
-  }
-
-  if (type === "resources") {
-    return (
-      <div className="lp-feature-ui lp-resources-ui" aria-label="Wildly lesson resources preview">
-        <div className="lp-ui-toolbar"><span>Lesson resources</span><strong>Everything for this lesson</strong></div>
-        <div className="lp-resource-row"><span className="lp-resource-icon teacher"><Icon type="book" /></span><div><strong>Teacher guide</strong><small>PDF · 12 pages</small></div><span>Open</span></div>
-        <div className="lp-resource-row"><span className="lp-resource-icon student"><Icon type="report" /></span><div><strong>Student field notes</strong><small>Editable worksheet</small></div><span>Open</span></div>
-        <div className="lp-resource-row"><span className="lp-resource-icon video"><Icon type="play" /></span><div><strong>Habitat evidence</strong><small>Taronga TV · 6 min</small></div><span>Watch</span></div>
-        <div className="lp-resource-ready"><Icon type="link" /><span><strong>Attached to Lesson 03</strong><small>Available exactly where it is taught</small></span></div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="lp-feature-ui lp-sequence-ui" aria-label="Wildly learning path sequence preview">
-      <div className="lp-ui-toolbar"><span>Learning Path</span><strong>Sustainable Futures</strong><small>6 weeks</small></div>
-      <div className="lp-sequence-progress"><span style={{ width: "48%" }}></span></div>
-      <div className="lp-sequence-weeks">
-        {[
-          ["01", "Discover the challenge", "Ready"],
-          ["02", "Investigate systems", "Ready"],
-          ["03", "Gather real-world evidence", "Current"],
-          ["04", "Design for change", "Next"],
-        ].map(([number, title, state]) => <div className={state === "Current" ? "current" : ""} key={number}><span>{number}</span><strong>{title}</strong><small>{state}</small></div>)}
-      </div>
-      <div className="lp-sequence-footer"><span><strong>8</strong> lessons</span><span><strong>5</strong> outcomes</span><span><strong>18</strong> resources</span></div>
-    </div>
-  );
-}
 
 function LearningPathsMarketingPage() {
-  const ARCH = [
-    { icon: <Icon type="blocks" />, label: "Learning Path", desc: "Holds the unit structure — duration, curriculum outcomes, administration materials and every lesson in sequence." },
-    { icon: <Icon type="target" />, label: "Lesson", desc: "The teaching block. Sits inside a path or stands alone. Includes objectives, timing and teaching notes." },
-    { icon: <Icon type="link" />, label: "Resource", desc: "The specific file, link, worksheet, video or embed teachers use with students." },
+  const LAYERS = [
+    ["blocks", "acc-green", "Learning Path", "The whole unit — duration, curriculum outcomes, planning materials and every lesson in order."],
+    ["target", "acc-teal", "Lesson", "A single teaching block with its own objectives, timing and notes. Works inside a path or on its own."],
+    ["link", "acc-amber", "Resource", "The file, link, worksheet, video or activity — attached to the exact lesson it belongs to."],
   ];
 
   const FEATURES = [
-    {
-      title: "Plan your whole unit in one place",
-      sub: "Week-by-week sequencing.",
-      desc: "A learning path holds your unit structure — duration, curriculum outcomes, admin materials and every lesson in sequence. Open it once and have everything your class needs for the term.",
-      preview: "sequence",
-    },
-    {
-      title: "Teach lesson by lesson",
-      sub: "Clear objectives, every time.",
-      desc: "Each lesson has its own objectives, timing and teaching notes. Assign the full lesson, share a specific resource, or jump straight to the download — whatever fits the moment.",
-      preview: "lesson",
-    },
-    {
-      title: "Resources right where they belong",
-      sub: "No more searching.",
-      desc: "Files, links, worksheets, videos and guides are attached to the lesson they support. Students and teachers always find what they need without leaving the page.",
-      preview: "resources",
-    },
+    ["grid", "Plan the whole unit at once", "Open a path and see the full sequence — outcomes, timing and every lesson from start to finish, in one place."],
+    ["cap", "Teach one lesson at a time", "Each lesson stands on its own with clear objectives, so you always know the next move in front of the class."],
+    ["bookmark", "Resources where they belong", "Files and links live on the lesson they support — no hunting through folders in the middle of teaching."],
   ];
 
-  const STEPS = [
-    { num: "01", who: "teacher", title: "Find a path", desc: "Browse learning paths by subject, year group or curriculum focus in the teacher dashboard." },
-    { num: "02", who: "teacher", title: "Review the sequence", desc: "Open the path to see the full unit — duration, outcomes and every lesson laid out in order." },
-    { num: "03", who: "teacher", title: "Open any lesson", desc: "Click into a lesson to see teaching notes, objectives and all linked resources at a glance." },
-    { num: "04", who: "teacher", title: "Share with your class", desc: "Download resources, share links or assign a lesson directly from the dashboard." },
-    { num: "05", who: "teacher", title: "Move through the unit", desc: "Return to the path each lesson to pick up where you left off — the sequence holds your place." },
-    { num: "06", who: "teacher", title: "Connect to Tracka", desc: "Pair your unit with a Taronga Tracka excursion for before, during and after learning." },
+  const CONNECT = [
+    ["Before", "Build the vocabulary, background knowledge and a clear question worth investigating."],
+    ["During", "Head to the zoo or a digital experience with Taronga Tracka to observe, explore and gather real context."],
+    ["After", "Come back to the path to reflect, dig deeper and turn the experience into student action."],
   ];
 
   return (
     <>
       <SiteHeader active="learning-paths" />
-      <main className="lp-page" id="main-content" tabIndex="-1">
+      <main className="lp-page lp2-page" id="main-content" tabIndex="-1">
 
-        <section className="lp-hero">
-          <div className="lp-hero-copy">
-            <span className="audience-pill">Learning Paths</span>
-            <h1>Plan the whole unit. Teach one lesson at a time.</h1>
-            <p className="lp-hero-lead">Learning Paths connect outcomes, lessons and resources into a sequence teachers can understand at a glance and use week by week.</p>
-            <div className="hero-actions">
-              <a className="primary-action" href={signupRoute()}>Get started free</a>
-              <a className="secondary-action" href={routePath("subjects")}>Explore resources</a>
-            </div>
-          </div>
-          <Reveal className="lp-hero-visual lp-product-frame" variant="scale">
-            <div className="product-browser-bar" aria-hidden="true"><span></span><span></span><span></span><strong>Wildly Learning Path</strong></div>
-            <div className="path-sequence-preview">
-              <div className="path-sequence-header"><span>Technology &amp; STEM · Stages 4–5</span><h2>Sustainable Futures</h2><p>A connected inquiry from conservation challenge to student action.</p></div>
-              <div className="path-sequence-list">
-                {["Discover the challenge", "Investigate systems", "Gather real-world evidence", "Design for change", "Reflect and act"].map((title, index) => <div key={title}><span>{index + 1}</span><strong>{title}</strong>{index < 4 ? <i></i> : null}</div>)}
-              </div>
-            </div>
-            <div className="lp-product-meta"><span><strong>8</strong> lessons</span><span><strong>5</strong> outcomes</span><span><strong>6 weeks</strong> suggested</span></div>
-          </Reveal>
-        </section>
-
-        <section className="lp-arch-section">
-          <Reveal className="tracka-section-header">
-            <span className="audience-pill">Clear by design</span>
-            <h2>One journey. Three useful layers.</h2>
-            <p>A path gives the big picture, each lesson makes the next teaching move clear, and each resource sits where it will actually be used.</p>
-          </Reveal>
-          <InView className="lp-arch-flow">
-            {ARCH.map((item, i) => (
-              <React.Fragment key={item.label}>
-                <div className="lp-arch-card" style={{ "--card-index": i }}>
-                  <div className="lp-arch-icon">{item.icon}</div>
-                  <h3>{item.label}</h3>
-                  <p>{item.desc}</p>
-                </div>
-                {i < ARCH.length - 1 && <div className="lp-arch-arrow"><svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg></div>}
-              </React.Fragment>
-            ))}
-          </InView>
-        </section>
-
-        <section className="tracka-features-section">
-          <Reveal className="tracka-section-header">
-            <span className="audience-pill">How it helps teachers</span>
-            <h2>Everything in the right place, every time</h2>
-          </Reveal>
-          <div className="tracka-features-showcase">
-            {FEATURES.map((f, i) => (
-              <Reveal as="article" key={f.title} className={`tracka-feature-showcase-card${i % 2 === 1 ? " reversed" : ""}`}>
-                <div className="tracka-feature-showcase-media">
-                  <LearningPathFeaturePreview type={f.preview} />
-                </div>
-                <div className="tracka-feature-showcase-copy">
-                  <h3>{f.title}</h3>
-                  <p className="tracka-feature-sub">{f.sub}</p>
-                  <p>{f.desc}</p>
-                </div>
-              </Reveal>
-            ))}
+        <section className="lp2-hero">
+          <span className="audience-pill">Learning Paths</span>
+          <h1>Plan the whole unit. Teach one lesson at a time.</h1>
+          <p className="lp2-hero-lead">Learning Paths connect outcomes, lessons and resources into one sequence you can plan from and teach week by week.</p>
+          <div className="hero-actions">
+            <a className="primary-action animated-link" href={signupRoute()}><span>Get started free</span><Icon type="arrowRight" /></a>
+            <a className="secondary-action" href={routePath("subjects")}>Explore resources</a>
           </div>
         </section>
 
-        <section className="tracka-steps-section lp-connection-section">
-          <Reveal className="tracka-section-header">
-            <span className="audience-pill">Classroom to Taronga and back</span>
-            <h2>A sequence that can move beyond the classroom</h2>
-            <p>Learning Paths can prepare students for a zoo or digital Tracka experience, then use that experience as evidence for deeper inquiry.</p>
+        <section className="lp2-band lp2-model">
+          <Reveal className="public-section-heading">
+            <span className="audience-pill">How a path fits together</span>
+            <h2>One path. Three layers that connect.</h2>
+            <p>A path holds the big picture, each lesson makes the next teaching move clear, and every resource sits where it is actually used.</p>
           </Reveal>
-          <InView className="tracka-steps-grid lp-three-step-grid">
-            {[
-              { num: "01", who: "teacher", title: "Before", desc: "Build vocabulary, background knowledge and a clear question worth investigating." },
-              { num: "02", who: "teacher", title: "During", desc: "Use Tracka at the zoo or through a digital experience to observe, explore and gather context." },
-              { num: "03", who: "teacher", title: "After", desc: "Continue in Wildly with recommended resources, reflection and student action." },
-            ].map((s, i) => (
-              <article key={s.num} className="tracka-step-card" style={{ "--card-index": i }}>
-                <div className="tracka-step-top">
-                  <span className="tracka-step-num">{s.num}</span>
-                  <span className={`tracka-step-who ${s.who}`}>{s.who === "teacher" ? "Teacher" : "Student"}</span>
-                </div>
-                <h3>{s.title}</h3>
-                <p>{s.desc}</p>
+          <InView className="lp2-model-grid">
+            {LAYERS.map(([icon, accent, label, desc], index) => (
+              <article key={label} className={`lp2-node ${accent}`} style={{ "--card-index": index }}>
+                <span className="lp2-node-icon" aria-hidden="true"><Icon type={icon} className="" /></span>
+                <h3>{label}</h3>
+                <p>{desc}</p>
               </article>
             ))}
           </InView>
         </section>
 
-        <Reveal as="section" className="cta-section" variant="scale">
-          <img src={assets.heroKoala} alt="Koala with joey" width="710" height="400" loading="lazy" />
-          <div>
-            <h2>Ready to plan your next unit?</h2>
-            <p>Browse curriculum-aligned learning paths built by the Taronga education team — and start teaching with confidence.</p>
-            <div className="hero-actions">
-              <a className="primary-action" href={signupRoute()}>Get started free</a>
-              <a className="secondary-action" href={teacherPreviewRoute()}>Preview the dashboard</a>
-            </div>
+        <section className="lp2-features">
+          <Reveal className="public-section-heading">
+            <span className="audience-pill">Built for how you teach</span>
+            <h2>Everything in the right place, every time.</h2>
+          </Reveal>
+          <InView className="lp2-feature-grid">
+            {FEATURES.map(([icon, title, desc], index) => (
+              <article key={title} className="lp2-feature" style={{ "--card-index": index }}>
+                <span className="lp2-feature-icon" aria-hidden="true"><Icon type={icon} className="" /></span>
+                <h3>{title}</h3>
+                <p>{desc}</p>
+              </article>
+            ))}
+          </InView>
+        </section>
+
+        <section className="lp2-band lp2-connect">
+          <Reveal className="public-section-heading">
+            <span className="audience-pill">Classroom to Taronga and back</span>
+            <h2>A sequence that reaches beyond the classroom.</h2>
+            <p>A path can prepare a class for a zoo or digital Tracka experience, then use that experience as evidence for deeper inquiry.</p>
+          </Reveal>
+          <InView className="lp2-connect-grid">
+            {CONNECT.map(([title, desc], index) => (
+              <article key={title} className="lp2-step" style={{ "--card-index": index }}>
+                <span className="lp2-step-num">{index + 1}</span>
+                <h3>{title}</h3>
+                <p>{desc}</p>
+              </article>
+            ))}
+          </InView>
+        </section>
+
+        <Reveal as="section" className="lp2-cta-band" variant="scale">
+          <span className="subjects-soon-badge"><span className="subject-soon-dot" aria-hidden="true"></span>In development</span>
+          <h2>The first learning paths are on their way.</h2>
+          <p>We are building complete, curriculum-aligned units with the Taronga education team. Create a free account and they will be waiting in your dashboard as each one is ready.</p>
+          <div className="hero-actions">
+            <a className="primary-action animated-link" href={signupRoute()}><span>Get started free</span><Icon type="arrowRight" /></a>
+            <a className="secondary-action" href={teacherPreviewRoute()}>Preview the dashboard</a>
           </div>
         </Reveal>
 
