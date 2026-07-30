@@ -10160,3 +10160,44 @@ button:focus-visible {
 
 /* LP ends on a dark band, so sit the footer flush against it (no white strip) */
 .lp2-page .public-footer { margin-top: 0; }
+
+/* ══ Taronga Tracka — scroll motion + hover polish ═════════════════════════ */
+.tracka-page .tracka-stat,
+.tracka-page .tracka-step-card,
+.tracka-page .tracka-animal-card { opacity: 0; }
+
+.tracka-stats-bar.is-visible .tracka-stat {
+  animation: home-chapter-in 560ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: calc(var(--card-index, 0) * 90ms);
+}
+
+.tracka-steps-grid.is-visible .tracka-step-card {
+  animation: home-chapter-in 600ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: calc(var(--card-index, 0) * 80ms);
+}
+
+.tracka-animal-grid.is-visible .tracka-animal-card {
+  animation: home-chapter-in 560ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: calc(var(--card-index, 0) * 70ms);
+}
+
+.tracka-page .tracka-animal-card {
+  transition: transform 420ms cubic-bezier(0.22, 1, 0.36, 1), box-shadow 420ms ease;
+}
+
+@media (hover: hover) {
+  .tracka-page .tracka-animal-card:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 24px 44px -26px rgba(12, 33, 22, 0.3);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tracka-page .tracka-stat, .tracka-stats-bar.is-visible .tracka-stat,
+  .tracka-page .tracka-step-card, .tracka-steps-grid.is-visible .tracka-step-card,
+  .tracka-page .tracka-animal-card, .tracka-animal-grid.is-visible .tracka-animal-card {
+    opacity: 1;
+    animation: none;
+    transition: none;
+  }
+}

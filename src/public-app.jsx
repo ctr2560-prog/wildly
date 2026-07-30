@@ -956,36 +956,36 @@ function TrackaMarketingPage() {
             </div>
             <p className="tracka-hero-note"><Icon type="pin" />Designed around real Taronga places, species and learning moments.</p>
           </div>
-          <div className="tracka-hero-scene" aria-label="Students using Taronga Tracka at the zoo">
+          <Reveal className="tracka-hero-scene" variant="scale" aria-label="Students using Taronga Tracka at the zoo">
             <img className="tracka-hero-photo" src={assetPath("assets/tracka/mode-zoo.jpg")} alt="Students using Taronga Tracka while observing a tiger at Taronga Zoo" width="1200" height="772" fetchPriority="high" />
             <div className="tracka-phone-device">
               <span className="tracka-phone-speaker" aria-hidden="true"></span>
               <img src={assetPath("assets/tracka/app-home.jpg")} alt="Taronga Tracka app home screen" width="647" height="1400" />
             </div>
             <div className="tracka-scene-label"><span>Zoo mode</span><strong>Observe · Complete missions · Earn badges</strong></div>
-          </div>
+          </Reveal>
         </section>
 
-        <section className="tracka-stats-bar">
+        <InView as="section" className="tracka-stats-bar">
           {[
             ["At the zoo", "Guided wildlife missions"],
             ["Digital", "Taronga experiences from school"],
             ["Observe", "Evidence gathered in context"],
             ["Extend", "Recommended Wildly resources"],
-          ].map(([stat, desc]) => (
-            <div key={stat} className="tracka-stat">
+          ].map(([stat, desc], index) => (
+            <div key={stat} className="tracka-stat" style={{ "--card-index": index }}>
               <strong>{stat}</strong>
               <span>{desc}</span>
             </div>
           ))}
-        </section>
+        </InView>
 
         <section className="tracka-modes-section">
-          <div className="tracka-section-header">
+          <Reveal className="tracka-section-header">
             <span className="audience-pill">Choose the experience</span>
             <h2>One app. Every Taronga experience.</h2>
             <p>Tracka adapts to how your class meets Taronga, from a day excursion to an overnight ZooSnooz or a digital classroom journey.</p>
-          </div>
+          </Reveal>
           <AccessibleTabs
             id="tracka-mode"
             items={trackaModes}
@@ -1012,14 +1012,14 @@ function TrackaMarketingPage() {
         </section>
 
         <section className="tracka-features-section">
-          <div className="tracka-section-header">
+          <Reveal className="tracka-section-header">
             <span className="audience-pill">Inside Tracka</span>
             <h2>The app turns looking into active discovery.</h2>
             <p>Every feature has a learning purpose: orient the class, focus observation, invite a response and carry useful context forward.</p>
-          </div>
+          </Reveal>
           <div className="tracka-features-showcase">
             {trackaFeatures.map((f, i) => (
-              <article key={f.title} className={`tracka-feature-showcase-card${i % 2 === 1 ? " reversed" : ""}`}>
+              <Reveal as="article" key={f.title} className={`tracka-feature-showcase-card${i % 2 === 1 ? " reversed" : ""}`}>
                 <div className={`tracka-feature-showcase-media ${f.mediaClass}`}>
                   {f.imgs ? (
                     <div className="tracka-mission-grid">
@@ -1035,19 +1035,19 @@ function TrackaMarketingPage() {
                   <p className="tracka-feature-sub">{f.sub}</p>
                   <p>{f.desc}</p>
                 </div>
-              </article>
+              </Reveal>
             ))}
           </div>
         </section>
 
         <section className="tracka-steps-section">
-          <div className="tracka-section-header">
+          <Reveal className="tracka-section-header">
             <span className="audience-pill">From setup to follow-up</span>
             <h2>Six steps from classroom to collection</h2>
-          </div>
-          <div className="tracka-steps-grid">
-            {trackaSteps.map(s => (
-              <article key={s.num} className="tracka-step-card">
+          </Reveal>
+          <InView className="tracka-steps-grid">
+            {trackaSteps.map((s, i) => (
+              <article key={s.num} className="tracka-step-card" style={{ "--card-index": i }}>
                 <div className="tracka-step-top">
                   <span className="tracka-step-num">{s.num}</span>
                   <span className={`tracka-step-who ${s.who}`}>{s.who === "teacher" ? "Teacher" : "Student"}</span>
@@ -1056,16 +1056,16 @@ function TrackaMarketingPage() {
                 <p>{s.desc}</p>
               </article>
             ))}
-          </div>
+          </InView>
         </section>
 
         <section className="tracka-portal-section">
           <div className="tracka-portal-inner">
-            <div className="tracka-section-header light">
+            <Reveal className="tracka-section-header light">
               <span className="audience-pill">For Educators</span>
               <h2>Teacher Portal</h2>
               <p>Student observations, mission progress and wildlife documentaries in one place.</p>
-            </div>
+            </Reveal>
             <div className="tracka-portal-demo">
             <AccessibleTabs
               id="tracka-portal"
@@ -1087,16 +1087,16 @@ function TrackaMarketingPage() {
         </section>
 
         <section className="tracka-animals-section">
-          <div className="section-heading">
+          <Reveal className="section-heading">
             <div>
               <h2>Discover wildlife missions</h2>
               <p>Students explore real animals through guided discovery tasks — from enclosures to ecosystems.</p>
             </div>
             <a href={appLinks.tracka} target="_blank" rel="noopener noreferrer">Open Tracka</a>
-          </div>
-          <div className="tracka-animal-grid">
-            {trackaAnimals.map(a => (
-              <article key={a.name} className="tracka-animal-card">
+          </Reveal>
+          <InView className="tracka-animal-grid">
+            {trackaAnimals.map((a, i) => (
+              <article key={a.name} className="tracka-animal-card" style={{ "--card-index": i }}>
                 <div className="tracka-animal-img-wrap">
                   <img src={a.img} alt={a.name} width={a.width} height={a.height} loading="lazy" />
                   <img src={a.badge} alt={`${a.name} badge`} className="tracka-animal-badge" width={a.badgeWidth} height={a.badgeHeight} loading="lazy" />
@@ -1106,12 +1106,12 @@ function TrackaMarketingPage() {
                 </div>
               </article>
             ))}
-          </div>
+          </InView>
         </section>
 
         <section className="tracka-integration-section">
           <div className="tracka-integration-inner">
-            <div className="tracka-integration-copy">
+            <Reveal className="tracka-integration-copy">
               <span className="audience-pill">Wildly + Tracka</span>
               <h2>Tracka captures the experience. Wildly helps teachers take it further.</h2>
               <p>Whether students explore at the zoo or through a Taronga digital experience, Tracka gives Wildly the context needed to recommend relevant next steps.</p>
@@ -1124,8 +1124,8 @@ function TrackaMarketingPage() {
                 <a className="primary-action" href={signupRoute()}>Get started with Wildly</a>
                 <a className="secondary-action" href={appLinks.tracka} target="_blank" rel="noopener noreferrer">Open Tracka</a>
               </div>
-            </div>
-            <div className="tracka-recommendation-preview" aria-label="Example Tracka to Wildly recommendation">
+            </Reveal>
+            <Reveal className="tracka-recommendation-preview" delay={100} aria-label="Example Tracka to Wildly recommendation">
               <div className="tracka-recommendation-header">
                 <div><img src={assetPath("assets/tracka/tracka-logo.png")} alt="" width="500" height="500" /><span>Tracka experience</span></div>
                 <Icon type="link" />
@@ -1141,11 +1141,11 @@ function TrackaMarketingPage() {
                 <img src={assets.giraffe} alt="Giraffe representing a Wildly learning recommendation" width="710" height="400" loading="lazy" />
                 <div><span className="tracka-preview-label">Recommended in Wildly</span><h3>How habitats support survival</h3><p>Science · Stage 2 · Classroom resource</p><strong>Continue the learning</strong></div>
               </div>
-            </div>
+            </Reveal>
           </div>
         </section>
 
-        <section className="cta-section" id="excursions">
+        <Reveal as="section" className="cta-section" id="excursions" variant="scale">
           <img src={assets.heroKoala} alt="Koala with joey" width="710" height="400" loading="lazy" />
           <div>
             <h2>Ready to take your class to the zoo?</h2>
@@ -1155,7 +1155,7 @@ function TrackaMarketingPage() {
               <a className="secondary-action" href={appLinks.tracka} target="_blank" rel="noopener noreferrer">Open Taronga Tracka</a>
             </div>
           </div>
-        </section>
+        </Reveal>
         <SiteFooter />
       </main>
     </>
