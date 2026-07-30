@@ -968,10 +968,10 @@ function TrackaMarketingPage() {
 
         <InView as="section" className="tracka-stats-bar">
           {[
-            ["At the zoo", "Guided wildlife missions"],
-            ["Digital", "Taronga experiences from school"],
-            ["Observe", "Evidence gathered in context"],
-            ["Extend", "Recommended Wildly resources"],
+            ["GPS-guided", "Live location tracking across the zoo"],
+            ["Curriculum-connected", "Aligned to NSW outcomes by stage"],
+            ["Taronga-built", "Real Taronga places, species and keepers"],
+            ["Wildly-connected", "The experience continues in the classroom"],
           ].map(([stat, desc], index) => (
             <div key={stat} className="tracka-stat" style={{ "--card-index": index }}>
               <strong>{stat}</strong>
@@ -1114,12 +1114,7 @@ function TrackaMarketingPage() {
             <Reveal className="tracka-integration-copy">
               <span className="audience-pill">Wildly + Tracka</span>
               <h2>Tracka captures the experience. Wildly helps teachers take it further.</h2>
-              <p>Whether students explore at the zoo or through a Taronga digital experience, Tracka gives Wildly the context needed to recommend relevant next steps.</p>
-              <div className="tracka-learning-loop">
-                <article><span>1</span><div><h3>Explore with Tracka</h3><p>Students complete missions, encounter species and gather observations in context.</p></div></article>
-                <article><span>2</span><div><h3>Share the context</h3><p>Tracka tells Wildly which experience, animals and themes the class explored.</p></div></article>
-                <article><span>3</span><div><h3>Continue in Wildly</h3><p>Teachers receive curriculum-connected resource recommendations for reflection, inquiry and action.</p></div></article>
-              </div>
+              <p>Tracka passes the context from a zoo or digital experience — the animals, habitats and themes a class explored — straight to Wildly, so the right classroom follow-up is ready and waiting.</p>
               <div className="hero-actions tracka-integration-actions">
                 <a className="primary-action" href={signupRoute()}>Get started with Wildly</a>
                 <a className="secondary-action" href={appLinks.tracka} target="_blank" rel="noopener noreferrer">Open Tracka</a>
