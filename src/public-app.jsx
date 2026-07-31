@@ -1047,7 +1047,8 @@ function TrackaMarketingPage() {
           </Reveal>
           <InView className="tracka-steps-grid">
             {trackaSteps.map((s, i) => (
-              <article key={s.num} className="tracka-step-card" style={{ "--card-index": i }}>
+              <article key={s.num} className={`tracka-step-card ${s.who}`} style={{ "--card-index": i }}>
+                <span className="tracka-step-ghost" aria-hidden="true">{s.num}</span>
                 <div className="tracka-step-top">
                   <span className="tracka-step-num">{s.num}</span>
                   <span className={`tracka-step-who ${s.who}`}>{s.who === "teacher" ? "Teacher" : "Student"}</span>
