@@ -1114,8 +1114,8 @@ function TrackaMarketingPage() {
           <div className="tracka-integration-inner">
             <Reveal className="tracka-integration-copy">
               <span className="audience-pill">Wildly + Tracka</span>
-              <h2>Tracka captures the experience. Wildly helps teachers take it further.</h2>
-              <p>Tracka passes the context from a zoo or digital experience — the animals, habitats and themes a class explored — straight to Wildly, so the right classroom follow-up is ready and waiting.</p>
+              <h2>Where the experience becomes the lesson.</h2>
+              <p>Tracka captures what a class explored — the animals, habitats and themes — and passes that context straight to Wildly, so the right classroom follow-up is ready and waiting.</p>
               <div className="hero-actions tracka-integration-actions">
                 <a className="primary-action" href={signupRoute()}>Get started with Wildly</a>
                 <a className="secondary-action" href={appLinks.tracka} target="_blank" rel="noopener noreferrer">Open Tracka</a>
