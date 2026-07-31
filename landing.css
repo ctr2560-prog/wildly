@@ -10284,3 +10284,49 @@ button:focus-visible {
   }
   .premium-tracka-page .tracka-step-card:hover .tracka-step-ghost { opacity: 0.15; }
 }
+
+/* ── Tracka modes: centre the tab label, enlarge the right-hand panel text ── */
+.tracka-mode-tab { justify-content: center; }
+
+.premium-tracka-page .tracka-mode-desc > span { font-size: 12px; letter-spacing: 0.05em; }
+.premium-tracka-page .tracka-mode-desc h3 { margin: 14px 0; color: var(--green-950); font-size: clamp(32px, 3vw, 40px); }
+.premium-tracka-page .tracka-mode-desc p { color: #4d5c55; font-size: clamp(17px, 1.4vw, 19px); line-height: 1.6; }
+.premium-tracka-page .tracka-mode-points span { font-size: 14px; }
+.premium-tracka-page .tracka-mode-points svg { width: 16px; }
+
+/* ── Tracka × Wildly connection: premium dark band (matches home ecosystem) ── */
+.premium-tracka-page .tracka-integration-section {
+  border: 0;
+  border-radius: 22px;
+  background: radial-gradient(130% 150% at 12% 0%, #0f5d3d 0%, #08462e 50%, #05301f 100%);
+}
+
+.premium-tracka-page .tracka-integration-copy .audience-pill { color: #a9f0cd; }
+.premium-tracka-page .tracka-integration-copy h2 { color: #fff; }
+.premium-tracka-page .tracka-integration-copy p { color: rgba(255, 255, 255, 0.82); }
+
+.premium-tracka-page .tracka-integration-copy .primary-action {
+  border-color: var(--studio-green-bright);
+  color: #062d20;
+  background: var(--studio-green-bright);
+}
+.premium-tracka-page .tracka-integration-copy .primary-action:hover {
+  border-color: #3bdc93;
+  color: #062d20;
+  background: #3bdc93;
+}
+.premium-tracka-page .tracka-integration-copy .secondary-action {
+  border-color: rgba(255, 255, 255, 0.5);
+  color: #fff;
+  background: transparent;
+}
+.premium-tracka-page .tracka-integration-copy .secondary-action:hover {
+  border-color: #fff;
+  color: #fff;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.premium-tracka-page .tracka-recommendation-preview {
+  border-color: transparent;
+  box-shadow: 0 34px 68px -24px rgba(0, 0, 0, 0.45);
+}
