@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { initializeApp, deleteApp } from "firebase/app";
 import { createUserWithEmailAndPassword, getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut } from "firebase/auth";
-import { addDoc, arrayUnion, collection, deleteDoc, doc, getCountFromServer, getDoc, getFirestore, onSnapshot, orderBy, query, serverTimestamp, setDoc, updateDoc, where } from "firebase/firestore";
+import { addDoc, arrayUnion, collection, collectionGroup, deleteDoc, doc, getCountFromServer, getDoc, getFirestore, onSnapshot, orderBy, query, serverTimestamp, setDoc, updateDoc, where } from "firebase/firestore";
 import { auth, db } from "./firebase";
 import "../landing.css";
 import "../styles.css";
@@ -2929,20 +2929,18 @@ function ControlRoomPanel({ currentEmail }) {
 }
 
 function useTrackaStats() {
-  const [stats, setStats] = useState({ schools: null, classes: null, loading: true });
+  const [stats, setStats] = useState({ schools: null, classes: null, students: null, loading: true });
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      const [schools, classes] = await Promise.allSettled([
+      const results = await Promise.allSettled([
         getCountFromServer(collection(db, "schools")),
         getCountFromServer(collection(db, "classes")),
+        getCountFromServer(collectionGroup(db, "students")),
       ]);
       if (cancelled) return;
-      setStats({
-        schools: schools.status === "fulfilled" ? schools.value.data().count : null,
-        classes: classes.status === "fulfilled" ? classes.value.data().count : null,
-        loading: false,
-      });
+      const [schools, classes, students] = results.map((r) => (r.status === "fulfilled" ? r.value.data().count : null));
+      setStats({ schools, classes, students, loading: false });
     })();
     return () => { cancelled = true; };
   }, []);
@@ -3038,6 +3036,7 @@ function OverviewPanel({ contentItems, tvVideos, plItems, upcomingEvents = [], u
         <div className="sc-tracka-stats">
           <div><strong>{fmt(tracka.schools)}</strong><span>Schools</span></div>
           <div><strong>{fmt(tracka.classes)}</strong><span>Classes created</span></div>
+          <div><strong>{fmt(tracka.students)}</strong><span>Student records</span></div>
           <div><strong>{users.length.toLocaleString()}</strong><span>Teacher accounts</span></div>
         </div>
         <p className="sc-tracka-note">Shared Taronga Education backend — the same teacher accounts sign in to Wildly and Tracka.</p>

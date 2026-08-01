@@ -3185,7 +3185,7 @@ button.sc-stat-card.accent:hover { border-color: transparent; }
 }
 .sc-tracka-stats {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 16px;
 }
 .sc-tracka-stats > div {
