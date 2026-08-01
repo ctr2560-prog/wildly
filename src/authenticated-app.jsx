@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { createUserWithEmailAndPassword, onAuthStateChanged, signInWithEmailAndPassword, signOut } from "firebase/auth";
-import { addDoc, arrayUnion, collection, deleteDoc, doc, getDoc, onSnapshot, orderBy, query, serverTimestamp, setDoc, updateDoc, where } from "firebase/firestore";
+import { initializeApp, deleteApp } from "firebase/app";
+import { createUserWithEmailAndPassword, getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut } from "firebase/auth";
+import { addDoc, arrayUnion, collection, deleteDoc, doc, getDoc, getFirestore, onSnapshot, orderBy, query, serverTimestamp, setDoc, updateDoc, where } from "firebase/firestore";
 import { auth, db } from "./firebase";
 import "../landing.css";
 import "../styles.css";
@@ -2782,6 +2783,7 @@ function StaffConsole({ onLock, firebaseUser }) {
             ["professional-learning", "book", "Professional Learning"],
             ["upcoming-events", "calendar", "Upcoming Events"],
             ["dashboard", "monitor", "Edit Dashboard"],
+            ["control-room", "target", "Control Room"],
           ].map(([id, icon, label]) => <button className={panel === id ? "active" : ""} type="button" data-panel={id} key={id} onClick={() => setPanel(id)}><Icon type={icon} className="" />{label}</button>)}
         </nav>
         <article className="tracka-mini"><img src={assets.trackaLogo} alt="Taronga Tracka" /><p>Staff editing is unlocked for this browser session. Tracka data connector ready for staff review.</p></article>
@@ -2797,7 +2799,125 @@ function StaffConsole({ onLock, firebaseUser }) {
         {panel === "professional-learning" && <ProfessionalLearningPanel items={professionalLearningItems} status={professionalLearningStatus} saveState={professionalLearningSaveState} saveItem={saveProfessionalLearningItem} deleteItem={deleteProfessionalLearningItem} />}
         {panel === "upcoming-events" && <UpcomingEventsPanel events={upcomingEvents} saveEvent={saveUpcomingEvent} deleteEvent={deleteUpcomingEvent} />}
         {panel === "dashboard" && <DashboardEditor config={config} contentItems={contentItems} updateConfig={updateConfig} reset={() => { setConfig(defaultDashboardConfig); setPreviewKey((key) => key + 1); }} previewKey={previewKey} publish={publishDashboardConfig} status={status} saveState={saveState} />}
+        {panel === "control-room" && <ControlRoomPanel currentEmail={firebaseUser?.email} />}
       </main>
+    </div>
+  );
+}
+
+const CONTROL_ROOM_PASSCODE = "2560";
+const CONTROL_ROOM_SESSION_KEY = "wildly-controlroom-unlocked";
+const STAFF_ROLES = ["Education Staff", "Curriculum Leader", "School Leader"];
+
+async function createStaffAdmin({ email, password, role }) {
+  // Create the account on a SECONDARY Firebase app so the current admin's
+  // session is not replaced. The new user is briefly signed in on that
+  // secondary app, which is exactly what lets us write their own teacher doc
+  // (the teachers/{email} write rule requires request.auth.token.email == email).
+  const secondary = initializeApp(auth.app.options, `sc-admin-${Date.now()}`);
+  try {
+    const secAuth = getAuth(secondary);
+    const secDb = getFirestore(secondary);
+    const cleanEmail = email.trim().toLowerCase();
+    await createUserWithEmailAndPassword(secAuth, cleanEmail, password);
+    await setDoc(
+      doc(secDb, "teachers", cleanEmail),
+      { email: cleanEmail, role, products: arrayUnion("wildly"), createdAt: serverTimestamp(), updatedAt: serverTimestamp() },
+      { merge: true },
+    );
+    await signOut(secAuth);
+  } finally {
+    await deleteApp(secondary);
+  }
+}
+
+function ControlRoomPanel({ currentEmail }) {
+  const [unlocked, setUnlocked] = useState(() => window.sessionStorage.getItem(CONTROL_ROOM_SESSION_KEY) === "yes");
+  const [passcode, setPasscode] = useState("");
+  const [passError, setPassError] = useState("");
+
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [role, setRole] = useState(STAFF_ROLES[0]);
+  const [state, setState] = useState("idle"); // idle | saving | saved | error
+  const [message, setMessage] = useState("");
+
+  function handleUnlock(event) {
+    event.preventDefault();
+    if (passcode.trim() === CONTROL_ROOM_PASSCODE) {
+      window.sessionStorage.setItem(CONTROL_ROOM_SESSION_KEY, "yes");
+      setUnlocked(true);
+      setPassError("");
+      return;
+    }
+    setPassError("Incorrect passcode.");
+  }
+
+  async function handleAddAdmin(event) {
+    event.preventDefault();
+    setMessage("");
+    const cleanEmail = email.trim();
+    if (!cleanEmail || !/^\S+@\S+\.\S+$/.test(cleanEmail)) {
+      setState("error");
+      setMessage("Enter a valid email address.");
+      return;
+    }
+    if (password.length < 6) {
+      setState("error");
+      setMessage("Password must be at least 6 characters (Firebase requirement).");
+      return;
+    }
+    setState("saving");
+    try {
+      await createStaffAdmin({ email: cleanEmail, password, role });
+      setState("saved");
+      setMessage(`${cleanEmail} added as ${role}.`);
+      setEmail("");
+      setPassword("");
+      setRole(STAFF_ROLES[0]);
+    } catch (error) {
+      setState("error");
+      setMessage(
+        error.code === "auth/email-already-in-use"
+          ? "That email already has an account. Ask them to sign in, or use a different email."
+          : error.code === "auth/invalid-email"
+            ? "That email address is not valid."
+            : error.code === "auth/weak-password"
+              ? "Password is too weak. Use at least 6 characters."
+              : "Could not create the staff account. Check your connection and try again.",
+      );
+    }
+  }
+
+  if (!unlocked) {
+    return (
+      <div className="sc-panel sc-controlroom">
+        <div className="sc-panel-header"><div><h2>Control Room</h2><p>Restricted. Enter the control room passcode to continue.</p></div></div>
+        <form className="sc-controlroom-gate" onSubmit={handleUnlock}>
+          <label>Passcode<input type="password" inputMode="numeric" value={passcode} onChange={(e) => setPasscode(e.target.value)} autoComplete="off" autoFocus /></label>
+          {passError && <p className="auth-error">{passError}</p>}
+          <button type="submit">Unlock Control Room</button>
+        </form>
+      </div>
+    );
+  }
+
+  return (
+    <div className="sc-panel sc-controlroom">
+      <div className="sc-panel-header"><div><h2>Control Room</h2><p>Manage privileged access to Wildly.</p></div><button type="button" className="sc-controlroom-lock" onClick={() => { window.sessionStorage.removeItem(CONTROL_ROOM_SESSION_KEY); setUnlocked(false); setPasscode(""); }}>Lock</button></div>
+
+      <section className="sc-controlroom-card">
+        <h3>Add staff admin</h3>
+        <p>Creates a Taronga staff account with email + password and grants a staff role. They can then sign in to this console.</p>
+        <form className="sc-controlroom-form" onSubmit={handleAddAdmin}>
+          <label>Email<input type="email" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="off" placeholder="name@example.com" /></label>
+          <label>Password<input type="text" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="off" placeholder="At least 6 characters" /></label>
+          <label>Role<select value={role} onChange={(e) => setRole(e.target.value)}>{STAFF_ROLES.map((r) => <option key={r} value={r}>{r}</option>)}</select></label>
+          <button type="submit" disabled={state === "saving"}>{state === "saving" ? "Creating…" : "Add staff admin"}</button>
+        </form>
+        {message && <p className={state === "error" ? "auth-error" : "sc-controlroom-success"}>{message}</p>}
+        <p className="sc-controlroom-note">You are signed in as {currentEmail}. Adding an admin does not sign you out.</p>
+      </section>
     </div>
   );
 }
