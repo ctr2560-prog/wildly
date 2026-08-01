@@ -28,6 +28,8 @@ const assets = {
   tarongaBushland: assetPath("assets/taronga-bushland-classroom.jpg"),
   tarongaOutdoor: assetPath("assets/taronga-outdoor-learning.jpg"),
   tarongaPlLectureTheatre: assetPath("assets/taronga-pl-lecture-theatre.jpg"),
+  tarongaKeeperTortoise: assetPath("assets/taronga-education-keeper-tortoise.webp"),
+  tarongaRainforestClassroom: assetPath("assets/taronga-education-rainforest-classroom.webp"),
 };
 
 const subjects = [
@@ -1448,23 +1450,23 @@ function AboutMarketingPage() {
             <p className="hero-subtitle">Wildly helps teachers turn Taronga’s conservation knowledge and experiences into purposeful classroom learning.</p>
             <div className="hero-actions"><a className="primary-action" href={signupRoute()}>Get started free</a><a className="secondary-action" href={routePath("subjects")}>Explore resources</a></div>
           </div>
-          <div className="about-hero-media"><img src={assets.tarongaBushland} alt="Taronga educator leading students through a bushland habitat learning experience" width="1423" height="1067" fetchPriority="high" /></div>
+          <div className="about-hero-media"><img src={assets.tarongaRainforestClassroom} alt="A Taronga educator teaching a class of students in an immersive rainforest habitat classroom" width="2000" height="1000" fetchPriority="high" /></div>
         </section>
 
-        <section className="about-purpose-band">
+        <Reveal as="section" className="about-purpose-band">
           <div><span className="audience-pill">Why Wildly exists</span><h2>Nature gives learning a reason to matter.</h2></div>
           <div><p>Teachers do not need another folder of disconnected downloads. They need trusted content, clear curriculum context and a practical way to move from a compelling idea into a complete learning experience.</p><p>Wildly is Taronga’s place to make that connection: from conservation expertise and real animal stories to lessons that work in classrooms.</p></div>
-        </section>
+        </Reveal>
 
         <section className="about-principles-section">
-          <div className="public-section-heading"><span className="audience-pill">Our approach</span><h2>Designed around what makes learning work</h2></div>
+          <Reveal className="public-section-heading"><span className="audience-pill">Our approach</span><h2>Designed around what makes learning work</h2></Reveal>
           <div className="about-principles-grid">
-            {principles.map(([title, copy], index) => <article key={title}><span>0{index + 1}</span><h3>{title}</h3><p>{copy}</p></article>)}
+            {principles.map(([title, copy], index) => <Reveal as="article" key={title} delay={index * 80}><span>0{index + 1}</span><h3>{title}</h3><p>{copy}</p></Reveal>)}
           </div>
         </section>
 
-        <section className="about-ecosystem public-about-ecosystem">
-          <div className="about-ecosystem-media"><img src={assetPath("assets/tracka/mode-zoo.jpg")} alt="Students using Taronga Tracka during a zoo learning experience" width="1200" height="772" loading="lazy" /></div>
+        <Reveal as="section" className="about-ecosystem public-about-ecosystem">
+          <div className="about-ecosystem-media"><img src={assets.tarongaKeeperTortoise} alt="A Taronga keeper introducing students to a tortoise in a rainforest habitat classroom" width="1459" height="1479" loading="lazy" /></div>
           <div className="about-ecosystem-copy">
             <span className="about-kicker">The Taronga connection</span>
             <h2>From experience to understanding.</h2>
@@ -1474,12 +1476,12 @@ function AboutMarketingPage() {
             </ul>
             <a className="text-action" href={routePath("tracka")}>Explore Wildly + Tracka</a>
           </div>
-        </section>
+        </Reveal>
 
-        <section className="about-taronga-band">
+        <Reveal as="section" className="about-taronga-band" variant="scale">
           <img src={assets.tarongaOutdoor} alt="Students observing animals during an outdoor learning experience at Taronga" width="2000" height="1335" loading="lazy" />
           <div><span className="audience-pill">Backed by Taronga</span><h2>Conservation expertise, shaped for education.</h2><p>Wildly grows from Taronga’s work with wildlife, educators and communities. The goal is not to replace a teacher’s judgement, but to give it stronger material: real contexts, thoughtful sequences and practical resources.</p><a className="primary-action" href={signupRoute()}>Start exploring Wildly</a></div>
-        </section>
+        </Reveal>
         <SiteFooter />
       </main>
     </>

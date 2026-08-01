@@ -10593,3 +10593,6 @@ button:focus-visible {
   .schools-value { border-right: 0; border-bottom: 1px solid var(--studio-line); }
   .schools-value:last-child { border-bottom: 0; }
 }
+
+/* About: keep the ecosystem CTA link at content width (grid item was stretching) */
+.about-ecosystem-copy .text-action { justify-self: start; }
