@@ -2631,11 +2631,6 @@ function StaffConsole({ onLock, firebaseUser }) {
     }
   }
 
-  async function publishUpdates() {
-    await publishDashboardConfig();
-    setNotice("Dashboard settings were published. Content items save to Firestore as soon as they are created or deleted.");
-  }
-
   async function saveProfessionalLearningItem(item) {
     setProfessionalLearningSaveState("saving");
     try {
@@ -2786,10 +2781,10 @@ function StaffConsole({ onLock, firebaseUser }) {
             ["control-room", "target", "Control Room"],
           ].map(([id, icon, label]) => <button className={panel === id ? "active" : ""} type="button" data-panel={id} key={id} onClick={() => setPanel(id)}><Icon type={icon} className="" />{label}</button>)}
         </nav>
-        <article className="tracka-mini"><img src={assets.trackaLogo} alt="Taronga Tracka" /><p>Staff editing is unlocked for this browser session. Tracka data connector ready for staff review.</p></article>
+        <article className="tracka-mini"><img src={assets.trackaLogo} alt="Taronga Tracka" /><p>Part of the Taronga Education ecosystem — Wildly and Tracka share one staff sign-in.</p></article>
       </aside>
       <main className="staff-workspace">
-        <header className="staff-topbar"><div><span>Taronga Staff Console</span><h1>Wildly learning operations</h1></div><div className="staff-actions">{firebaseUser && <span className="staff-signed-in">Signed in as {firebaseUser.email}</span>}<a href={routePath("teacher")}>Teacher view</a><button type="button" onClick={publishUpdates}>Publish updates</button><button type="button" className="sign-out-button" onClick={onLock}>Sign out</button></div></header>
+        <header className="staff-topbar"><div className="staff-topbar-titles"><span>Wildly by Taronga</span><h1>Staff console</h1></div><div className="staff-actions">{firebaseUser && <span className="staff-signed-in">Signed in as {firebaseUser.email}</span>}<a href={routePath("teacher")}>Teacher view</a><button type="button" className="sign-out-button" onClick={onLock}>Sign out</button></div></header>
         <NoticeBanner notice={notice} onClose={() => setNotice("")} />
         {panel === "overview" && <OverviewPanel contentItems={contentItems} tvVideos={tarongaTvVideos} plItems={professionalLearningItems} liveSessions={liveSessions} liveResponses={liveResponses} />}
         {panel === "users" && <UsersPanel users={users} usersStatus={usersStatus} onPlaceholder={(message) => setNotice(message)} />}
@@ -4206,12 +4201,12 @@ function ContentFirestoreStatus({
   if (status === "live" && !saveState) return null;
 
   const messages = {
-    loading: loadingLabel || `Loading Firestore ${collectionLabel}...`,
-    missing: emptyLabel || `Firestore ${collectionName} is empty. Showing fallback content until you seed or add content.`,
-    fallback: `Firestore denied access to ${collectionName}. Showing built-in demo ${collectionLabel} until rules are updated.`,
-    error: errorLabel || `Firestore ${collectionLabel} could not load. Check rules allow access to ${collectionName}.`,
-    saving: savingLabel || "Writing content to Firestore...",
-    saved: savedLabel || "Content saved to Firestore.",
+    loading: loadingLabel || `Loading ${collectionLabel}…`,
+    missing: emptyLabel || "Nothing published here yet — you're seeing sample content until you add your own.",
+    fallback: `Showing built-in sample ${collectionLabel} — your account may not have staff edit access yet.`,
+    error: errorLabel || `${collectionLabel} could not load. Check your connection and try again.`,
+    saving: savingLabel || "Saving…",
+    saved: savedLabel || "Saved.",
   };
 
   const statusKey = saveState && saveState !== "idle" ? saveState : status;

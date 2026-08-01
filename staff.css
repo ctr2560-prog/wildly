@@ -339,7 +339,7 @@ svg {
   backdrop-filter: blur(18px);
 }
 
-.staff-topbar span {
+.staff-topbar-titles span {
   color: var(--green-800);
   font-size: 12px;
   font-weight: 900;
