@@ -326,8 +326,10 @@ function buildLessonActivityBlocks(item) {
   }));
 }
 
-const staffPassword = "admin";
-const staffSessionKey = "wildly-staff-session";
+// Staff console access is gated solely by a real Firebase email + password
+// login whose teachers/{email}.role is a Wildly staff role (enforced by the
+// isWildlyStaff() Firestore rule). The old shared "admin" password gate was
+// removed — it was session-only and not real security.
 const staffRoles = ["Education Staff", "Curriculum Leader", "School Leader"];
 
 function listFromText(value) {
@@ -2380,7 +2382,6 @@ function TeacherPage({ page = "dashboard", subject = "", contentId = "", tvVideo
 }
 
 function StaffPage() {
-  const [isUnlocked, setIsUnlocked] = useState(() => window.sessionStorage.getItem(staffSessionKey) === "unlocked");
   const [firebaseUser, setFirebaseUser] = useState(null);
   const [authChecked, setAuthChecked] = useState(false);
 
@@ -2391,21 +2392,10 @@ function StaffPage() {
     });
   }, []);
 
-  function unlock() {
-    window.sessionStorage.setItem(staffSessionKey, "unlocked");
-    setIsUnlocked(true);
-  }
-
   async function lock() {
-    window.sessionStorage.removeItem(staffSessionKey);
-    setIsUnlocked(false);
     if (auth.currentUser) {
       await signOut(auth);
     }
-  }
-
-  if (!isUnlocked) {
-    return <StaffPasswordScreen onUnlock={unlock} />;
   }
 
   if (!authChecked) {
@@ -2420,43 +2410,13 @@ function StaffPage() {
   }
 
   if (!firebaseUser) {
-    return <StaffFirebaseLoginScreen onLock={lock} />;
+    return <StaffFirebaseLoginScreen />;
   }
 
   return <StaffConsole onLock={lock} firebaseUser={firebaseUser} />;
 }
 
-function StaffPasswordScreen({ onUnlock }) {
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
-
-  function handleSubmit(event) {
-    event.preventDefault();
-    if (password === staffPassword) {
-      onUnlock();
-      return;
-    }
-    setError("Incorrect password.");
-  }
-
-  return (
-    <main className="staff-auth-page">
-      <section className="staff-auth-card" aria-label="Taronga staff login">
-        <img src={assets.wildlyLogo} alt="Wildly by Taronga" />
-        <span>Taronga Staff Console</span>
-        <h1>Staff password</h1>
-        <p>Enter the staff password to access the console.</p>
-        <form onSubmit={handleSubmit}>
-          <label>Password<input type="password" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="current-password" autoFocus /></label>
-          {error && <p className="auth-error">{error}</p>}
-          <button type="submit">Enter staff console</button>
-        </form>
-      </section>
-    </main>
-  );
-}
-
-function StaffFirebaseLoginScreen({ onLock }) {
+function StaffFirebaseLoginScreen() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -2483,15 +2443,14 @@ function StaffFirebaseLoginScreen({ onLock }) {
       <section className="staff-auth-card" aria-label="Taronga staff sign in">
         <img src={assets.wildlyLogo} alt="Wildly by Taronga" />
         <span>Taronga Staff Console</span>
-        <h1>Sign in to enable saves</h1>
-        <p>Content writes require your Taronga Firebase account. Use the email and password set up for your staff account.</p>
+        <h1>Staff sign in</h1>
+        <p>Sign in with your Taronga staff account to manage Wildly content.</p>
         <form onSubmit={handleSubmit}>
           <label>Email<input type="email" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" autoFocus /></label>
           <label>Password<input type="password" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="current-password" /></label>
           {error && <p className="auth-error">{error}</p>}
           <button type="submit" disabled={loading}>{loading ? "Signing in…" : "Sign in"}</button>
         </form>
-        <button type="button" className="auth-back-link" onClick={onLock}>← Back to staff password</button>
       </section>
     </main>
   );
