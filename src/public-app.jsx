@@ -1115,21 +1115,7 @@ function TrackaMarketingPage() {
             <Reveal className="tracka-integration-copy">
               <span className="audience-pill">Wildly + Tracka</span>
               <h2>Where the experience becomes the lesson.</h2>
-              <p>One connected thread — what a class discovers with Tracka becomes what you teach next in Wildly.</p>
-              <ol className="tracka-handoff-flow" aria-label="How Tracka hands off to Wildly">
-                <li>
-                  <span className="tracka-handoff-node acc-green"><Icon type="pin" /></span>
-                  <div><strong>In Tracka</strong><p>A class explores animals, habitats and themes on the ground.</p></div>
-                </li>
-                <li>
-                  <span className="tracka-handoff-node acc-teal"><Icon type="arrowRight" /></span>
-                  <div><strong>Context transfers</strong><p>Automatically — nothing to re-enter or set up.</p></div>
-                </li>
-                <li>
-                  <span className="tracka-handoff-node acc-amber"><Icon type="cap" /></span>
-                  <div><strong>In Wildly</strong><p>Matching lessons and resources are ready to teach.</p></div>
-                </li>
-              </ol>
+              <p>Everything a class explores in Tracka flows into Wildly. Instead of planning from a blank page, you open straight to lessons and resources matched to what they just experienced.</p>
               <div className="hero-actions tracka-integration-actions">
                 <a className="primary-action" href={signupRoute()}>Get started with Wildly</a>
                 <a className="secondary-action" href={appLinks.tracka} target="_blank" rel="noopener noreferrer">Open Tracka</a>
