@@ -1259,6 +1259,113 @@ function LearningPathsMarketingPage() {
   );
 }
 
+const SCHOOLS_VALUES = [
+  ["cap", "Teacher-first", "Built to be scanned, understood and taught."],
+  ["blocks", "Curriculum-connected", "Organised by NSW subject and stage."],
+  ["leaf", "Taronga-backed", "Real conservation expertise and stories."],
+  ["heart", "Free to start", "No procurement, no student data needed."],
+];
+
+const SCHOOLS_AUDIENCES = [
+  {
+    id: "teachers",
+    label: "Teachers",
+    lead: "Find ready-to-teach resources by subject and stage — with the teaching notes, purpose and curriculum context already in place.",
+    points: [
+      "Browse by NSW subject and stage",
+      "Open teaching notes, not just downloads",
+      "Sequence resources into a learning path",
+      "Extend a zoo visit or Tracka experience",
+    ],
+    image: assets.tarongaClassroom,
+    imageAlt: "A Taronga educator teaching a class in an immersive habitat classroom",
+  },
+  {
+    id: "leaders",
+    label: "Curriculum leaders",
+    lead: "Give your faculty one trusted place to plan consistent, curriculum-connected learning through nature.",
+    points: [
+      "Resources organised around NSW outcomes",
+      "Consistent quality across every class",
+      "Reusable learning paths for your team",
+      "Professional learning to build capability",
+    ],
+    image: assets.tarongaBushland,
+    imageAlt: "Students learning outdoors in a bushland classroom with a Taronga educator",
+  },
+  {
+    id: "school",
+    label: "School leaders",
+    lead: "Bring Taronga-backed, real-world learning to your whole school — free to start, with nothing to procure.",
+    points: [
+      "Free to begin, no procurement barrier",
+      "Backed by Taronga's conservation expertise",
+      "Works with or without a zoo excursion",
+      "No student accounts or data to get started",
+    ],
+    image: assets.tarongaOutdoor,
+    imageAlt: "A school group engaged in outdoor learning at Taronga",
+  },
+];
+
+const SCHOOLS_FAQS = [
+  ["Does it cost anything to start?", "You can create a teacher account and use the published Wildly collection for free. Begin with your next lesson — there's no procurement process to work through first."],
+  ["Is the content connected to the curriculum?", "Every resource is organised by NSW subject and stage, with teaching notes that make the outcomes and purpose clear before you even open it."],
+  ["Do students need logins or devices?", "No. Wildly is a teacher planning and resource space — no student login is required. The student-facing experience lives in Taronga Tracka."],
+  ["What happens with student data?", "Getting started with Wildly doesn't require student accounts or student data. It's built for teachers to find and plan learning."],
+  ["Do we have to visit the zoo?", "No. Wildly works as a standalone classroom resource, and connects naturally with a Taronga excursion or Tracka when your class does visit."],
+  ["Is everything ready now?", "The collection is growing. You'll only ever see resources that are genuinely published and ready to teach — nothing placeholder."],
+];
+
+function SchoolsAudienceTabs() {
+  const [active, setActive] = useState("teachers");
+  const current = SCHOOLS_AUDIENCES.find((a) => a.id === active) || SCHOOLS_AUDIENCES[0];
+  return (
+    <div className="schools-audience">
+      <AccessibleTabs
+        id="schools-audience"
+        items={SCHOOLS_AUDIENCES}
+        activeId={active}
+        onChange={setActive}
+        ariaLabel="Choose your role"
+        className="schools-audience-tabs"
+        getClassName={(_, selected) => `schools-audience-tab${selected ? " active" : ""}`}
+        renderItem={(a) => a.label}
+      />
+      <div className="schools-audience-panel" id="schools-audience-panel" role="tabpanel" aria-labelledby={tabDomId("schools-audience", current.id)} tabIndex="0">
+        <div className="schools-audience-copy">
+          <p className="schools-audience-lead">{current.lead}</p>
+          <ul className="schools-audience-points">
+            {current.points.map((point) => <li key={point}><span className="schools-audience-tick"><Icon type="plus" /></span>{point}</li>)}
+          </ul>
+          <a className="text-action schools-audience-link" href={signupRoute()}>Get started free<Icon type="arrowRight" /></a>
+        </div>
+        <div className="schools-audience-media"><img key={current.id} src={current.image} alt={current.imageAlt} width="710" height="500" loading="lazy" /></div>
+      </div>
+    </div>
+  );
+}
+
+function SchoolsFaq() {
+  const [open, setOpen] = useState(0);
+  return (
+    <ul className="schools-faq-list">
+      {SCHOOLS_FAQS.map(([question, answer], i) => {
+        const isOpen = open === i;
+        return (
+          <li key={question} className={`schools-faq-item${isOpen ? " open" : ""}`}>
+            <button type="button" className="schools-faq-q" aria-expanded={isOpen} onClick={() => setOpen(isOpen ? -1 : i)}>
+              <span>{question}</span>
+              <span className="schools-faq-icon" aria-hidden="true"><Icon type="chevron" /></span>
+            </button>
+            <div className="schools-faq-a"><div><p>{answer}</p></div></div>
+          </li>
+        );
+      })}
+    </ul>
+  );
+}
+
 function SchoolsMarketingPage() {
   return (
     <>
@@ -1268,36 +1375,49 @@ function SchoolsMarketingPage() {
           <div className="schools-hero-copy">
             <span className="audience-pill">For schools</span>
             <h1>Bring Taronga-connected learning to your school.</h1>
-            <p className="hero-subtitle">Give teachers a clear place to find trusted resources, plan connected learning and extend zoo or digital experiences.</p>
+            <p className="hero-subtitle">A trusted place for teachers to find curriculum-connected resources, plan complete learning, and extend every zoo or digital experience.</p>
             <div className="hero-actions"><a className="primary-action" href={signupRoute()}>Get started free</a><a className="secondary-action" href={teacherPreviewRoute()}>Preview teacher workspace</a></div>
           </div>
           <div className="schools-hero-visual"><img src={assets.tarongaClassroom} alt="Students learning with a Taronga educator in an immersive habitat classroom" width="2400" height="1200" fetchPriority="high" /></div>
         </section>
 
-        <Reveal as="section" className="schools-stats-strip public-schools-values">
-          {["Teacher-first", "Curriculum-connected", "Taronga-backed", "Flexible to use"].map((value) => <div className="schools-stat" key={value}><Icon type="leaf" /><strong>{value}</strong></div>)}
+        <Reveal as="section" className="schools-values-row">
+          {SCHOOLS_VALUES.map(([icon, title, copy], i) => (
+            <div className="schools-value" key={title} style={{ "--card-index": i }}>
+              <span className="schools-value-icon"><Icon type={icon} /></span>
+              <div><strong>{title}</strong><p>{copy}</p></div>
+            </div>
+          ))}
         </Reveal>
 
-        <section className="schools-steps-band">
-          <Reveal className="schools-steps-header"><span className="about-kicker">A simple starting point</span><h2>Useful from the first lesson.</h2><p>Wildly can begin as a practical teacher resource and become a shared way for your school to connect curriculum with nature.</p></Reveal>
-          <div className="schools-steps-grid">
-            {[
-              ["01", "Access", "Teachers create an account and enter a calm workspace built for finding and planning learning."],
-              ["02", "Find", "Browse by subject and stage, then open the teaching notes and resources that are ready now."],
-              ["03", "Extend", "Connect classroom work with Taronga Tracka, zoo experiences, digital exploration and professional learning."],
-            ].map(([number, title, copy], i) => <Reveal as="article" className="schools-step-card" key={number} delay={i * 90}><span className="schools-step-number">{number}</span><h3>{title}</h3><p>{copy}</p></Reveal>)}
-          </div>
+        <section className="schools-audience-section">
+          <Reveal className="schools-section-head">
+            <span className="about-kicker">Built for your whole school</span>
+            <h2>One platform, for every role in learning.</h2>
+            <p>Whether you're planning tomorrow's lesson or a whole-school approach, Wildly meets you where you are.</p>
+          </Reveal>
+          <Reveal delay={80}><SchoolsAudienceTabs /></Reveal>
         </section>
 
         <Reveal as="section" className="schools-why-band public-schools-why">
           <div className="schools-why-media"><img src={assets.heroKoala} alt="Koala with joey at Taronga" width="710" height="400" loading="lazy" /></div>
           <div className="schools-why-copy">
-            <span className="about-kicker">Why it belongs in schools</span><h2>Real context. Less planning friction.</h2>
+            <span className="about-kicker">Why it belongs in schools</span>
+            <h2>Real context. Less planning friction.</h2>
             <ul className="about-checklist">
               {["Resources make their subject, stage and purpose clear.", "Learning paths connect individual materials into a coherent sequence.", "Taronga expertise gives familiar curriculum ideas a compelling real-world context.", "Tracka can recommend the right Wildly follow-up after zoo and digital experiences.", "Professional learning supports teachers to use nature-connected pedagogy with confidence."].map((reason) => <li key={reason}><span><Icon type="plus" className="about-check-icon" /></span><p>{reason}</p></li>)}
             </ul>
           </div>
         </Reveal>
+
+        <section className="schools-faq-section">
+          <Reveal className="schools-section-head">
+            <span className="about-kicker">Good to know</span>
+            <h2>Questions schools ask.</h2>
+            <p>Straight answers on cost, curriculum, devices and data.</p>
+          </Reveal>
+          <Reveal delay={80}><SchoolsFaq /></Reveal>
+        </section>
 
         <Reveal as="section" className="schools-cta-band" variant="scale">
           <div className="schools-cta-copy"><h2>Start with your next lesson.</h2><p>Create a teacher account and explore the published Wildly collection. No student login is needed to begin.</p></div>

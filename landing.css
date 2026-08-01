@@ -10332,3 +10332,259 @@ button:focus-visible {
   box-shadow: 0 34px 68px -24px rgba(0, 0, 0, 0.45);
 }
 
+
+/* ══════════ For Schools — reworked (tighter, bolder, interactive) ══════════ */
+
+/* Tighten the oversized studio spacing on this page */
+.public-schools-page.marketing-page > section,
+.public-schools-page.marketing-page > .motion-reveal {
+  margin-block: 0;
+}
+.public-schools-hero {
+  min-height: 0;
+  padding: clamp(56px, 7vw, 96px) 0 clamp(44px, 5vw, 72px);
+  gap: clamp(36px, 5vw, 60px);
+}
+.public-schools-page .public-schools-hero h1 {
+  margin: 16px 0 20px;
+  font-size: clamp(52px, 6.4vw, 86px);
+}
+.public-schools-page .public-schools-hero .hero-subtitle {
+  max-width: 740px;
+  font-size: clamp(20px, 1.7vw, 25px);
+}
+
+/* Value row — refined confidence strip with icons + a line each */
+.schools-values-row {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0;
+  margin: 0 auto clamp(64px, 8vw, 108px);
+  border-top: 1px solid var(--studio-line);
+  border-bottom: 1px solid var(--studio-line);
+}
+.schools-value {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  padding: 26px clamp(18px, 2.2vw, 30px);
+  border-right: 1px solid var(--studio-line);
+}
+.schools-value:last-child { border-right: 0; }
+.schools-value-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: 42px;
+  height: 42px;
+  border-radius: 11px;
+  color: var(--studio-forest);
+  background: #e7f6ec;
+}
+.schools-value-icon svg { width: 21px; }
+.schools-value strong {
+  display: block;
+  color: var(--studio-ink);
+  font-size: 17px;
+  font-weight: 800;
+}
+.schools-value p {
+  margin: 4px 0 0;
+  color: var(--studio-muted);
+  font-size: 14.5px;
+  line-height: 1.45;
+}
+
+/* Shared section heads */
+.public-schools-page .schools-section-head {
+  max-width: 760px;
+  margin-bottom: clamp(32px, 4vw, 52px);
+}
+.public-schools-page .schools-section-head h2 {
+  margin: 12px 0 14px;
+  color: var(--studio-ink);
+  font-size: clamp(34px, 3.8vw, 52px);
+  line-height: 1.02;
+}
+.public-schools-page .schools-section-head p {
+  margin: 0;
+  color: var(--studio-muted);
+  font-size: clamp(18px, 1.5vw, 21px);
+  line-height: 1.55;
+}
+
+/* Audience section */
+.schools-audience-section { padding-block: clamp(64px, 7vw, 104px); }
+
+.schools-audience-tabs {
+  display: inline-flex;
+  gap: 6px;
+  margin-bottom: 26px;
+  padding: 6px;
+  border: 1px solid var(--studio-line);
+  border-radius: 999px;
+  background: var(--studio-wash);
+}
+.schools-audience-tab {
+  padding: 11px 24px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--studio-muted);
+  font-family: inherit;
+  font-size: 15.5px;
+  font-weight: 750;
+  cursor: pointer;
+  transition: color 160ms ease, background-color 160ms ease;
+}
+.schools-audience-tab:hover { color: var(--studio-ink); }
+.schools-audience-tab.active {
+  color: #fff;
+  background: var(--green-900);
+}
+
+.schools-audience-panel {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr);
+  gap: clamp(32px, 4vw, 64px);
+  align-items: center;
+}
+.schools-audience-copy { display: grid; gap: 22px; }
+.schools-audience-lead {
+  margin: 0;
+  color: var(--studio-ink);
+  font-size: clamp(21px, 2vw, 27px);
+  font-weight: 600;
+  line-height: 1.35;
+}
+.schools-audience-points {
+  display: grid;
+  gap: 14px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.schools-audience-points li {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  color: #33403a;
+  font-size: 17px;
+  font-weight: 600;
+}
+.schools-audience-tick {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  color: var(--studio-forest);
+  background: #e7f6ec;
+}
+.schools-audience-tick svg { width: 15px; }
+.schools-audience-link {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+  color: var(--studio-forest);
+  font-size: 16px;
+  font-weight: 800;
+}
+.schools-audience-link svg { width: 18px; }
+.schools-audience-media {
+  overflow: hidden;
+  border-radius: 4px;
+}
+.schools-audience-media img {
+  display: block;
+  width: 100%;
+  height: clamp(300px, 34vw, 440px);
+  object-fit: cover;
+  animation: home-chapter-in 520ms ease both;
+}
+
+/* Why band — bigger type */
+.public-schools-page .schools-why-band { padding-block: clamp(64px, 7vw, 104px); }
+.public-schools-page .schools-why-copy h2 {
+  font-size: clamp(34px, 3.6vw, 50px);
+  line-height: 1.04;
+}
+.public-schools-page .about-checklist li p { font-size: 17.5px; }
+
+/* FAQ */
+.schools-faq-section { padding-block: clamp(64px, 7vw, 104px); }
+.schools-faq-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-top: 1px solid var(--studio-line);
+}
+.schools-faq-item { border-bottom: 1px solid var(--studio-line); }
+.schools-faq-q {
+  display: flex;
+  gap: 24px;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 26px 4px;
+  border: 0;
+  background: transparent;
+  color: var(--studio-ink);
+  font-family: inherit;
+  font-size: clamp(19px, 1.7vw, 23px);
+  font-weight: 750;
+  text-align: left;
+  cursor: pointer;
+}
+.schools-faq-q:hover { color: var(--studio-forest); }
+.schools-faq-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  color: var(--studio-forest);
+  background: #e7f6ec;
+  transition: transform 260ms ease;
+}
+.schools-faq-icon svg { width: 18px; }
+.schools-faq-item.open .schools-faq-icon { transform: rotate(180deg); }
+.schools-faq-a {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 280ms ease;
+}
+.schools-faq-item.open .schools-faq-a { grid-template-rows: 1fr; }
+.schools-faq-a > div { overflow: hidden; }
+.schools-faq-a p {
+  max-width: 760px;
+  margin: 0;
+  padding: 0 4px 28px;
+  color: var(--studio-muted);
+  font-size: 18px;
+  line-height: 1.65;
+}
+
+/* CTA — bigger */
+.public-schools-page .schools-cta-band { padding: clamp(48px, 5vw, 72px) clamp(36px, 5vw, 72px); }
+.public-schools-page .schools-cta-copy h2 { font-size: clamp(32px, 3.4vw, 46px); }
+.public-schools-page .schools-cta-copy p { font-size: clamp(17px, 1.5vw, 20px); }
+
+@media (max-width: 900px) {
+  .schools-values-row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .schools-value:nth-child(2) { border-right: 0; }
+  .schools-value:nth-child(1), .schools-value:nth-child(2) { border-bottom: 1px solid var(--studio-line); }
+  .schools-audience-panel { grid-template-columns: minmax(0, 1fr); }
+  .schools-audience-media { order: -1; }
+  .schools-audience-tabs { display: flex; flex-wrap: wrap; }
+}
+@media (max-width: 560px) {
+  .schools-values-row { grid-template-columns: minmax(0, 1fr); }
+  .schools-value { border-right: 0; border-bottom: 1px solid var(--studio-line); }
+  .schools-value:last-child { border-bottom: 0; }
+}
