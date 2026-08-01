@@ -865,6 +865,7 @@ function AuthScreen({ mode = "login" }) {
           email: credential.user.email.toLowerCase(),
           schoolName: school,
           createdAt: serverTimestamp(),
+          lastLogin: serverTimestamp(),
           products: arrayUnion("wildly"),
         }, { merge: true });
         window.location.hash = "#teacher";
@@ -877,7 +878,7 @@ function AuthScreen({ mode = "login" }) {
       }
 
       const credential = await signInWithEmailAndPassword(auth, email.trim(), password);
-      setDoc(doc(db, "teachers", credential.user.email.toLowerCase()), { products: arrayUnion("wildly") }, { merge: true }).catch(() => {});
+      setDoc(doc(db, "teachers", credential.user.email.toLowerCase()), { products: arrayUnion("wildly"), lastLogin: serverTimestamp() }, { merge: true }).catch(() => {});
       window.location.hash = "#teacher";
     } catch (error) {
       console.error("Auth flow failed", error);
@@ -2799,14 +2800,14 @@ function StaffConsole({ onLock, firebaseUser }) {
         </header>
         <NoticeBanner notice={notice} onClose={() => setNotice("")} />
         {panel === "overview" && <OverviewPanel contentItems={contentItems} tvVideos={tarongaTvVideos} plItems={professionalLearningItems} upcomingEvents={upcomingEvents} users={users} onNavigate={setPanel} />}
-        {panel === "users" && <UsersPanel users={users} usersStatus={usersStatus} onPlaceholder={(message) => setNotice(message)} />}
+        {panel === "users" && <UsersPanel users={users} usersStatus={usersStatus} />}
         {panel === "analytics" && <AnalyticsPanel liveSessions={liveSessions} liveResponses={liveResponses} liveSessionsStatus={liveSessionsStatus} liveResponsesStatus={liveResponsesStatus} onPlaceholder={(message) => setNotice(message)} />}
         {panel === "content" && <ContentPanel contentItems={contentItems} status={contentStatus} saveState={contentSaveState} seedContentItems={seedContentItems} addContentItem={addContentItem} deleteContentItem={deleteContentItem} />}
         {panel === "taronga-tv" && <TarongaTvPanel items={tarongaTvVideos} contentItems={contentItems} status={tarongaTvStatus} saveState={tarongaTvSaveState} saveVideo={saveTarongaTvVideo} deleteVideo={deleteTarongaTvVideo} />}
         {panel === "professional-learning" && <ProfessionalLearningPanel items={professionalLearningItems} status={professionalLearningStatus} saveState={professionalLearningSaveState} saveItem={saveProfessionalLearningItem} deleteItem={deleteProfessionalLearningItem} />}
         {panel === "upcoming-events" && <UpcomingEventsPanel events={upcomingEvents} saveEvent={saveUpcomingEvent} deleteEvent={deleteUpcomingEvent} />}
         {panel === "dashboard" && <DashboardEditor config={config} contentItems={contentItems} updateConfig={updateConfig} reset={() => { setConfig(defaultDashboardConfig); setPreviewKey((key) => key + 1); }} previewKey={previewKey} publish={publishDashboardConfig} status={status} saveState={saveState} />}
-        {panel === "control-room" && <ControlRoomPanel currentEmail={firebaseUser?.email} />}
+        {panel === "control-room" && <ControlRoomPanel currentEmail={firebaseUser?.email} users={users} />}
       </main>
     </div>
   );
@@ -2840,7 +2841,7 @@ async function createStaffAdmin({ email, password, role }) {
   }
 }
 
-function ControlRoomPanel({ currentEmail }) {
+function ControlRoomPanel({ currentEmail, users = [] }) {
   const [unlocked, setUnlocked] = useState(() => window.sessionStorage.getItem(CONTROL_ROOM_SESSION_KEY) === "yes");
   const [passcode, setPasscode] = useState("");
   const [passError, setPassError] = useState("");
@@ -2849,6 +2850,32 @@ function ControlRoomPanel({ currentEmail }) {
   const [password, setPassword] = useState("");
   const [state, setState] = useState("idle"); // idle | saving | saved | error
   const [message, setMessage] = useState("");
+
+  const [userSearch, setUserSearch] = useState("");
+  const [confirmId, setConfirmId] = useState(null);
+  const [removingId, setRemovingId] = useState(null);
+  const [removeError, setRemoveError] = useState("");
+
+  async function removeUser(id) {
+    setRemoveError("");
+    setRemovingId(id);
+    try {
+      await deleteDoc(doc(db, "teachers", id));
+      setConfirmId(null);
+    } catch (error) {
+      console.error("Unable to remove user", error);
+      setRemoveError("Could not remove that account. Try again.");
+    } finally {
+      setRemovingId(null);
+    }
+  }
+
+  const manageableUsers = users
+    .filter((u) => {
+      if (!userSearch) return true;
+      return `${u.email || ""} ${u.schoolName || ""}`.toLowerCase().includes(userSearch.toLowerCase());
+    })
+    .slice(0, 50);
 
   function handleUnlock(event) {
     event.preventDefault();
@@ -2923,6 +2950,41 @@ function ControlRoomPanel({ currentEmail }) {
         </form>
         {message && <p className={state === "error" ? "auth-error" : "sc-controlroom-success"}>{message}</p>}
         <p className="sc-controlroom-note">You are signed in as {currentEmail}. Adding an admin does not sign you out.</p>
+      </section>
+
+      <section className="sc-controlroom-card">
+        <h3>Manage users</h3>
+        <p>Remove a teacher or staff account from the roster. This deletes their Taronga Education profile and revokes console access — it does not delete their Firebase sign-in.</p>
+        <div className="sc-manage-search">
+          <Icon type="target" className="" />
+          <input type="search" value={userSearch} onChange={(e) => setUserSearch(e.target.value)} placeholder="Search email or school" autoComplete="off" />
+        </div>
+        {removeError && <p className="auth-error">{removeError}</p>}
+        <ul className="sc-manage-list">
+          {manageableUsers.length === 0 && <li className="sc-manage-empty">No accounts match.</li>}
+          {manageableUsers.map((u) => {
+            const isSelf = (u.email || "").toLowerCase() === (currentEmail || "").toLowerCase();
+            return (
+              <li key={u.id} className="sc-manage-row">
+                <div className="sc-manage-who">
+                  <span className="sc-user-initial">{(u.email || "?").charAt(0).toUpperCase()}</span>
+                  <div><strong>{u.email || "—"}</strong><small>{displayRoleOf(u)}{u.schoolName ? ` · ${u.schoolName}` : ""}</small></div>
+                </div>
+                {isSelf ? (
+                  <span className="sc-manage-self">You</span>
+                ) : confirmId === u.id ? (
+                  <span className="sc-manage-confirm">
+                    <button type="button" className="sc-manage-delete" disabled={removingId === u.id} onClick={() => removeUser(u.id)}>{removingId === u.id ? "Removing…" : "Confirm remove"}</button>
+                    <button type="button" className="sc-manage-cancel" onClick={() => setConfirmId(null)}>Cancel</button>
+                  </span>
+                ) : (
+                  <button type="button" className="sc-manage-remove" onClick={() => { setConfirmId(u.id); setRemoveError(""); }}>Remove</button>
+                )}
+              </li>
+            );
+          })}
+        </ul>
+        {users.length > 50 && <p className="sc-controlroom-note">Showing the first 50 — search to find a specific account.</p>}
       </section>
     </div>
   );
@@ -3045,72 +3107,72 @@ function OverviewPanel({ contentItems, tvVideos, plItems, upcomingEvents = [], u
   );
 }
 
-function UsersPanel({ users = [], usersStatus = "loading", onPlaceholder }) {
+function displayRoleOf(user) {
+  return staffRoles.includes(user.role) ? user.role : "Teacher";
+}
+
+function lastActiveOf(user) {
+  return user.lastLogin || user.updatedAt || user.createdAt || null;
+}
+
+function formatRelativeDate(ts) {
+  if (!ts) return "—";
+  const d = ts.toDate ? ts.toDate() : new Date(ts);
+  if (Number.isNaN(d.getTime())) return "—";
+  const diffDays = Math.floor((Date.now() - d.getTime()) / 86400000);
+  if (diffDays <= 0) return "Today";
+  if (diffDays === 1) return "Yesterday";
+  if (diffDays < 7) return `${diffDays} days ago`;
+  if (diffDays < 30) return `${Math.floor(diffDays / 7)} week${diffDays < 14 ? "" : "s"} ago`;
+  return d.toLocaleDateString("en-AU", { day: "numeric", month: "short", year: "numeric" });
+}
+
+function UsersPanel({ users = [], usersStatus = "loading" }) {
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState("All roles");
 
-  const allRoles = [...new Set(users.map((u) => u.role).filter(Boolean))].sort();
-
-  const visibleUsers = users.filter((u) => {
-    const haystack = `${u.name || ""} ${u.role || ""} ${u.schoolName || ""} ${u.email || ""}`.toLowerCase();
-    const matchesSearch = !search || haystack.includes(search.toLowerCase());
-    const matchesRole = roleFilter === "All roles" || u.role === roleFilter;
-    return matchesSearch && matchesRole;
-  });
-
-  const roleCounts = users.reduce((acc, u) => {
-    const r = u.role || "Unknown";
-    acc[r] = (acc[r] || 0) + 1;
-    return acc;
-  }, {});
-
-  const countTeachers = users.filter((u) => u.role === "Teacher").length;
-  const countStaff = users.filter((u) => staffRoles.includes(u.role)).length;
-  const countOther = users.filter((u) => u.role !== "Teacher" && !staffRoles.includes(u.role)).length;
-
-  function formatDate(ts) {
-    if (!ts) return "—";
-    const d = ts.toDate ? ts.toDate() : new Date(ts);
-    const now = new Date();
-    const diffMs = now - d;
-    const diffDays = Math.floor(diffMs / 86400000);
-    if (diffDays === 0) return "Today";
-    if (diffDays === 1) return "Yesterday";
-    if (diffDays < 7) return `${diffDays} days ago`;
-    return d.toLocaleDateString("en-AU", { day: "numeric", month: "short" });
-  }
-
   const isPermissionDenied = usersStatus === "permission-denied";
   const isLoading = usersStatus === "loading";
+
+  const countStaff = users.filter((u) => staffRoles.includes(u.role)).length;
+  const countTeachers = users.length - countStaff;
+  const schoolCount = new Set(users.map((u) => (u.schoolName || "").trim()).filter(Boolean)).size;
+  const roleOptions = ["All roles", "Teacher", ...staffRoles.filter((r) => users.some((u) => u.role === r))];
+
+  const visibleUsers = users.filter((u) => {
+    const haystack = `${displayRoleOf(u)} ${u.schoolName || ""} ${u.email || ""}`.toLowerCase();
+    const matchesSearch = !search || haystack.includes(search.toLowerCase());
+    const matchesRole = roleFilter === "All roles" || displayRoleOf(u) === roleFilter;
+    return matchesSearch && matchesRole;
+  });
 
   return (
     <section className="staff-section staff-panel active">
       <div className="section-heading">
         <div>
           <h2>Users</h2>
-          <p>All registered teachers, staff and administrators in Wildly.</p>
+          <p>Everyone with a Taronga Education account. Manage access in the Control Room.</p>
         </div>
-        <button type="button" onClick={() => onPlaceholder("User invites coming soon — connect this to your provisioning flow.")}>Invite user</button>
       </div>
 
       {isPermissionDenied && (
         <article className="placeholder-card" style={{ marginBottom: 24 }}>
           <h3>Staff sign-in required</h3>
-          <p>Reading all user accounts requires Firebase authentication with a staff role. Log in at <code>/#login</code> with a staff account (Education Staff, Curriculum Leader, or School Leader) to see live user data here.</p>
+          <p>Reading all user accounts requires a staff role. Sign in with a staff account (Education Staff, Curriculum Leader, or School Leader) to see live user data here.</p>
         </article>
       )}
 
-      <div className="sc-overview-grid" style={{ marginBottom: 24 }}>
+      <div className="sc-overview-grid" style={{ marginBottom: 20 }}>
         {[
-          ["Total users", isLoading ? "…" : users.length, "Registered accounts"],
-          ["Teachers", isLoading ? "…" : countTeachers, "Signed up via get-started"],
-          ["Taronga staff", isLoading ? "…" : countStaff, "Education, Curriculum, School Leader"],
-          ["Other roles", isLoading ? "…" : countOther, "Accounts with other or no role"],
+          ["Total users", isLoading ? "…" : users.length.toLocaleString(), "Taronga Education accounts"],
+          ["Teachers", isLoading ? "…" : countTeachers.toLocaleString(), "Standard teacher access"],
+          ["Taronga staff", isLoading ? "…" : countStaff.toLocaleString(), "Console access"],
+          ["Schools", isLoading ? "…" : schoolCount.toLocaleString(), "Distinct schools"],
         ].map(([label, value, desc]) => (
           <article key={label} className="sc-stat-card">
-            <span className="sc-stat-label">{label}</span>
-            <strong className="sc-stat-value">{value}</strong>
-            <p className="sc-stat-desc">{desc}</p>
+            <span>{label}</span>
+            <strong>{value}</strong>
+            <p>{desc}</p>
           </article>
         ))}
       </div>
@@ -3119,68 +3181,50 @@ function UsersPanel({ users = [], usersStatus = "loading", onPlaceholder }) {
         <div className="table-toolbar">
           <label>
             <Icon type="target" className="" />
-            <input
-              type="search"
-              placeholder="Search name, school or email"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
+            <input type="search" placeholder="Search email or school" value={search} onChange={(e) => setSearch(e.target.value)} />
           </label>
           <select aria-label="Filter by role" value={roleFilter} onChange={(e) => setRoleFilter(e.target.value)}>
-            <option>All roles</option>
-            {allRoles.map((r) => <option key={r}>{r}</option>)}
+            {roleOptions.map((r) => <option key={r}>{r}</option>)}
           </select>
         </div>
 
         {isLoading ? (
           <p className="empty-table-copy">Loading users…</p>
+        ) : visibleUsers.length === 0 ? (
+          <p className="empty-table-copy">{users.length === 0 ? (isPermissionDenied ? "Sign in with a staff account to view users." : "No users have registered yet.") : "No users match this search."}</p>
         ) : (
-          <table>
+          <table className="sc-users-table">
             <thead>
               <tr>
-                <th>Name</th>
-                <th>Role</th>
-                <th>School / Organisation</th>
                 <th>Email</th>
-                <th>Last updated</th>
+                <th>Role</th>
+                <th>School</th>
+                <th>Last active</th>
               </tr>
             </thead>
             <tbody>
-              {visibleUsers.map((u) => (
-                <tr key={u.id}>
-                  <td>{u.name || "—"}</td>
-                  <td>
-                    <span className={`sc-status-badge ${staffRoles.includes(u.role) ? "published" : "draft"}`}>
-                      {u.role || "No role"}
-                    </span>
-                  </td>
-                  <td>{u.schoolName || "—"}</td>
-                  <td style={{ fontSize: 13, color: "#666" }}>{u.email || "—"}</td>
-                  <td style={{ fontSize: 13, color: "#888" }}>{formatDate(u.updatedAt)}</td>
-                </tr>
-              ))}
+              {visibleUsers.map((u) => {
+                const isStaff = staffRoles.includes(u.role);
+                return (
+                  <tr key={u.id}>
+                    <td>
+                      <div className="sc-user-cell">
+                        <span className="sc-user-initial">{(u.email || "?").charAt(0).toUpperCase()}</span>
+                        <span className="sc-user-email">{u.email || "—"}</span>
+                      </div>
+                    </td>
+                    <td><span className={`sc-role-badge ${isStaff ? "staff" : "teacher"}`}>{displayRoleOf(u)}</span></td>
+                    <td className="sc-user-school">{u.schoolName || "—"}</td>
+                    <td className="sc-user-date">{formatRelativeDate(lastActiveOf(u))}</td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         )}
 
-        {!isLoading && visibleUsers.length === 0 && (
-          <p className="empty-table-copy">
-            {users.length === 0
-              ? isPermissionDenied
-                ? "Sign in with a staff account to view users."
-                : "No users have registered yet."
-              : "No users match this filter."}
-          </p>
-        )}
-
-        {!isLoading && users.length > 0 && (
-          <div style={{ display: "flex", gap: 16, flexWrap: "wrap", padding: "12px 0 0", borderTop: "1px solid #eee", marginTop: 8 }}>
-            {Object.entries(roleCounts).sort((a, b) => b[1] - a[1]).map(([role, count]) => (
-              <span key={role} style={{ fontSize: 12, color: "#555" }}>
-                <strong style={{ color: "#1a4d2e" }}>{count}</strong> {role}
-              </span>
-            ))}
-          </div>
+        {!isLoading && visibleUsers.length > 0 && (
+          <p className="sc-users-count">{visibleUsers.length} of {users.length} account{users.length !== 1 ? "s" : ""}</p>
         )}
       </article>
     </section>

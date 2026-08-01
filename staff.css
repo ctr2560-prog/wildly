@@ -3216,3 +3216,122 @@ button.sc-stat-card.accent:hover { border-color: transparent; }
   .sc-quick-actions { grid-template-columns: 1fr; }
   .sc-tracka-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
+
+/* ── Users table (redesigned) ── */
+.sc-users-table { width: 100%; border-collapse: collapse; }
+.sc-users-table thead th {
+  padding: 0 16px 12px;
+  text-align: left;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  border-bottom: 1px solid var(--line);
+}
+.sc-users-table tbody td {
+  padding: 12px 16px;
+  border-bottom: 1px solid #eef2ec;
+  font-size: 14px;
+  color: var(--green-950);
+  vertical-align: middle;
+}
+.sc-users-table tbody tr:last-child td { border-bottom: 0; }
+.sc-users-table tbody tr:hover td { background: #f7faf5; }
+
+.sc-user-cell { display: flex; align-items: center; gap: 12px; }
+.sc-user-initial {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: linear-gradient(150deg, var(--green-800), var(--green-950));
+  color: #fff;
+  font-size: 14px;
+  font-weight: 700;
+}
+.sc-user-email { font-weight: 600; word-break: break-all; }
+.sc-user-school { color: #4d5c55; }
+.sc-user-date { color: var(--muted); font-size: 13px; white-space: nowrap; }
+
+.sc-role-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+}
+.sc-role-badge.teacher { color: #4d5c55; background: #eef2ec; }
+.sc-role-badge.staff { color: #0b4c32; background: #cdeed7; }
+
+.sc-users-count {
+  margin: 14px 4px 0;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+/* ── Control Room: manage users ── */
+.sc-manage-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 42px;
+  margin-bottom: 14px;
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: #fff;
+}
+.sc-manage-search svg { width: 16px; color: var(--muted); }
+.sc-manage-search input { flex: 1; border: 0; background: transparent; font-size: 14px; outline: none; }
+
+.sc-manage-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 420px;
+  overflow-y: auto;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}
+.sc-manage-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px;
+  border-bottom: 1px solid #eef2ec;
+}
+.sc-manage-row:last-child { border-bottom: 0; }
+.sc-manage-empty { padding: 18px; color: var(--muted); font-size: 14px; }
+.sc-manage-who { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.sc-manage-who strong { display: block; color: var(--green-950); font-size: 14px; font-weight: 600; word-break: break-all; }
+.sc-manage-who small { color: var(--muted); font-size: 12px; }
+
+.sc-manage-remove,
+.sc-manage-delete,
+.sc-manage-cancel {
+  height: 34px;
+  padding: 0 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.sc-manage-remove {
+  border: 1px solid var(--line);
+  background: #fff;
+  color: #b4231f;
+}
+.sc-manage-remove:hover { border-color: #b4231f; background: #fdf3f2; }
+.sc-manage-confirm { display: inline-flex; gap: 8px; }
+.sc-manage-delete { border: 0; background: #b4231f; color: #fff; }
+.sc-manage-delete:hover { background: #97160f; }
+.sc-manage-delete:disabled { opacity: 0.6; cursor: default; }
+.sc-manage-cancel { border: 1px solid var(--line); background: #fff; color: var(--green-900); }
+.sc-manage-self { color: var(--muted); font-size: 12px; font-weight: 700; padding-right: 6px; }
