@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { initializeApp, deleteApp } from "firebase/app";
 import { createUserWithEmailAndPassword, getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut } from "firebase/auth";
-import { addDoc, arrayUnion, collection, deleteDoc, doc, getDoc, getFirestore, onSnapshot, orderBy, query, serverTimestamp, setDoc, updateDoc, where } from "firebase/firestore";
+import { addDoc, arrayUnion, collection, deleteDoc, doc, getCountFromServer, getDoc, getFirestore, onSnapshot, orderBy, query, serverTimestamp, setDoc, updateDoc, where } from "firebase/firestore";
 import { auth, db } from "./firebase";
 import "../landing.css";
 import "../styles.css";
@@ -2798,7 +2798,7 @@ function StaffConsole({ onLock, firebaseUser }) {
           </div>
         </header>
         <NoticeBanner notice={notice} onClose={() => setNotice("")} />
-        {panel === "overview" && <OverviewPanel contentItems={contentItems} tvVideos={tarongaTvVideos} plItems={professionalLearningItems} liveSessions={liveSessions} liveResponses={liveResponses} />}
+        {panel === "overview" && <OverviewPanel contentItems={contentItems} tvVideos={tarongaTvVideos} plItems={professionalLearningItems} upcomingEvents={upcomingEvents} users={users} onNavigate={setPanel} />}
         {panel === "users" && <UsersPanel users={users} usersStatus={usersStatus} onPlaceholder={(message) => setNotice(message)} />}
         {panel === "analytics" && <AnalyticsPanel liveSessions={liveSessions} liveResponses={liveResponses} liveSessionsStatus={liveSessionsStatus} liveResponsesStatus={liveResponsesStatus} onPlaceholder={(message) => setNotice(message)} />}
         {panel === "content" && <ContentPanel contentItems={contentItems} status={contentStatus} saveState={contentSaveState} seedContentItems={seedContentItems} addContentItem={addContentItem} deleteContentItem={deleteContentItem} />}
@@ -2928,56 +2928,90 @@ function ControlRoomPanel({ currentEmail }) {
   );
 }
 
-function OverviewPanel({ contentItems, tvVideos, plItems, liveSessions, liveResponses }) {
+function useTrackaStats() {
+  const [stats, setStats] = useState({ schools: null, classes: null, loading: true });
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const [schools, classes] = await Promise.allSettled([
+        getCountFromServer(collection(db, "schools")),
+        getCountFromServer(collection(db, "classes")),
+      ]);
+      if (cancelled) return;
+      setStats({
+        schools: schools.status === "fulfilled" ? schools.value.data().count : null,
+        classes: classes.status === "fulfilled" ? classes.value.data().count : null,
+        loading: false,
+      });
+    })();
+    return () => { cancelled = true; };
+  }, []);
+  return stats;
+}
+
+function OverviewPanel({ contentItems, tvVideos, plItems, upcomingEvents = [], users = [], onNavigate }) {
+  const tracka = useTrackaStats();
+
+  const learningPaths = contentItems.filter((i) => i.type === "Learning Path").length;
+  const lessons = contentItems.filter((i) => i.type === "Lesson").length;
+  const resources = contentItems.filter((i) => i.type === "Resource").length;
   const publishedContent = contentItems.filter((i) => i.status === "Published").length;
   const publishedTv = tvVideos.filter((v) => v.status === "Published").length;
   const publishedPl = plItems.filter((s) => s.status === "Published").length;
-  const activeSessions = liveSessions.filter((s) => s.state !== "ended").length;
-  const totalResponses = liveResponses.length;
-  const uniqueStudents = new Set(liveResponses.map((r) => r.studentName?.trim()).filter(Boolean)).size;
 
   const contentBreakdown = [
-    { label: "Learning Paths", count: contentItems.filter((i) => i.type === "Learning Path").length },
-    { label: "Lessons", count: contentItems.filter((i) => i.type === "Lesson").length },
-    { label: "Resources", count: contentItems.filter((i) => i.type === "Resource").length },
-    { label: "TV Videos", count: tvVideos.length },
-    { label: "PL Sessions", count: plItems.length },
+    { label: "Learning Paths", count: learningPaths },
+    { label: "Lessons", count: lessons },
+    { label: "Resources", count: resources },
+    { label: "Taronga TV", count: tvVideos.length },
+    { label: "Professional Learning", count: plItems.length },
   ];
   const maxCount = Math.max(...contentBreakdown.map((b) => b.count), 1);
 
+  const quickActions = [
+    ["content", "report", "Add content", "Learning paths, lessons and resources"],
+    ["taronga-tv", "play", "Taronga TV", "Publish curriculum videos"],
+    ["professional-learning", "book", "Professional learning", "Sessions and webinars for teachers"],
+    ["upcoming-events", "calendar", "Upcoming events", "What teachers see next"],
+    ["dashboard", "monitor", "Edit teacher dashboard", "Home screen teachers land on"],
+    ["users", "users", "Users", "Teachers and staff accounts"],
+  ];
+
+  const fmt = (n) => (tracka.loading ? "…" : n == null ? "—" : n.toLocaleString());
+
   return (
-    <section className="staff-section staff-panel active">
+    <section className="staff-section staff-panel active sc-overview">
       <div className="sc-overview-grid">
-        <div className="sc-stat-card accent">
+        <button type="button" className="sc-stat-card accent" onClick={() => onNavigate("content")}>
           <span>Published content</span>
           <strong>{publishedContent}</strong>
-          <p>{contentItems.length} total items in Firestore</p>
-        </div>
-        <div className="sc-stat-card">
+          <p>{learningPaths} paths · {lessons} lessons · {resources} resources</p>
+        </button>
+        <button type="button" className="sc-stat-card" onClick={() => onNavigate("taronga-tv")}>
           <span>Taronga TV</span>
           <strong>{publishedTv}</strong>
-          <p>{tvVideos.length} total videos</p>
-        </div>
-        <div className="sc-stat-card">
-          <span>Student responses</span>
-          <strong>{totalResponses}</strong>
-          <p>{uniqueStudents} unique students</p>
-        </div>
-        <div className="sc-stat-card">
-          <span>Live sessions</span>
-          <strong>{liveSessions.length}</strong>
-          <p>{activeSessions} still active</p>
-        </div>
+          <p>{tvVideos.length} video{tvVideos.length !== 1 ? "s" : ""} in library</p>
+        </button>
+        <button type="button" className="sc-stat-card" onClick={() => onNavigate("professional-learning")}>
+          <span>Professional Learning</span>
+          <strong>{publishedPl}</strong>
+          <p>{plItems.length} session{plItems.length !== 1 ? "s" : ""} total</p>
+        </button>
+        <button type="button" className="sc-stat-card" onClick={() => onNavigate("upcoming-events")}>
+          <span>Upcoming events</span>
+          <strong>{upcomingEvents.length}</strong>
+          <p>Visible to teachers</p>
+        </button>
       </div>
 
       <div className="sc-overview-body">
         <div className="sc-overview-card">
-          <h3>Content breakdown</h3>
+          <h3>Content library</h3>
           <div className="sc-content-breakdown">
             {contentBreakdown.map((b) => (
               <div key={b.label} className="sc-breakdown-row">
                 <span className="sc-breakdown-label">{b.label}</span>
-                <div className="sc-breakdown-bar"><span style={{width: `${(b.count / maxCount) * 100}%`}} /></div>
+                <div className="sc-breakdown-bar"><span style={{ width: `${(b.count / maxCount) * 100}%` }} /></div>
                 <span className="sc-breakdown-count">{b.count}</span>
               </div>
             ))}
@@ -2985,10 +3019,28 @@ function OverviewPanel({ contentItems, tvVideos, plItems, liveSessions, liveResp
         </div>
         <div className="sc-overview-card">
           <h3>Quick actions</h3>
-          <p>Content, Taronga TV and Professional Learning panels let you create and publish directly to Firestore. Use the Analytics panel to monitor live session engagement. Edit Dashboard to update what teachers see on login.</p>
-          {publishedPl > 0 && <p style={{marginTop:12}}><strong>{publishedPl}</strong> published professional learning session{publishedPl !== 1 ? "s" : ""} visible to teachers.</p>}
-          {activeSessions > 0 && <p style={{marginTop:8,color:"var(--green-800)",fontWeight:700}}>{activeSessions} live session{activeSessions !== 1 ? "s" : ""} currently active.</p>}
+          <div className="sc-quick-actions">
+            {quickActions.map(([panelId, icon, label, desc]) => (
+              <button type="button" key={panelId} className="sc-quick-action" onClick={() => onNavigate(panelId)}>
+                <span className="sc-quick-action-icon"><Icon type={icon} className="" /></span>
+                <span className="sc-quick-action-text"><strong>{label}</strong><small>{desc}</small></span>
+              </button>
+            ))}
+          </div>
         </div>
+      </div>
+
+      <div className="sc-tracka-band">
+        <div className="sc-tracka-head">
+          <img src={assets.trackaLogo} alt="Taronga Tracka" />
+          <div><span>Live from the field</span><h3>Taronga Tracka</h3></div>
+        </div>
+        <div className="sc-tracka-stats">
+          <div><strong>{fmt(tracka.schools)}</strong><span>Schools</span></div>
+          <div><strong>{fmt(tracka.classes)}</strong><span>Classes created</span></div>
+          <div><strong>{users.length.toLocaleString()}</strong><span>Teacher accounts</span></div>
+        </div>
+        <p className="sc-tracka-note">Shared Taronga Education backend — the same teacher accounts sign in to Wildly and Tracka.</p>
       </div>
     </section>
   );

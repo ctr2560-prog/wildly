@@ -3085,3 +3085,134 @@ td {
 @media (max-width: 640px) {
   .sc-controlroom-form { grid-template-columns: 1fr; }
 }
+
+/* ── Overview: clickable stat cards, quick actions, Tracka band ── */
+.sc-overview { display: block; }
+
+button.sc-stat-card {
+  width: 100%;
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+  transition: transform 140ms ease, box-shadow 140ms ease, border-color 140ms ease;
+}
+button.sc-stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--surface-shadow-strong, 0 18px 40px rgba(7, 45, 31, 0.14));
+  border-color: var(--green-800);
+}
+button.sc-stat-card.accent:hover { border-color: transparent; }
+
+.sc-overview-card h3 {
+  font-size: 16px;
+  margin-bottom: 16px;
+}
+
+.sc-quick-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.sc-quick-action {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #fff;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 140ms ease, background-color 140ms ease, transform 140ms ease;
+}
+.sc-quick-action:hover {
+  border-color: var(--green-800);
+  background: #f5faf3;
+  transform: translateY(-1px);
+}
+.sc-quick-action-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  color: var(--green-900);
+  background: #e7f6ec;
+}
+.sc-quick-action-icon svg { width: 20px; height: 20px; }
+.sc-quick-action-text { display: flex; flex-direction: column; line-height: 1.3; min-width: 0; }
+.sc-quick-action-text strong { color: var(--green-950); font-size: 14px; font-weight: 700; }
+.sc-quick-action-text small { color: var(--muted); font-size: 12px; }
+
+.sc-tracka-band {
+  margin-top: 14px;
+  padding: 26px 28px;
+  border-radius: 14px;
+  background: radial-gradient(130% 150% at 12% 0%, #0f5d3d 0%, #08462e 55%, #05301f 100%);
+  color: #fff;
+}
+.sc-tracka-head {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 22px;
+}
+.sc-tracka-head img {
+  width: 52px;
+  height: 52px;
+  object-fit: contain;
+  padding: 7px;
+  border-radius: 12px;
+  background: #fff;
+}
+.sc-tracka-head span {
+  color: #a9f0cd;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.sc-tracka-head h3 {
+  margin: 3px 0 0;
+  color: #fff;
+  font-family: "Taronga Headline", "Avenir Next", Avenir, sans-serif;
+  font-weight: 400;
+  font-size: 26px;
+  line-height: 1;
+}
+.sc-tracka-stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+.sc-tracka-stats > div {
+  padding: 18px 20px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+.sc-tracka-stats strong {
+  display: block;
+  font-size: 34px;
+  font-weight: 800;
+  line-height: 1;
+  margin-bottom: 6px;
+}
+.sc-tracka-stats span {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 13px;
+  font-weight: 600;
+}
+.sc-tracka-note {
+  margin: 18px 0 0;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 13px;
+}
+
+@media (max-width: 900px) {
+  .sc-quick-actions { grid-template-columns: 1fr; }
+  .sc-tracka-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
