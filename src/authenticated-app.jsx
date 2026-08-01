@@ -2807,7 +2807,9 @@ function StaffConsole({ onLock, firebaseUser }) {
 
 const CONTROL_ROOM_PASSCODE = "2560";
 const CONTROL_ROOM_SESSION_KEY = "wildly-controlroom-unlocked";
-const STAFF_ROLES = ["Education Staff", "Curriculum Leader", "School Leader"];
+// Taronga staff admins all get the same console access. "Education Staff" is
+// one of the roles isWildlyStaff() accepts in the Firestore rules.
+const STAFF_ADMIN_ROLE = "Education Staff";
 
 async function createStaffAdmin({ email, password, role }) {
   // Create the account on a SECONDARY Firebase app so the current admin's
@@ -2838,7 +2840,6 @@ function ControlRoomPanel({ currentEmail }) {
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [role, setRole] = useState(STAFF_ROLES[0]);
   const [state, setState] = useState("idle"); // idle | saving | saved | error
   const [message, setMessage] = useState("");
 
@@ -2869,12 +2870,11 @@ function ControlRoomPanel({ currentEmail }) {
     }
     setState("saving");
     try {
-      await createStaffAdmin({ email: cleanEmail, password, role });
+      await createStaffAdmin({ email: cleanEmail, password, role: STAFF_ADMIN_ROLE });
       setState("saved");
-      setMessage(`${cleanEmail} added as ${role}.`);
+      setMessage(`${cleanEmail} added as Taronga staff.`);
       setEmail("");
       setPassword("");
-      setRole(STAFF_ROLES[0]);
     } catch (error) {
       setState("error");
       setMessage(
@@ -2908,11 +2908,10 @@ function ControlRoomPanel({ currentEmail }) {
 
       <section className="sc-controlroom-card">
         <h3>Add staff admin</h3>
-        <p>Creates a Taronga staff account with email + password and grants a staff role. They can then sign in to this console.</p>
+        <p>Creates a Taronga staff account with email + password and grants staff access. They can then sign in to this console.</p>
         <form className="sc-controlroom-form" onSubmit={handleAddAdmin}>
           <label>Email<input type="email" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="off" placeholder="name@example.com" /></label>
           <label>Password<input type="text" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="off" placeholder="At least 6 characters" /></label>
-          <label>Role<select value={role} onChange={(e) => setRole(e.target.value)}>{STAFF_ROLES.map((r) => <option key={r} value={r}>{r}</option>)}</select></label>
           <button type="submit" disabled={state === "saving"}>{state === "saving" ? "Creating…" : "Add staff admin"}</button>
         </form>
         {message && <p className={state === "error" ? "auth-error" : "sc-controlroom-success"}>{message}</p>}
