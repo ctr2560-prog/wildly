@@ -1274,22 +1274,22 @@ function SchoolsMarketingPage() {
           <div className="schools-hero-visual"><img src={assets.tarongaClassroom} alt="Students learning with a Taronga educator in an immersive habitat classroom" width="2400" height="1200" fetchPriority="high" /></div>
         </section>
 
-        <section className="schools-stats-strip public-schools-values">
+        <Reveal as="section" className="schools-stats-strip public-schools-values">
           {["Teacher-first", "Curriculum-connected", "Taronga-backed", "Flexible to use"].map((value) => <div className="schools-stat" key={value}><Icon type="leaf" /><strong>{value}</strong></div>)}
-        </section>
+        </Reveal>
 
         <section className="schools-steps-band">
-          <div className="schools-steps-header"><span className="about-kicker">A simple starting point</span><h2>Useful from the first lesson.</h2><p>Wildly can begin as a practical teacher resource and become a shared way for your school to connect curriculum with nature.</p></div>
+          <Reveal className="schools-steps-header"><span className="about-kicker">A simple starting point</span><h2>Useful from the first lesson.</h2><p>Wildly can begin as a practical teacher resource and become a shared way for your school to connect curriculum with nature.</p></Reveal>
           <div className="schools-steps-grid">
             {[
               ["01", "Access", "Teachers create an account and enter a calm workspace built for finding and planning learning."],
               ["02", "Find", "Browse by subject and stage, then open the teaching notes and resources that are ready now."],
               ["03", "Extend", "Connect classroom work with Taronga Tracka, zoo experiences, digital exploration and professional learning."],
-            ].map(([number, title, copy]) => <article className="schools-step-card" key={number}><span className="schools-step-number">{number}</span><h3>{title}</h3><p>{copy}</p></article>)}
+            ].map(([number, title, copy], i) => <Reveal as="article" className="schools-step-card" key={number} delay={i * 90}><span className="schools-step-number">{number}</span><h3>{title}</h3><p>{copy}</p></Reveal>)}
           </div>
         </section>
 
-        <section className="schools-why-band public-schools-why">
+        <Reveal as="section" className="schools-why-band public-schools-why">
           <div className="schools-why-media"><img src={assets.heroKoala} alt="Koala with joey at Taronga" width="710" height="400" loading="lazy" /></div>
           <div className="schools-why-copy">
             <span className="about-kicker">Why it belongs in schools</span><h2>Real context. Less planning friction.</h2>
@@ -1297,12 +1297,12 @@ function SchoolsMarketingPage() {
               {["Resources make their subject, stage and purpose clear.", "Learning paths connect individual materials into a coherent sequence.", "Taronga expertise gives familiar curriculum ideas a compelling real-world context.", "Tracka can recommend the right Wildly follow-up after zoo and digital experiences.", "Professional learning supports teachers to use nature-connected pedagogy with confidence."].map((reason) => <li key={reason}><span><Icon type="plus" className="about-check-icon" /></span><p>{reason}</p></li>)}
             </ul>
           </div>
-        </section>
+        </Reveal>
 
-        <section className="schools-cta-band">
+        <Reveal as="section" className="schools-cta-band" variant="scale">
           <div className="schools-cta-copy"><h2>Start with your next lesson.</h2><p>Create a teacher account and explore the published Wildly collection. No student login is needed to begin.</p></div>
           <div className="hero-actions"><a className="primary-action schools-cta-primary" href={signupRoute()}>Get started free</a><a className="secondary-action schools-cta-secondary" href={routePath("subjects")}>Explore resources</a></div>
-        </section>
+        </Reveal>
         <SiteFooter />
       </main>
     </>

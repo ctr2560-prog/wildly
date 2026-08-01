@@ -4218,7 +4218,7 @@ body,
 .about-hero-copy .audience-pill,
 .schools-hero-copy .audience-pill {
   width: auto;
-  justify-self: start;
+  justify-self: center;
 }
 
 .public-subjects-media {
