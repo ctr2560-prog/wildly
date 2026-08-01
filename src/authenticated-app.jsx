@@ -2784,7 +2784,19 @@ function StaffConsole({ onLock, firebaseUser }) {
         <article className="tracka-mini"><img src={assets.trackaLogo} alt="Taronga Tracka" /><p>Part of the Taronga Education ecosystem — Wildly and Tracka share one staff sign-in.</p></article>
       </aside>
       <main className="staff-workspace">
-        <header className="staff-topbar"><div className="staff-topbar-titles"><span>Wildly by Taronga</span><h1>Staff console</h1></div><div className="staff-actions">{firebaseUser && <span className="staff-signed-in">Signed in as {firebaseUser.email}</span>}<a href={routePath("teacher")}>Teacher view</a><button type="button" className="sign-out-button" onClick={onLock}>Sign out</button></div></header>
+        <header className="staff-topbar">
+          <div className="staff-topbar-titles"><span>Wildly by Taronga</span><h1>Staff console</h1></div>
+          <div className="staff-actions">
+            {firebaseUser && (
+              <div className="staff-user" title={firebaseUser.email}>
+                <span className="staff-user-avatar" aria-hidden="true">{(firebaseUser.email || "?").charAt(0).toUpperCase()}</span>
+                <span className="staff-user-meta"><small>Signed in as</small><strong>{firebaseUser.email}</strong></span>
+              </div>
+            )}
+            <a className="staff-btn staff-btn-ghost" href={routePath("teacher")}>Teacher view</a>
+            <button type="button" className="staff-btn staff-btn-quiet" onClick={onLock}>Sign out</button>
+          </div>
+        </header>
         <NoticeBanner notice={notice} onClose={() => setNotice("")} />
         {panel === "overview" && <OverviewPanel contentItems={contentItems} tvVideos={tarongaTvVideos} plItems={professionalLearningItems} liveSessions={liveSessions} liveResponses={liveResponses} />}
         {panel === "users" && <UsersPanel users={users} usersStatus={usersStatus} onPlaceholder={(message) => setNotice(message)} />}
