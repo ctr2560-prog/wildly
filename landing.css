@@ -10596,3 +10596,158 @@ button:focus-visible {
 
 /* About: keep the ecosystem CTA link at content width (grid item was stretching) */
 .about-ecosystem-copy .text-action { justify-self: start; }
+
+/* ══════════ About — polished edtech rework (tighter, bigger, interactive) ══════════ */
+
+/* Tighten the oversized studio spacing + scale type up */
+.public-about-hero {
+  padding: clamp(52px, 6vw, 88px) 0 clamp(40px, 4.5vw, 64px);
+  gap: clamp(32px, 4vw, 52px);
+}
+.public-about-page .public-about-hero .hero-subtitle {
+  font-size: clamp(21px, 1.8vw, 27px);
+}
+.public-about-page .audience-pill,
+.public-about-page .about-kicker {
+  font-size: 14px;
+  letter-spacing: 0.13em;
+}
+
+.public-about-page .about-purpose-band {
+  padding-block: clamp(48px, 5.5vw, 80px);
+}
+.public-about-page .about-purpose-band h2 {
+  font-size: clamp(32px, 3.6vw, 50px);
+  line-height: 1.03;
+}
+.public-about-page .about-purpose-band p {
+  font-size: clamp(18px, 1.5vw, 21px);
+  line-height: 1.62;
+}
+
+.public-about-page .about-principles-section {
+  padding-block: clamp(48px, 5.5vw, 80px);
+}
+.public-about-page .public-section-heading {
+  margin-bottom: clamp(26px, 3vw, 42px);
+}
+.public-about-page .public-section-heading h2 {
+  font-size: clamp(34px, 3.8vw, 52px);
+  line-height: 1.02;
+}
+
+/* Interactive "Our approach" explorer */
+.about-approach {
+  display: grid;
+  grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.05fr);
+  gap: clamp(20px, 2.6vw, 40px);
+  align-items: stretch;
+}
+.about-approach-list {
+  display: grid;
+  gap: 10px;
+  align-content: start;
+}
+.about-approach-tab {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 16px;
+  align-items: center;
+  width: 100%;
+  padding: 20px 22px;
+  border: 1px solid var(--studio-line);
+  border-radius: 14px;
+  background: #fff;
+  color: var(--studio-ink);
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 160ms ease, background-color 160ms ease, transform 160ms ease;
+}
+.about-approach-tab:hover { border-color: var(--studio-green); transform: translateY(-1px); }
+.about-approach-tab.active {
+  border-color: transparent;
+  background: var(--green-900);
+  color: #fff;
+}
+.about-approach-num {
+  color: var(--studio-muted);
+  font-size: 13px;
+  font-weight: 850;
+  letter-spacing: 0.08em;
+}
+.about-approach-tab.active .about-approach-num { color: #a9f0cd; }
+.about-approach-tab-title {
+  font-size: clamp(18px, 1.6vw, 22px);
+  font-weight: 780;
+}
+.about-approach-tab-caret {
+  display: inline-flex;
+  opacity: 0;
+  transform: translateX(-6px);
+  transition: opacity 160ms ease, transform 160ms ease;
+}
+.about-approach-tab-caret svg { width: 20px; }
+.about-approach-tab.active .about-approach-tab-caret { opacity: 1; transform: none; }
+
+.about-approach-detail {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: clamp(30px, 3.6vw, 52px);
+  border: 1px solid var(--studio-line);
+  border-radius: 18px;
+  background: var(--studio-wash);
+}
+.about-approach-detail-inner { animation: home-chapter-in 400ms ease both; }
+.about-approach-detail-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 60px;
+  height: 60px;
+  border-radius: 16px;
+  color: #fff;
+  background: linear-gradient(150deg, var(--studio-green-bright), var(--studio-forest));
+  box-shadow: 0 14px 30px -12px rgba(6, 76, 53, 0.55);
+}
+.about-approach-detail-icon svg { width: 30px; }
+.about-approach-detail h3 {
+  margin: 22px 0 12px;
+  color: var(--studio-ink);
+  font-size: clamp(26px, 2.6vw, 36px);
+  line-height: 1.05;
+}
+.about-approach-detail p {
+  margin: 0;
+  color: var(--studio-muted);
+  font-size: clamp(17px, 1.5vw, 20px);
+  line-height: 1.6;
+}
+
+/* Ecosystem + Taronga bands — tighter + bigger */
+.public-about-ecosystem {
+  margin: 0;
+  padding-block: clamp(48px, 5.5vw, 80px);
+}
+.public-about-page .about-ecosystem-copy h2 {
+  font-size: clamp(32px, 3.4vw, 46px);
+  line-height: 1.04;
+}
+.public-about-page .about-ecosystem-copy > p {
+  font-size: clamp(18px, 1.5vw, 21px);
+  line-height: 1.6;
+}
+.public-about-page .about-checklist li p { font-size: 18px; }
+.public-about-page .about-taronga-band h2 {
+  font-size: clamp(32px, 3.4vw, 46px);
+  line-height: 1.04;
+}
+.public-about-page .about-taronga-band p {
+  font-size: clamp(18px, 1.5vw, 21px);
+  line-height: 1.6;
+}
+
+@media (max-width: 860px) {
+  .about-approach { grid-template-columns: minmax(0, 1fr); }
+}

@@ -1431,14 +1431,42 @@ function SchoolsMarketingPage() {
   );
 }
 
-function AboutMarketingPage() {
-  const principles = [
-    ["Teacher-first", "Useful content should be easy to scan, understand and take into a real classroom."],
-    ["Learning through nature", "Animals, habitats and conservation make curriculum ideas tangible and worth caring about."],
-    ["Connected experiences", "Classroom resources, zoo visits and Taronga digital experiences should strengthen one another."],
-    ["Action with purpose", "Learning is deeper when students can reflect, make decisions and contribute to positive change."],
-  ];
+const ABOUT_APPROACH = [
+  { icon: "cap", title: "Teacher-first", detail: "Every resource opens with its subject, stage and purpose clear — so you can decide in seconds whether it fits your lesson, not after ten minutes of reading." },
+  { icon: "leaf", title: "Learning through nature", detail: "Abstract ideas land harder when they're anchored to a real species, a real habitat and a real conservation story students can care about." },
+  { icon: "link", title: "Connected experiences", detail: "What a class explores at the zoo or in Tracka flows back into the classroom, so preparation, experience and follow-up build one continuous thread." },
+  { icon: "heart", title: "Action with purpose", detail: "The goal isn't only knowledge — it's students who can reflect, make decisions and take real conservation action." },
+];
 
+function AboutApproach() {
+  const [active, setActive] = useState(0);
+  const current = ABOUT_APPROACH[active];
+  return (
+    <div className="about-approach">
+      <div className="about-approach-list" role="tablist" aria-label="Our approach">
+        {ABOUT_APPROACH.map((p, i) => {
+          const selected = active === i;
+          return (
+            <button key={p.title} type="button" role="tab" aria-selected={selected} className={`about-approach-tab${selected ? " active" : ""}`} onClick={() => setActive(i)}>
+              <span className="about-approach-num">0{i + 1}</span>
+              <span className="about-approach-tab-title">{p.title}</span>
+              <span className="about-approach-tab-caret" aria-hidden="true"><Icon type="arrowRight" /></span>
+            </button>
+          );
+        })}
+      </div>
+      <div className="about-approach-detail" role="tabpanel" aria-live="polite">
+        <div className="about-approach-detail-inner" key={active}>
+          <span className="about-approach-detail-icon"><Icon type={current.icon} /></span>
+          <h3>{current.title}</h3>
+          <p>{current.detail}</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function AboutMarketingPage() {
   return (
     <>
       <SiteHeader active="about" />
@@ -1459,10 +1487,8 @@ function AboutMarketingPage() {
         </Reveal>
 
         <section className="about-principles-section">
-          <Reveal className="public-section-heading"><span className="audience-pill">Our approach</span><h2>Designed around what makes learning work</h2></Reveal>
-          <div className="about-principles-grid">
-            {principles.map(([title, copy], index) => <Reveal as="article" key={title} delay={index * 80}><span>0{index + 1}</span><h3>{title}</h3><p>{copy}</p></Reveal>)}
-          </div>
+          <Reveal className="public-section-heading"><span className="audience-pill">Our approach</span><h2>Designed around what makes learning work.</h2></Reveal>
+          <Reveal delay={80}><AboutApproach /></Reveal>
         </section>
 
         <Reveal as="section" className="about-ecosystem public-about-ecosystem">
