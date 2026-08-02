@@ -2801,7 +2801,7 @@ function StaffConsole({ onLock, firebaseUser }) {
         <NoticeBanner notice={notice} onClose={() => setNotice("")} />
         {panel === "overview" && <OverviewPanel contentItems={contentItems} tvVideos={tarongaTvVideos} plItems={professionalLearningItems} upcomingEvents={upcomingEvents} users={users} onNavigate={setPanel} />}
         {panel === "users" && <UsersPanel users={users} usersStatus={usersStatus} />}
-        {panel === "analytics" && <AnalyticsPanel liveSessions={liveSessions} liveResponses={liveResponses} liveSessionsStatus={liveSessionsStatus} liveResponsesStatus={liveResponsesStatus} onPlaceholder={(message) => setNotice(message)} />}
+        {panel === "analytics" && <AnalyticsPanel contentItems={contentItems} tvVideos={tarongaTvVideos} plItems={professionalLearningItems} users={users} />}
         {panel === "content" && <ContentPanel contentItems={contentItems} status={contentStatus} saveState={contentSaveState} seedContentItems={seedContentItems} addContentItem={addContentItem} deleteContentItem={deleteContentItem} />}
         {panel === "taronga-tv" && <TarongaTvPanel items={tarongaTvVideos} contentItems={contentItems} status={tarongaTvStatus} saveState={tarongaTvSaveState} saveVideo={saveTarongaTvVideo} deleteVideo={deleteTarongaTvVideo} />}
         {panel === "professional-learning" && <ProfessionalLearningPanel items={professionalLearningItems} status={professionalLearningStatus} saveState={professionalLearningSaveState} saveItem={saveProfessionalLearningItem} deleteItem={deleteProfessionalLearningItem} />}
@@ -3231,144 +3231,154 @@ function UsersPanel({ users = [], usersStatus = "loading" }) {
   );
 }
 
-function AnalyticsPanel({ liveSessions = [], liveResponses = [], liveSessionsStatus = "loading", liveResponsesStatus = "loading", onPlaceholder }) {
-  const sessionsWithResponses = liveSessions.map((session) => {
-    const responses = liveResponses.filter((response) => response.sessionId === session.id);
-    const uniqueStudents = new Set(responses.map((response) => response.studentName?.trim()).filter(Boolean));
-    return {
-      ...session,
-      responseCount: responses.length,
-      studentCount: uniqueStudents.size,
-      responses,
-    };
-  });
+const ANALYTICS_STAGES = ["Stage 2", "Stage 3", "Stage 4", "Stage 5"];
+const ANALYTICS_BASE_SUBJECTS = ["Science", "Mathematics", "English", "HSIE", "PDHPE", "CAPA", "Technology & STEM"];
+const stageDigit = (s) => (String(s || "").match(/\d/) || [])[0] || "";
 
-  const activeSessions = sessionsWithResponses.filter((session) => session.state !== "ended");
-  const totalSessions = sessionsWithResponses.length;
-  const totalResponses = liveResponses.length;
-  const totalStudents = new Set(liveResponses.map((response) => response.studentName?.trim()).filter(Boolean)).size;
-  const avgResponses = totalSessions ? Math.round((totalResponses / totalSessions) * 10) / 10 : 0;
-  const modeCounts = {
-    live: sessionsWithResponses.filter((session) => session.mode === "live").length,
-    "student-paced": sessionsWithResponses.filter((session) => session.mode === "student-paced").length,
-  };
-  const blockTypeCounts = liveResponses.reduce((accumulator, response) => ({
-    ...accumulator,
-    [response.blockType || "slide"]: (accumulator[response.blockType || "slide"] || 0) + 1,
-  }), {});
-  const responseMix = Object.entries(blockTypeCounts)
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 4);
-  const weeklyCounts = Array.from({ length: 7 }, (_, index) => {
-    const target = new Date();
-    target.setDate(target.getDate() - (6 - index));
-    const key = target.toISOString().slice(0, 10);
-    return liveResponses.filter((response) => {
-      const submittedAt = response.submittedAt?.toDate?.();
-      return submittedAt && submittedAt.toISOString().slice(0, 10) === key;
-    }).length;
-  });
-  const weeklyMax = Math.max(...weeklyCounts, 1);
-  const recentSessions = [...sessionsWithResponses]
-    .sort((a, b) => {
-      const aTime = a.createdAt?.toDate?.()?.getTime?.() || 0;
-      const bTime = b.createdAt?.toDate?.()?.getTime?.() || 0;
-      return bTime - aTime;
-    })
-    .slice(0, 5);
+function AnalyticsPanel({ contentItems = [], tvVideos = [], plItems = [], users = [] }) {
+  const [typeFilter, setTypeFilter] = useState("All");
+  const [cell, setCell] = useState(null);
 
-  function exportReport() {
+  const subjects = [...new Set([...ANALYTICS_BASE_SUBJECTS, ...contentItems.map((i) => i.subject).filter(Boolean)])];
+  const filtered = typeFilter === "All" ? contentItems : contentItems.filter((i) => i.type === typeFilter);
+  const countFor = (subject, stage) => filtered.filter((i) => i.subject === subject && stageDigit(i.stage) === stageDigit(stage)).length;
+
+  const cellCounts = subjects.flatMap((s) => ANALYTICS_STAGES.map((st) => countFor(s, st)));
+  const maxCell = Math.max(...cellCounts, 1);
+
+  const published = contentItems.filter((i) => i.status === "Published").length;
+  const draft = contentItems.length - published;
+  const subjectsCovered = new Set(contentItems.map((i) => i.subject).filter(Boolean)).size;
+  const teacherReach = users.length;
+  const schools = new Set(users.map((u) => (u.schoolName || "").trim()).filter(Boolean)).size;
+
+  const typeBreakdown = [
+    ["Learning Paths", contentItems.filter((i) => i.type === "Learning Path").length],
+    ["Lessons", contentItems.filter((i) => i.type === "Lesson").length],
+    ["Resources", contentItems.filter((i) => i.type === "Resource").length],
+    ["Taronga TV", tvVideos.length],
+    ["Professional Learning", plItems.length],
+  ];
+  const typeMax = Math.max(...typeBreakdown.map(([, n]) => n), 1);
+
+  const selectedItems = cell ? filtered.filter((i) => i.subject === cell.subject && stageDigit(i.stage) === stageDigit(cell.stage)) : [];
+
+  function exportLibrary() {
     const rows = [
-      ["session_title", "class", "mode", "code", "state", "responses", "students"],
-      ...sessionsWithResponses.map((session) => [
-        session.contentTitle || "",
-        session.classTitle || "",
-        session.mode || "",
-        session.code || "",
-        session.state || "",
-        String(session.responseCount || 0),
-        String(session.studentCount || 0),
-      ]),
+      ["title", "type", "subject", "stage", "status"],
+      ...contentItems.map((i) => [i.title || "", i.type || "", i.subject || "", i.stage || "", i.status || ""]),
     ];
     downloadTextFile(
-      "wildly-live-analytics.csv",
-      rows.map((row) => row.map((value) => `"${String(value).replaceAll("\"", "\"\"")}"`).join(",")).join("\n"),
+      "wildly-content-library.csv",
+      rows.map((row) => row.map((v) => `"${String(v).replaceAll("\"", "\"\"")}"`).join(",")).join("\n"),
       "text/csv;charset=utf-8",
     );
-    onPlaceholder("Live lesson analytics exported as CSV.");
   }
-
-  const isEmpty = !sessionsWithResponses.length && !liveResponses.length;
-  const loading = liveSessionsStatus === "loading" || liveResponsesStatus === "loading";
 
   return (
     <section className="staff-section staff-panel active">
       <div className="section-heading">
         <div>
           <h2>Analytics</h2>
-          <p>View live lesson usage, student participation and response patterns across Wildly.</p>
+          <p>How your teaching library is shaping up across the curriculum, and who can reach it.</p>
         </div>
-        <button type="button" onClick={exportReport}>Export report</button>
+        <button type="button" onClick={exportLibrary} disabled={!contentItems.length}>Export library (CSV)</button>
       </div>
-      <div className="overview-grid analytics-summary-grid">
+
+      <div className="sc-overview-grid" style={{ marginBottom: 20 }}>
         {[
-          ["Live sessions", totalSessions, "Teacher-launched lessons with join codes"],
-          ["Active now", activeSessions.length, "Sessions students can still join"],
-          ["Student responses", totalResponses, "Saved quiz, poll and written responses"],
-          ["Avg. responses / session", avgResponses, "Useful for spotting engagement drop-off"],
-        ].map(([label, value, copy]) => (
-          <article key={label}>
+          ["In the library", contentItems.length, "Paths, lessons & resources"],
+          ["Published", published, `${draft} still in draft`],
+          ["Subjects covered", subjectsCovered, `of ${subjects.length} key learning areas`],
+          ["Teacher reach", teacherReach, `across ${schools} school${schools !== 1 ? "s" : ""}`],
+        ].map(([label, value, desc]) => (
+          <article key={label} className="sc-stat-card">
             <span>{label}</span>
             <strong>{value}</strong>
-            <p>{copy}</p>
+            <p>{desc}</p>
           </article>
         ))}
       </div>
-      {loading ? <article className="placeholder-card"><h3>Loading analytics</h3><p>Pulling live lesson session data from Firestore.</p></article> : null}
-      {!loading ? (
-        <div className="analytics-grid">
-          <article className="wide-card">
-            <h3>Student participation this week</h3>
-            <div className="bar-chart">
-              {weeklyCounts.map((count, index) => (
-                <span key={`${index}-${count}`} style={{ height: `${Math.max((count / weeklyMax) * 100, count ? 18 : 8)}%` }}></span>
-              ))}
-            </div>
-            <ul className="result-list compact-results">
-              <li>Unique students <strong>{totalStudents}</strong></li>
-              <li>Live Participation <strong>{modeCounts.live}</strong></li>
-              <li>Student-Paced <strong>{modeCounts["student-paced"]}</strong></li>
-            </ul>
-          </article>
-          <article>
-            <h3>Response mix</h3>
-            {responseMix.length ? responseMix.map(([label, value]) => {
-              const width = Math.max((value / Math.max(...responseMix.map(([, count]) => count), 1)) * 100, 14);
-              return (
-                <React.Fragment key={label}>
-                  <p className="metric">{label}</p>
-                  <div className="meter"><span style={{ width: `${width}%` }}></span></div>
-                </React.Fragment>
-              );
-            }) : <p className="mini-empty">Responses will be grouped here once students start answering live activities.</p>}
-          </article>
-          <article>
-            <h3>Recent sessions</h3>
-            <ul className="result-list analytics-session-list">
-              {recentSessions.length ? recentSessions.map((session) => (
-                <li key={session.id}>
-                  <span>
-                    {session.contentTitle || "Untitled lesson"}
-                    <small>{session.classTitle || "Class"} · {session.code || "Code pending"} · {session.mode === "student-paced" ? "Student-Paced" : "Live"}</small>
-                  </span>
-                  <strong>{session.responseCount}</strong>
-                </li>
-              )) : <li>No live sessions yet</li>}
-            </ul>
-          </article>
+
+      <article className="an-card">
+        <div className="an-card-head">
+          <div><h3>Curriculum coverage</h3><p>Where content sits across subjects and stages. Click a cell to see what's there — and where the gaps are.</p></div>
+          <div className="sc-type-tabs an-type-tabs">
+            {["All", "Learning Path", "Lesson", "Resource"].map((t) => (
+              <button key={t} type="button" className={`sc-type-tab${typeFilter === t ? " active" : ""}`} onClick={() => { setTypeFilter(t); setCell(null); }}>
+                {t === "All" ? "All" : t === "Learning Path" ? "Paths" : `${t}s`}
+              </button>
+            ))}
+          </div>
         </div>
-      ) : null}
-      {!loading && isEmpty ? <article className="placeholder-card"><h3>No live lesson data yet</h3><p>Once teachers launch code-based lessons, session and response analytics will appear here automatically.</p></article> : null}
+
+        <div className="an-matrix" role="grid" aria-label="Curriculum coverage by subject and stage">
+          <div className="an-matrix-corner" />
+          {ANALYTICS_STAGES.map((st) => <div key={st} className="an-matrix-colhead">{st}</div>)}
+          {subjects.map((subject) => (
+            <React.Fragment key={subject}>
+              <div className="an-matrix-rowhead">{subject}</div>
+              {ANALYTICS_STAGES.map((stage) => {
+                const count = countFor(subject, stage);
+                const alpha = count === 0 ? 0 : 0.22 + 0.78 * (count / maxCell);
+                const isActive = cell && cell.subject === subject && cell.stage === stage;
+                return (
+                  <button
+                    key={stage}
+                    type="button"
+                    className={`an-matrix-cell${count ? " has" : ""}${isActive ? " active" : ""}`}
+                    style={count ? { background: `rgba(11, 76, 50, ${alpha})`, color: alpha > 0.55 ? "#fff" : "var(--green-950)" } : undefined}
+                    onClick={() => setCell(isActive ? null : { subject, stage })}
+                    aria-label={`${subject}, ${stage}: ${count} item${count !== 1 ? "s" : ""}`}
+                  >
+                    {count || ""}
+                  </button>
+                );
+              })}
+            </React.Fragment>
+          ))}
+        </div>
+
+        {cell && (
+          <div className="an-cell-detail">
+            <h4>{cell.subject} · {cell.stage} <span>{selectedItems.length} item{selectedItems.length !== 1 ? "s" : ""}</span></h4>
+            {selectedItems.length ? (
+              <ul>
+                {selectedItems.map((i) => (
+                  <li key={i.id}><span>{i.title || "Untitled"}</span><span className={`sc-role-badge ${i.status === "Published" ? "staff" : "teacher"}`}>{i.status || "Draft"}</span></li>
+                ))}
+              </ul>
+            ) : <p className="an-gap">No content here yet — a gap to fill.</p>}
+          </div>
+        )}
+      </article>
+
+      <div className="an-two-col">
+        <article className="an-card">
+          <h3>Library by type</h3>
+          <div className="sc-content-breakdown">
+            {typeBreakdown.map(([label, count]) => (
+              <div key={label} className="sc-breakdown-row">
+                <span className="sc-breakdown-label">{label}</span>
+                <div className="sc-breakdown-bar"><span style={{ width: `${(count / typeMax) * 100}%` }} /></div>
+                <span className="sc-breakdown-count">{count}</span>
+              </div>
+            ))}
+          </div>
+        </article>
+        <article className="an-card">
+          <h3>Publishing status</h3>
+          <div className="an-status-bar" aria-hidden="true">
+            <span className="an-status-published" style={{ flex: Math.max(published, 0.001) }} />
+            <span className="an-status-draft" style={{ flex: Math.max(draft, 0.001) }} />
+          </div>
+          <div className="an-status-legend">
+            <span><i className="dot published" />Published <strong>{published}</strong></span>
+            <span><i className="dot draft" />Draft <strong>{draft}</strong></span>
+          </div>
+          <p className="an-status-note">{contentItems.length ? `${Math.round((published / contentItems.length) * 100)}% of the library is live for teachers.` : "Add content to start tracking what's live for teachers."}</p>
+        </article>
+      </div>
     </section>
   );
 }
