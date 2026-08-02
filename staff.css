@@ -3493,3 +3493,13 @@ button.sc-stat-card.accent:hover { border-color: transparent; }
   .an-rank-bar { display: none; }
   .an-soon-metrics { grid-template-columns: 1fr; }
 }
+
+.an-tv-total {
+  flex: 0 0 auto;
+  padding: 4px 12px;
+  border-radius: 999px;
+  background: #e7f6ec;
+  color: var(--green-900);
+  font-size: 12px;
+  font-weight: 800;
+}

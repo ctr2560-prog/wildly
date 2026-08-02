@@ -1156,6 +1156,21 @@ function TeacherDashboard({ config, contentItems = defaultContentItems.map(resol
   }), [activeSubject, activeTvCategory, teacherVisibleTarongaTvVideos, query]);
   const featuredTarongaTvVideo = filteredTarongaTvVideos[0] || teacherVisibleTarongaTvVideos[0] || null;
   const tarongaTvDetail = teacherVisibleTarongaTvVideos.find((item) => item.id === tvVideoId) || null;
+
+  // Track Taronga TV video opens the same way as content, tagged as "Taronga TV".
+  useEffect(() => {
+    if (preview || !tarongaTvDetail?.id) return;
+    setDoc(doc(db, "contentStats", tarongaTvDetail.id), {
+      contentId: tarongaTvDetail.id,
+      title: tarongaTvDetail.title || "",
+      type: "Taronga TV",
+      subject: tarongaTvDetail.subject || "",
+      stage: tarongaTvDetail.stage || "",
+      views: increment(1),
+      lastViewedAt: serverTimestamp(),
+    }, { merge: true }).catch(() => {});
+  }, [tarongaTvDetail?.id, preview]);
+
   const contentDownloads = contentDetail ? buildContentDownloads(contentDetail) : [];
   const tarongaTvDownloads = tarongaTvDetail?.downloadLinks || [];
   const allResourceItems = [...lessons, ...resources];
@@ -3267,7 +3282,14 @@ function AnalyticsPanel({ contentItems = [], tvVideos = [], plItems = [], users 
   const stats = useContentStats();
 
   const viewsById = Object.fromEntries(stats.map((s) => [s.contentId || s.id, s.views || 0]));
-  const totalViews = stats.reduce((sum, s) => sum + (s.views || 0), 0);
+  const libraryViews = contentItems.reduce((sum, i) => sum + (viewsById[i.id] || 0), 0);
+  const tvRanked = tvVideos
+    .map((v) => ({ ...v, views: viewsById[v.id] || 0 }))
+    .filter((v) => v.views > 0)
+    .sort((a, b) => b.views - a.views)
+    .slice(0, 6);
+  const tvRankedMax = Math.max(...tvRanked.map((v) => v.views), 1);
+  const tvViews = tvVideos.reduce((sum, v) => sum + (viewsById[v.id] || 0), 0);
   const rankedContent = contentItems
     .map((i) => ({ ...i, views: viewsById[i.id] || 0 }))
     .filter((i) => i.views > 0)
@@ -3332,7 +3354,7 @@ function AnalyticsPanel({ contentItems = [], tvVideos = [], plItems = [], users 
         {[
           ["In the library", contentItems.length, "Paths, lessons & resources"],
           ["Published", published, `${draft} still in draft`],
-          ["Content opens", totalViews, "Times teachers opened content"],
+          ["Content opens", libraryViews, "Paths, lessons & resources opened"],
           ["Teacher reach", teacherReach, `across ${schools} school${schools !== 1 ? "s" : ""}`],
         ].map(([label, value, desc]) => (
           <article key={label} className="sc-stat-card">
@@ -3413,8 +3435,28 @@ function AnalyticsPanel({ contentItems = [], tvVideos = [], plItems = [], users 
           ) : <p className="an-empty">No content opened yet — this fills in as teachers open paths, lessons and resources.</p>}
         </article>
         <article className="an-card">
+          <div className="an-card-head" style={{ marginBottom: 8 }}>
+            <div><h3>Most watched on Taronga TV</h3><p className="an-sub" style={{ margin: 0 }}>Which videos teachers open most.</p></div>
+            {tvViews > 0 && <span className="an-tv-total">{tvViews} view{tvViews !== 1 ? "s" : ""}</span>}
+          </div>
+          {tvRanked.length ? (
+            <ol className="an-rank">
+              {tvRanked.map((v) => (
+                <li key={v.id}>
+                  <span className="an-rank-title">{v.title || "Untitled"}<small>Taronga TV{v.subject ? ` · ${v.subject}` : ""}</small></span>
+                  <span className="an-rank-bar"><span style={{ width: `${(v.views / tvRankedMax) * 100}%` }} /></span>
+                  <span className="an-rank-count">{v.views}</span>
+                </li>
+              ))}
+            </ol>
+          ) : <p className="an-empty">No videos watched yet — this fills in as teachers open Taronga TV videos.</p>}
+        </article>
+      </div>
+
+      <div className="an-two-col">
+        <article className="an-card">
           <h3>Subject areas utilised</h3>
-          <p className="an-sub">Total opens by learning area.</p>
+          <p className="an-sub">Total content opens by learning area.</p>
           {subjectViews.length ? (
             <div className="sc-content-breakdown">
               {subjectViews.map(([subject, v]) => (
@@ -3427,9 +3469,6 @@ function AnalyticsPanel({ contentItems = [], tvVideos = [], plItems = [], users 
             </div>
           ) : <p className="an-empty">Usage by subject appears once teachers start opening content.</p>}
         </article>
-      </div>
-
-      <div className="an-two-col">
         <article className="an-card">
           <h3>Publishing status</h3>
           <div className="an-status-bar" aria-hidden="true">
@@ -3451,16 +3490,17 @@ function AnalyticsPanel({ contentItems = [], tvVideos = [], plItems = [], users 
             ))}
           </div>
         </article>
-        <article className="an-card an-soon">
-          <div className="an-soon-head"><h3>Taronga Tracka linked lessons</h3><span className="an-soon-chip">Not connected yet</span></div>
-          <p>When Taronga Tracka recommends a Wildly lesson after a zoo or digital experience, opens will be tracked here — showing which linked lessons classes use most, and which excursions drive classroom follow-up.</p>
-          <div className="an-soon-metrics">
-            <div><strong>—</strong><span>Linked lessons opened</span></div>
-            <div><strong>—</strong><span>From Tracka recommendations</span></div>
-            <div><strong>—</strong><span>Top linked lesson</span></div>
-          </div>
-        </article>
       </div>
+
+      <article className="an-card an-soon">
+        <div className="an-soon-head"><h3>Taronga Tracka linked lessons</h3><span className="an-soon-chip">Not connected yet</span></div>
+        <p>When Taronga Tracka recommends a Wildly lesson after a zoo or digital experience, opens will be tracked here — showing which linked lessons classes use most, and which excursions drive classroom follow-up.</p>
+        <div className="an-soon-metrics">
+          <div><strong>—</strong><span>Linked lessons opened</span></div>
+          <div><strong>—</strong><span>From Tracka recommendations</span></div>
+          <div><strong>—</strong><span>Top linked lesson</span></div>
+        </div>
+      </article>
     </section>
   );
 }
