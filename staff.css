@@ -3443,3 +3443,53 @@ button.sc-stat-card.accent:hover { border-color: transparent; }
   .an-two-col { grid-template-columns: 1fr; }
   .an-matrix { grid-template-columns: minmax(110px, 1.4fr) repeat(4, minmax(0, 1fr)); }
 }
+
+/* ── Analytics: usage sections ── */
+.an-sub { margin: 0 0 16px; color: var(--muted); font-size: 13px; }
+.an-empty { margin: 8px 0 0; color: var(--muted); font-size: 14px; line-height: 1.5; }
+
+.an-rank { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; counter-reset: rank; }
+.an-rank li {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+}
+.an-rank-title { display: flex; flex-direction: column; min-width: 0; }
+.an-rank-title { color: var(--green-950); font-size: 14px; font-weight: 600; }
+.an-rank-title small { color: var(--muted); font-size: 12px; font-weight: 500; }
+.an-rank-bar { height: 8px; border-radius: 99px; background: var(--line); overflow: hidden; }
+.an-rank-bar span { display: block; height: 100%; border-radius: 99px; background: var(--green-800); }
+.an-rank-count { min-width: 26px; text-align: right; color: var(--green-950); font-weight: 800; font-size: 14px; }
+
+/* Tracka linked (coming soon) */
+.an-soon { background: linear-gradient(160deg, #f4f7f3, #fff); }
+.an-soon-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 8px; }
+.an-soon-head h3 { margin: 0; }
+.an-soon-chip {
+  flex: 0 0 auto;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: #e7edea;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+.an-soon > p { margin: 0 0 18px; color: #4d5c55; font-size: 13.5px; line-height: 1.55; }
+.an-soon-metrics { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+.an-soon-metrics > div {
+  padding: 14px;
+  border: 1px dashed var(--line);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.6);
+}
+.an-soon-metrics strong { display: block; color: var(--muted); font-size: 26px; font-weight: 800; line-height: 1; margin-bottom: 6px; }
+.an-soon-metrics span { color: var(--muted); font-size: 12px; }
+
+@media (max-width: 640px) {
+  .an-rank li { grid-template-columns: minmax(0, 1fr) auto; }
+  .an-rank-bar { display: none; }
+  .an-soon-metrics { grid-template-columns: 1fr; }
+}

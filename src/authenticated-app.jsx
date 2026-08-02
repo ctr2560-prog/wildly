@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { initializeApp, deleteApp } from "firebase/app";
 import { createUserWithEmailAndPassword, getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut } from "firebase/auth";
-import { addDoc, arrayUnion, collection, collectionGroup, deleteDoc, doc, getCountFromServer, getDoc, getFirestore, onSnapshot, orderBy, query, serverTimestamp, setDoc, updateDoc, where } from "firebase/firestore";
+import { addDoc, arrayUnion, collection, collectionGroup, deleteDoc, doc, getCountFromServer, getDoc, getFirestore, increment, onSnapshot, orderBy, query, serverTimestamp, setDoc, updateDoc, where } from "firebase/firestore";
 import { auth, db } from "./firebase";
 import "../landing.css";
 import "../styles.css";
@@ -1131,6 +1131,22 @@ function TeacherDashboard({ config, contentItems = defaultContentItems.map(resol
   }), [activeSubject, publishedItems, query]);
   const contentDetail = publishedItems.find((item) => item.id === contentId) || null;
   const contentActivityBlocks = contentDetail ? buildLessonActivityBlocks(contentDetail) : [];
+
+  // Log a lightweight access event whenever a teacher opens a content item, so
+  // the staff Analytics panel can show what's actually being used. Skipped in
+  // staff preview mode. Fails silently for demo (non-authenticated) sessions.
+  useEffect(() => {
+    if (preview || !contentDetail?.id) return;
+    setDoc(doc(db, "contentStats", contentDetail.id), {
+      contentId: contentDetail.id,
+      title: contentDetail.title || "",
+      type: contentDetail.type || "",
+      subject: contentDetail.subject || "",
+      stage: contentDetail.stage || "",
+      views: increment(1),
+      lastViewedAt: serverTimestamp(),
+    }, { merge: true }).catch(() => {});
+  }, [contentDetail?.id, preview]);
   const teacherVisibleTarongaTvVideos = useMemo(() => sortTarongaTvVideos(tarongaTvVideos), [tarongaTvVideos]);
   const filteredTarongaTvVideos = useMemo(() => teacherVisibleTarongaTvVideos.filter((item) => {
     const matchesSubject = !activeSubject || item.subject === activeSubject;
@@ -3235,9 +3251,36 @@ const ANALYTICS_STAGES = ["Stage 2", "Stage 3", "Stage 4", "Stage 5"];
 const ANALYTICS_BASE_SUBJECTS = ["Science", "Mathematics", "English", "HSIE", "PDHPE", "CAPA", "Technology & STEM"];
 const stageDigit = (s) => (String(s || "").match(/\d/) || [])[0] || "";
 
+function useContentStats() {
+  const [stats, setStats] = useState([]);
+  useEffect(() => onSnapshot(
+    collection(db, "contentStats"),
+    (snap) => setStats(snap.docs.map((d) => ({ id: d.id, ...d.data() }))),
+    () => setStats([]),
+  ), []);
+  return stats;
+}
+
 function AnalyticsPanel({ contentItems = [], tvVideos = [], plItems = [], users = [] }) {
   const [typeFilter, setTypeFilter] = useState("All");
   const [cell, setCell] = useState(null);
+  const stats = useContentStats();
+
+  const viewsById = Object.fromEntries(stats.map((s) => [s.contentId || s.id, s.views || 0]));
+  const totalViews = stats.reduce((sum, s) => sum + (s.views || 0), 0);
+  const rankedContent = contentItems
+    .map((i) => ({ ...i, views: viewsById[i.id] || 0 }))
+    .filter((i) => i.views > 0)
+    .sort((a, b) => b.views - a.views)
+    .slice(0, 8);
+  const rankedMax = Math.max(...rankedContent.map((i) => i.views), 1);
+  const subjectViewsMap = {};
+  contentItems.forEach((i) => {
+    if (!i.subject) return;
+    subjectViewsMap[i.subject] = (subjectViewsMap[i.subject] || 0) + (viewsById[i.id] || 0);
+  });
+  const subjectViews = Object.entries(subjectViewsMap).filter(([, v]) => v > 0).sort((a, b) => b[1] - a[1]);
+  const subjectViewsMax = Math.max(...subjectViews.map(([, v]) => v), 1);
 
   const subjects = [...new Set([...ANALYTICS_BASE_SUBJECTS, ...contentItems.map((i) => i.subject).filter(Boolean)])];
   const filtered = typeFilter === "All" ? contentItems : contentItems.filter((i) => i.type === typeFilter);
@@ -3289,7 +3332,7 @@ function AnalyticsPanel({ contentItems = [], tvVideos = [], plItems = [], users 
         {[
           ["In the library", contentItems.length, "Paths, lessons & resources"],
           ["Published", published, `${draft} still in draft`],
-          ["Subjects covered", subjectsCovered, `of ${subjects.length} key learning areas`],
+          ["Content opens", totalViews, "Times teachers opened content"],
           ["Teacher reach", teacherReach, `across ${schools} school${schools !== 1 ? "s" : ""}`],
         ].map(([label, value, desc]) => (
           <article key={label} className="sc-stat-card">
@@ -3355,17 +3398,38 @@ function AnalyticsPanel({ contentItems = [], tvVideos = [], plItems = [], users 
 
       <div className="an-two-col">
         <article className="an-card">
-          <h3>Library by type</h3>
-          <div className="sc-content-breakdown">
-            {typeBreakdown.map(([label, count]) => (
-              <div key={label} className="sc-breakdown-row">
-                <span className="sc-breakdown-label">{label}</span>
-                <div className="sc-breakdown-bar"><span style={{ width: `${(count / typeMax) * 100}%` }} /></div>
-                <span className="sc-breakdown-count">{count}</span>
-              </div>
-            ))}
-          </div>
+          <h3>Most accessed content</h3>
+          <p className="an-sub">Which paths, lessons and resources teachers open most.</p>
+          {rankedContent.length ? (
+            <ol className="an-rank">
+              {rankedContent.map((i) => (
+                <li key={i.id}>
+                  <span className="an-rank-title">{i.title || "Untitled"}<small>{i.type} · {i.subject || "—"}{i.stage ? ` · ${i.stage}` : ""}</small></span>
+                  <span className="an-rank-bar"><span style={{ width: `${(i.views / rankedMax) * 100}%` }} /></span>
+                  <span className="an-rank-count">{i.views}</span>
+                </li>
+              ))}
+            </ol>
+          ) : <p className="an-empty">No content opened yet — this fills in as teachers open paths, lessons and resources.</p>}
         </article>
+        <article className="an-card">
+          <h3>Subject areas utilised</h3>
+          <p className="an-sub">Total opens by learning area.</p>
+          {subjectViews.length ? (
+            <div className="sc-content-breakdown">
+              {subjectViews.map(([subject, v]) => (
+                <div key={subject} className="sc-breakdown-row">
+                  <span className="sc-breakdown-label">{subject}</span>
+                  <div className="sc-breakdown-bar"><span style={{ width: `${(v / subjectViewsMax) * 100}%` }} /></div>
+                  <span className="sc-breakdown-count">{v}</span>
+                </div>
+              ))}
+            </div>
+          ) : <p className="an-empty">Usage by subject appears once teachers start opening content.</p>}
+        </article>
+      </div>
+
+      <div className="an-two-col">
         <article className="an-card">
           <h3>Publishing status</h3>
           <div className="an-status-bar" aria-hidden="true">
@@ -3377,6 +3441,24 @@ function AnalyticsPanel({ contentItems = [], tvVideos = [], plItems = [], users 
             <span><i className="dot draft" />Draft <strong>{draft}</strong></span>
           </div>
           <p className="an-status-note">{contentItems.length ? `${Math.round((published / contentItems.length) * 100)}% of the library is live for teachers.` : "Add content to start tracking what's live for teachers."}</p>
+          <div className="sc-content-breakdown" style={{ marginTop: 18, paddingTop: 16, borderTop: "1px solid var(--line)" }}>
+            {typeBreakdown.map(([label, count]) => (
+              <div key={label} className="sc-breakdown-row">
+                <span className="sc-breakdown-label">{label}</span>
+                <div className="sc-breakdown-bar"><span style={{ width: `${(count / typeMax) * 100}%` }} /></div>
+                <span className="sc-breakdown-count">{count}</span>
+              </div>
+            ))}
+          </div>
+        </article>
+        <article className="an-card an-soon">
+          <div className="an-soon-head"><h3>Taronga Tracka linked lessons</h3><span className="an-soon-chip">Not connected yet</span></div>
+          <p>When Taronga Tracka recommends a Wildly lesson after a zoo or digital experience, opens will be tracked here — showing which linked lessons classes use most, and which excursions drive classroom follow-up.</p>
+          <div className="an-soon-metrics">
+            <div><strong>—</strong><span>Linked lessons opened</span></div>
+            <div><strong>—</strong><span>From Tracka recommendations</span></div>
+            <div><strong>—</strong><span>Top linked lesson</span></div>
+          </div>
         </article>
       </div>
     </section>
