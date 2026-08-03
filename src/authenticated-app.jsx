@@ -1144,6 +1144,7 @@ function TeacherDashboard({ config, contentItems = defaultContentItems.map(resol
       subject: contentDetail.subject || "",
       stage: contentDetail.stage || "",
       views: increment(1),
+      daily: { [new Date().toISOString().slice(0, 10)]: increment(1) },
       lastViewedAt: serverTimestamp(),
     }, { merge: true }).catch(() => {});
   }, [contentDetail?.id, preview]);
@@ -1167,6 +1168,7 @@ function TeacherDashboard({ config, contentItems = defaultContentItems.map(resol
       subject: tarongaTvDetail.subject || "",
       stage: tarongaTvDetail.stage || "",
       views: increment(1),
+      daily: { [new Date().toISOString().slice(0, 10)]: increment(1) },
       lastViewedAt: serverTimestamp(),
     }, { merge: true }).catch(() => {});
   }, [tarongaTvDetail?.id, preview]);
@@ -3266,6 +3268,20 @@ const ANALYTICS_STAGES = ["Stage 2", "Stage 3", "Stage 4", "Stage 5"];
 const ANALYTICS_BASE_SUBJECTS = ["Science", "Mathematics", "English", "HSIE", "PDHPE", "CAPA", "Technology & STEM"];
 const stageDigit = (s) => (String(s || "").match(/\d/) || [])[0] || "";
 
+// Build a 14-day trend from one or more { "YYYY-MM-DD": count } maps.
+function buildTrend(dailyMaps) {
+  const maps = dailyMaps.filter(Boolean);
+  const days = [];
+  for (let i = 13; i >= 0; i -= 1) {
+    const d = new Date();
+    d.setDate(d.getDate() - i);
+    const key = d.toISOString().slice(0, 10);
+    const count = maps.reduce((sum, m) => sum + (m[key] || 0), 0);
+    days.push({ key, count, label: d.toLocaleDateString("en-AU", { day: "numeric", month: "short" }) });
+  }
+  return days;
+}
+
 function useContentStats() {
   const [stats, setStats] = useState([]);
   useEffect(() => onSnapshot(
@@ -3279,8 +3295,12 @@ function useContentStats() {
 function AnalyticsPanel({ contentItems = [], tvVideos = [], plItems = [], users = [] }) {
   const [typeFilter, setTypeFilter] = useState("All");
   const [cell, setCell] = useState(null);
+  const [detail, setDetail] = useState(null);
   const stats = useContentStats();
 
+  const statById = Object.fromEntries(stats.map((s) => [s.contentId || s.id, s]));
+  const grandTotal = stats.reduce((sum, s) => sum + (s.views || 0), 0);
+  const itemsById = { ...Object.fromEntries(contentItems.map((i) => [i.id, i])), ...Object.fromEntries(tvVideos.map((v) => [v.id, { ...v, type: "Taronga TV" }])) };
   const viewsById = Object.fromEntries(stats.map((s) => [s.contentId || s.id, s.views || 0]));
   const libraryViews = contentItems.reduce((sum, i) => sum + (viewsById[i.id] || 0), 0);
   const tvRanked = tvVideos
@@ -3423,15 +3443,15 @@ function AnalyticsPanel({ contentItems = [], tvVideos = [], plItems = [], users 
           <h3>Most accessed content</h3>
           <p className="an-sub">Which paths, lessons and resources teachers open most.</p>
           {rankedContent.length ? (
-            <ol className="an-rank">
+            <div className="an-rank">
               {rankedContent.map((i) => (
-                <li key={i.id}>
+                <button type="button" key={i.id} className="an-rank-item" onClick={() => setDetail({ kind: "item", id: i.id })}>
                   <span className="an-rank-title">{i.title || "Untitled"}<small>{i.type} · {i.subject || "—"}{i.stage ? ` · ${i.stage}` : ""}</small></span>
                   <span className="an-rank-bar"><span style={{ width: `${(i.views / rankedMax) * 100}%` }} /></span>
                   <span className="an-rank-count">{i.views}</span>
-                </li>
+                </button>
               ))}
-            </ol>
+            </div>
           ) : <p className="an-empty">No content opened yet — this fills in as teachers open paths, lessons and resources.</p>}
         </article>
         <article className="an-card">
@@ -3440,15 +3460,15 @@ function AnalyticsPanel({ contentItems = [], tvVideos = [], plItems = [], users 
             {tvViews > 0 && <span className="an-tv-total">{tvViews} view{tvViews !== 1 ? "s" : ""}</span>}
           </div>
           {tvRanked.length ? (
-            <ol className="an-rank">
+            <div className="an-rank">
               {tvRanked.map((v) => (
-                <li key={v.id}>
+                <button type="button" key={v.id} className="an-rank-item" onClick={() => setDetail({ kind: "item", id: v.id })}>
                   <span className="an-rank-title">{v.title || "Untitled"}<small>Taronga TV{v.subject ? ` · ${v.subject}` : ""}</small></span>
                   <span className="an-rank-bar"><span style={{ width: `${(v.views / tvRankedMax) * 100}%` }} /></span>
                   <span className="an-rank-count">{v.views}</span>
-                </li>
+                </button>
               ))}
-            </ol>
+            </div>
           ) : <p className="an-empty">No videos watched yet — this fills in as teachers open Taronga TV videos.</p>}
         </article>
       </div>
@@ -3460,11 +3480,11 @@ function AnalyticsPanel({ contentItems = [], tvVideos = [], plItems = [], users 
           {subjectViews.length ? (
             <div className="sc-content-breakdown">
               {subjectViews.map(([subject, v]) => (
-                <div key={subject} className="sc-breakdown-row">
+                <button type="button" key={subject} className="sc-breakdown-row an-subject-row" onClick={() => setDetail({ kind: "subject", subject })}>
                   <span className="sc-breakdown-label">{subject}</span>
                   <div className="sc-breakdown-bar"><span style={{ width: `${(v / subjectViewsMax) * 100}%` }} /></div>
                   <span className="sc-breakdown-count">{v}</span>
-                </div>
+                </button>
               ))}
             </div>
           ) : <p className="an-empty">Usage by subject appears once teachers start opening content.</p>}
@@ -3501,6 +3521,70 @@ function AnalyticsPanel({ contentItems = [], tvVideos = [], plItems = [], users 
           <div><strong>—</strong><span>Top linked lesson</span></div>
         </div>
       </article>
+
+      {detail && (() => {
+        const isSubject = detail.kind === "subject";
+        let title;
+        let eyebrow;
+        let total;
+        let last;
+        let trend;
+        let badges;
+        let breakdownItems = [];
+        if (isSubject) {
+          const subjectItems = contentItems.filter((i) => i.subject === detail.subject).map((i) => ({ ...i, views: viewsById[i.id] || 0 }));
+          title = detail.subject;
+          eyebrow = "Subject analytics";
+          total = subjectItems.reduce((s, i) => s + i.views, 0);
+          trend = buildTrend(subjectItems.map((i) => statById[i.id]?.daily));
+          last = subjectItems.map((i) => statById[i.id]?.lastViewedAt).filter(Boolean).sort((a, b) => (b?.seconds || 0) - (a?.seconds || 0))[0];
+          badges = [`${subjectItems.length} item${subjectItems.length !== 1 ? "s" : ""} in library`];
+          breakdownItems = subjectItems.filter((i) => i.views > 0).sort((a, b) => b.views - a.views);
+        } else {
+          const item = itemsById[detail.id] || {};
+          const stat = statById[detail.id] || {};
+          title = item.title || stat.title || "Untitled";
+          eyebrow = `${item.type || stat.type || "Content"} analytics`;
+          total = stat.views || 0;
+          trend = buildTrend([stat.daily]);
+          last = stat.lastViewedAt;
+          badges = [item.subject || stat.subject, item.stage || stat.stage, item.status].filter(Boolean);
+        }
+        const trendMax = Math.max(...trend.map((d) => d.count), 1);
+        const trendTotal = trend.reduce((s, d) => s + d.count, 0);
+        const share = grandTotal ? Math.round((total / grandTotal) * 100) : 0;
+        return (
+          <div className="an-modal-backdrop" role="dialog" aria-modal="true" onClick={() => setDetail(null)}>
+            <div className="an-modal" onClick={(e) => e.stopPropagation()}>
+              <button type="button" className="an-modal-close" aria-label="Close" onClick={() => setDetail(null)}>✕</button>
+              <span className="an-modal-eyebrow">{eyebrow}</span>
+              <h3>{title}</h3>
+              <div className="an-modal-badges">{badges.map((b) => <span key={b} className={`sc-role-badge ${b === "Published" ? "staff" : "teacher"}`}>{b}</span>)}</div>
+              <div className="an-modal-stats">
+                <div><strong>{total}</strong><span>Total opens</span></div>
+                <div><strong>{share}%</strong><span>Of all opens</span></div>
+                <div><strong>{last ? formatRelativeDate(last) : "—"}</strong><span>Last opened</span></div>
+              </div>
+              <div className="an-modal-trend">
+                <div className="an-modal-trend-head"><span>Last 14 days</span><span>{trendTotal} open{trendTotal !== 1 ? "s" : ""}</span></div>
+                <div className="an-trend-bars">
+                  {trend.map((d) => <span key={d.key} title={`${d.label}: ${d.count}`} className={d.count ? "has" : ""} style={{ height: `${d.count ? Math.max((d.count / trendMax) * 100, 12) : 3}%` }} />)}
+                </div>
+                <div className="an-trend-axis"><span>{trend[0].label}</span><span>{trend[trend.length - 1].label}</span></div>
+              </div>
+              {isSubject && (
+                <div className="an-modal-list">
+                  <h4>Content opened in {title}</h4>
+                  {breakdownItems.length ? (
+                    <ul>{breakdownItems.map((i) => <li key={i.id}><span>{i.title || "Untitled"}<small>{i.type}{i.stage ? ` · ${i.stage}` : ""}</small></span><strong>{i.views}</strong></li>)}</ul>
+                  ) : <p className="an-empty">No opens recorded for this subject yet.</p>}
+                </div>
+              )}
+              {!isSubject && total === 0 && <p className="an-empty" style={{ marginTop: 14 }}>No opens recorded yet.</p>}
+            </div>
+          </div>
+        );
+      })()}
     </section>
   );
 }
