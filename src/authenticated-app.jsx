@@ -4528,65 +4528,112 @@ function UpcomingEventsPanel({ events = [], saveEvent, deleteEvent }) {
   const emptyDraft = { title: "", date: "", description: "" };
   const [draft, setDraft] = useState(emptyDraft);
   const [editing, setEditing] = useState(null);
+  const [editorOpen, setEditorOpen] = useState(false);
 
   function updateDraft(patch) { setDraft((d) => ({ ...d, ...patch })); }
+
+  function openNew() {
+    setEditing(null);
+    setDraft(emptyDraft);
+    setEditorOpen(true);
+  }
+
+  function openEdit(event) {
+    setEditing(event.id);
+    setDraft({ title: event.title, date: event.date, description: event.description || "" });
+    setEditorOpen(true);
+  }
+
+  function closeEditor() {
+    setEditing(null);
+    setDraft(emptyDraft);
+    setEditorOpen(false);
+  }
 
   async function handleSave() {
     if (!draft.title.trim() || !draft.date) return;
     await saveEvent(editing ? { ...draft, id: editing } : draft);
-    setDraft(emptyDraft);
-    setEditing(null);
+    closeEditor();
   }
 
-  function startEdit(event) {
-    setEditing(event.id);
-    setDraft({ title: event.title, date: event.date, description: event.description || "" });
+  async function handleDelete(event) {
+    if (!event) return;
+    if (!window.confirm(`Delete event "${event.title}"?`)) return;
+    await deleteEvent(event);
+    closeEditor();
   }
 
-  function cancelEdit() {
-    setEditing(null);
-    setDraft(emptyDraft);
+  function eventDateParts(dateStr) {
+    const d = new Date(`${dateStr}T00:00:00`);
+    if (Number.isNaN(d.getTime())) return { day: dateStr || "—", month: "", full: dateStr || "No date" };
+    return {
+      day: d.getDate(),
+      month: d.toLocaleDateString("en-AU", { month: "short" }).toUpperCase(),
+      full: d.toLocaleDateString("en-AU", { weekday: "long", day: "numeric", month: "long", year: "numeric" }),
+    };
   }
 
   return (
     <section className="staff-section staff-panel active">
-      <div className="section-heading">
+      <div className="sc-panel-header">
         <div><h2>Upcoming Events</h2><p>Add events and sessions that appear on every teacher's dashboard. Past events are hidden automatically.</p></div>
       </div>
-      <div className="upcoming-editor">
-        <div className="upcoming-form-card">
-          <h3>{editing ? "Edit event" : "Add new event"}</h3>
-          <form className="editor-form" onSubmit={(e) => { e.preventDefault(); handleSave(); }}>
-            <label>Event title<input type="text" value={draft.title} onChange={(e) => updateDraft({ title: e.target.value })} placeholder="e.g. Wildlife Photography Workshop" required /></label>
-            <label>Date<input type="date" value={draft.date} onChange={(e) => updateDraft({ date: e.target.value })} required /></label>
-            <label>Description (optional)<textarea value={draft.description} onChange={(e) => updateDraft({ description: e.target.value })} rows={2} placeholder="Short note for teachers about this event" /></label>
-            <div className="form-actions">
-              <button type="submit" className="primary-action">{editing ? "Update event" : "Add event"}</button>
-              {editing && <button type="button" className="secondary-action" onClick={cancelEdit}>Cancel</button>}
-            </div>
-          </form>
-        </div>
-        <div className="upcoming-list">
-          <h3>Current upcoming events ({events.length})</h3>
-          {events.length === 0 ? (
-            <p className="col-empty">No upcoming events added yet. Events you add will appear on teacher dashboards.</p>
-          ) : (
-            events.map((event) => (
-              <div key={event.id} className="upcoming-event-row">
-                <div className="upcoming-event-info">
-                  <time className="upcoming-date">{event.date}</time>
-                  <strong>{event.title}</strong>
-                  {event.description && <p>{event.description}</p>}
-                </div>
-                <div className="upcoming-event-actions">
-                  <button type="button" onClick={() => startEdit(event)}>Edit</button>
-                  <button type="button" className="delete-btn" onClick={() => deleteEvent(event)}>Delete</button>
-                </div>
-              </div>
-            ))
-          )}
-        </div>
+
+      <div className="cc-toolbar">
+        <span>{events.length} event{events.length !== 1 ? "s" : ""}</span>
+        <button type="button" className="cc-new" onClick={openNew}><Icon type="plus" className="" />New event</button>
       </div>
+
+      {events.length ? (
+        <div className="ev-grid">
+          {events.map((event) => {
+            const parts = eventDateParts(event.date);
+            return (
+              <article key={event.id} className="ev-card" onClick={() => openEdit(event)}>
+                <div className="ev-date"><strong>{parts.day}</strong><span>{parts.month}</span></div>
+                <div className="ev-body">
+                  <h3>{event.title}</h3>
+                  <p className="ev-full">{parts.full}</p>
+                  {event.description && <p className="ev-desc">{event.description}</p>}
+                </div>
+                <button type="button" className="cc-card-del" aria-label={`Delete ${event.title}`} onClick={(e) => { e.stopPropagation(); handleDelete(event); }}>✕</button>
+              </article>
+            );
+          })}
+        </div>
+      ) : (
+        <div className="cc-empty">
+          <Icon type="calendar" className="" />
+          <h3>No upcoming events yet</h3>
+          <p>Events you add appear on every teacher's dashboard. Past events are hidden automatically.</p>
+          <button type="button" className="cc-new" onClick={openNew}><Icon type="plus" className="" />New event</button>
+        </div>
+      )}
+
+      {editorOpen && (
+      <div className="cc-modal-backdrop" role="dialog" aria-modal="true" onClick={closeEditor}>
+        <form className="cc-modal sc-detail" onSubmit={(e) => { e.preventDefault(); handleSave(); }} onClick={(e) => e.stopPropagation()}>
+          <div className="sc-detail-header">
+            <div>
+              <span className="content-type">{editing ? "Editing" : "New"}</span>
+              <h3>{editing ? "Edit event" : "New event"}</h3>
+            </div>
+            <div className="sc-detail-actions">
+              {editing ? <button type="button" className="delete-button" onClick={() => handleDelete({ id: editing, title: draft.title })}>Delete</button> : null}
+              <button type="button" className="secondary-button" onClick={closeEditor}>Cancel</button>
+              <button type="submit">{editing ? "Update" : "Add event"}</button>
+            </div>
+          </div>
+          <div className="sc-form-body">
+            <div className="sc-fields">
+              <div className="sc-field"><label>Event title</label><input type="text" required value={draft.title} onChange={(e) => updateDraft({ title: e.target.value })} placeholder="e.g. Wildlife Photography Workshop" /></div>
+              <div className="sc-field"><label>Date</label><input type="date" required value={draft.date} onChange={(e) => updateDraft({ date: e.target.value })} /></div>
+              <div className="sc-field"><label>Description (optional)</label><textarea rows={3} value={draft.description} onChange={(e) => updateDraft({ description: e.target.value })} placeholder="Short note for teachers about this event" /></div>
+            </div>
+          </div>
+        </form>
+      </div>
+      )}
     </section>
   );
 }
