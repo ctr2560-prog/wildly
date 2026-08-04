@@ -3595,6 +3595,7 @@ function ContentPanel({ contentItems, status, saveState, seedContentItems, addCo
   const [draft, setDraft] = useState(createContentDraft("Learning Path"));
   const [imageError, setImageError] = useState("");
   const [formTab, setFormTab] = useState("details");
+  const [editorOpen, setEditorOpen] = useState(false);
   const learningPaths = contentItems.filter((item) => item.type === "Learning Path");
   const lessonOptions = contentItems.filter((item) => item.type === "Lesson");
   const resourceOptions = contentItems.filter((item) => item.type === "Resource");
@@ -3704,6 +3705,23 @@ function ContentPanel({ contentItems, status, saveState, seedContentItems, addCo
     setSelectedId(item.id);
   }
 
+  function openNew(type = activeType) {
+    startNew(type);
+    setFormTab("details");
+    setEditorOpen(true);
+  }
+
+  function openEdit(item) {
+    selectItem(item);
+    setFormTab("details");
+    setEditorOpen(true);
+  }
+
+  function closeEditor() {
+    setEditorOpen(false);
+    setSelectedId("");
+  }
+
   function updateDraft(patch) {
     setDraft((current) => ({ ...current, ...patch }));
   }
@@ -3713,6 +3731,7 @@ function ContentPanel({ contentItems, status, saveState, seedContentItems, addCo
     await addContentItem(draft);
     setSelectedId("");
     setDraft(createContentDraft(activeType));
+    setEditorOpen(false);
   }
 
   async function uploadCardImage(event) {
@@ -3778,6 +3797,7 @@ function ContentPanel({ contentItems, status, saveState, seedContentItems, addCo
     await deleteContentItem(item);
     setSelectedId("");
     setDraft(createContentDraft(activeType));
+    setEditorOpen(false);
   }
 
   function handleExistingSelection(value) {
@@ -3810,7 +3830,7 @@ function ContentPanel({ contentItems, status, saveState, seedContentItems, addCo
 
       <div className="sc-type-tabs">
         {["Learning Path", "Lesson", "Resource"].map((type) => (
-          <button key={type} type="button" className={`sc-type-tab${activeType === type ? " active" : ""}`} onClick={() => startNew(type)}>
+          <button key={type} type="button" className={`sc-type-tab${activeType === type ? " active" : ""}`} onClick={() => { setActiveType(type); setSelectedId(""); }}>
             <Icon type={typeCopy[type].icon} className="" />
             {type}
             <span className="sc-type-count">{contentItems.filter((i) => i.type === type).length}</span>
@@ -3818,40 +3838,49 @@ function ContentPanel({ contentItems, status, saveState, seedContentItems, addCo
         ))}
       </div>
 
-      <div className="sc-master-detail">
-        <div className="sc-list">
-          <div className="sc-list-header">
-            <span>{currentItems.length} item{currentItems.length !== 1 ? "s" : ""}</span>
-            <button type="button" onClick={() => startNew(activeType)}>+ New</button>
-          </div>
-          <div className="sc-list-items">
-            {!selectedId && (
-              <div className="sc-item active">
-                <span className="sc-status-badge draft">Draft</span>
-                <strong>New {activeType}</strong>
-                <span className="sc-item-meta">Unsaved</span>
-              </div>
-            )}
-            {currentItems.map((item) => (
-              <div key={item.id} className={`sc-item${selectedId === item.id ? " active" : ""}`} onClick={() => selectItem(item)}>
-                <span className={`sc-status-badge ${(item.status || "draft").toLowerCase()}`}>{item.status || "Draft"}</span>
-                <strong>{item.title}</strong>
-                <span className="sc-item-meta">{item.subject} · {item.stage}{item.durationWeeks ? ` · ${item.durationWeeks}w` : ""}{item.durationMinutes ? ` · ${item.durationMinutes}m` : ""}</span>
-              </div>
-            ))}
-            {!currentItems.length && <div className="sc-list-empty">No {activeType.toLowerCase()}s yet.</div>}
-          </div>
-        </div>
+      <div className="cc-toolbar">
+        <span>{currentItems.length} {activeType.toLowerCase()}{currentItems.length !== 1 ? "s" : ""}</span>
+        <button type="button" className="cc-new" onClick={() => openNew(activeType)}><Icon type="plus" className="" />New {activeType.toLowerCase()}</button>
+      </div>
 
-        <form className="sc-detail" onSubmit={submitContent}>
+      {currentItems.length ? (
+        <div className="cc-grid">
+          {currentItems.map((item) => (
+            <article key={item.id} className="cc-card" onClick={() => openEdit(item)}>
+              <div className="cc-card-top">
+                <span className={`sc-role-badge ${item.status === "Published" ? "staff" : "teacher"}`}>{item.status || "Draft"}</span>
+                <button type="button" className="cc-card-del" aria-label={`Delete ${item.title}`} onClick={(e) => { e.stopPropagation(); confirmDelete(item); }}>✕</button>
+              </div>
+              <h3>{item.title || "Untitled"}</h3>
+              <p className="cc-card-meta">{item.subject} · {item.stage}{item.durationWeeks ? ` · ${item.durationWeeks} wks` : ""}{item.durationMinutes ? ` · ${item.durationMinutes} min` : ""}</p>
+              {item.summary && <p className="cc-card-summary">{item.summary}</p>}
+              <div className="cc-card-foot">
+                <span>{materialCount(item)} file{materialCount(item) !== 1 ? "s" : ""}</span>
+                <span className="cc-card-edit">Edit<Icon type="arrowRight" className="" /></span>
+              </div>
+            </article>
+          ))}
+        </div>
+      ) : (
+        <div className="cc-empty">
+          <Icon type={typeCopy[activeType].icon} className="" />
+          <h3>No {activeType.toLowerCase()}s yet</h3>
+          <p>{typeCopy[activeType].intro}</p>
+          <button type="button" className="cc-new" onClick={() => openNew(activeType)}><Icon type="plus" className="" />New {activeType.toLowerCase()}</button>
+        </div>
+      )}
+
+      {editorOpen && (
+      <div className="cc-modal-backdrop" role="dialog" aria-modal="true" onClick={closeEditor}>
+        <form className="cc-modal sc-detail" onSubmit={submitContent} onClick={(e) => e.stopPropagation()}>
           <div className="sc-detail-header">
             <div>
-              <span className="content-type">{selectedId ? "Editing" : "New"}</span>
+              <span className="content-type">{selectedId ? "Editing" : `New ${draft.type}`}</span>
               <h3>{selectedId ? (draft.title || `Edit ${draft.type}`) : `New ${draft.type}`}</h3>
             </div>
             <div className="sc-detail-actions">
               {selectedId ? <button type="button" className="delete-button" onClick={() => confirmDelete(draft)}>Delete</button> : null}
-              <button type="button" className="secondary-button" onClick={() => startNew(activeType)}>Clear</button>
+              <button type="button" className="secondary-button" onClick={closeEditor}>Cancel</button>
               <button type="submit" disabled={saveState === "saving"}>{saveState === "saving" ? "Saving…" : selectedId ? "Update" : "Save"}</button>
             </div>
           </div>
@@ -3984,6 +4013,7 @@ function ContentPanel({ contentItems, status, saveState, seedContentItems, addCo
           </div>
         </form>
       </div>
+      )}
     </section>
   );
 }
