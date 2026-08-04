@@ -4550,8 +4550,6 @@ function ContentFirestoreStatus({
   savingLabel,
   savedLabel,
 }) {
-  if (status === "live" && !saveState) return null;
-
   const messages = {
     loading: loadingLabel || `Loading ${collectionLabel}…`,
     missing: emptyLabel || "Nothing published here yet — you're seeing sample content until you add your own.",
@@ -4562,7 +4560,9 @@ function ContentFirestoreStatus({
   };
 
   const statusKey = saveState && saveState !== "idle" ? saveState : status;
-  return <p className={`firestore-status ${statusKey}`}>{messages[statusKey]}</p>;
+  const message = messages[statusKey];
+  if (!message) return null;
+  return <p className={`firestore-status ${statusKey}`}>{message}</p>;
 }
 
 function PlaceholderExperiencePage({ eyebrow, title, description, points = [], primaryLabel, primaryHref, secondaryLabel, secondaryHref }) {
