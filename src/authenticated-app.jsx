@@ -1080,6 +1080,48 @@ function AboutYouPage() {
   );
 }
 
+function bannerImage(banner) {
+  return banner.image || (banner.imageKey ? assets[banner.imageKey] : "") || "";
+}
+
+function TeacherBanner({ banner }) {
+  const img = bannerImage(banner);
+  return (
+    <div className={`tb-banner${img ? " has-image" : ""}`}>
+      {img && <img className="tb-banner-img" src={img} alt="" />}
+      <div className="tb-banner-body">
+        {banner.eyebrow && <span className="tb-banner-eyebrow">{banner.eyebrow}</span>}
+        {banner.title && <h3>{banner.title}</h3>}
+        {banner.message && <p>{banner.message}</p>}
+      </div>
+      {banner.linkLabel && banner.linkUrl ? <a className="tb-banner-btn" href={banner.linkUrl}>{banner.linkLabel}</a> : null}
+    </div>
+  );
+}
+
+function TeacherBannerStrip({ banners }) {
+  const [index, setIndex] = useState(0);
+  useEffect(() => {
+    if (banners.length <= 1) return undefined;
+    const timer = setInterval(() => setIndex((n) => (n + 1) % banners.length), 6000);
+    return () => clearInterval(timer);
+  }, [banners.length]);
+  if (!banners.length) return null;
+  const active = Math.min(index, banners.length - 1);
+  return (
+    <section className="tb-strip" aria-label="Announcements">
+      <TeacherBanner banner={banners[active]} />
+      {banners.length > 1 && (
+        <div className="tb-dots">
+          {banners.map((banner, n) => (
+            <button key={banner.id || n} type="button" className={n === active ? "active" : ""} onClick={() => setIndex(n)} aria-label={`Show announcement ${n + 1}`} />
+          ))}
+        </div>
+      )}
+    </section>
+  );
+}
+
 function TeacherDashboard({ config, contentItems = defaultContentItems.map(resolveContentItem), professionalLearningItems = defaultProfessionalLearningItems, tarongaTvVideos = defaultTarongaTvVideos.map(resolveTarongaTvVideo), page = "dashboard", subject = "", contentId = "", tvVideoId = "", profile = null, onSignOut = null, preview = false, workspace = createDefaultTeacherWorkspace(), onToggleSaved = () => {}, onCreateClass = () => {}, upcomingEvents = [] }) {
   const [activeSubject, setActiveSubject] = useState(subjectFromSlug(subject));
   const [activeTvCategory, setActiveTvCategory] = useState("All");
@@ -1442,6 +1484,8 @@ function TeacherDashboard({ config, contentItems = defaultContentItems.map(resol
               </div>
               <img className="hero-animal" src={config.heroImageUrl} alt="Koala with joey at Taronga" />
             </section>
+
+            <TeacherBannerStrip banners={(config.banners || []).filter((b) => b.active)} />
 
             <section className="library-head">
               <div>
@@ -2535,6 +2579,15 @@ function StaffConsole({ onLock, firebaseUser }) {
     }
   }
 
+  async function saveBanners(banners) {
+    setConfig((current) => ({ ...current, banners }));
+    try {
+      await setDoc(dashboardConfigRef, { banners, updatedAt: serverTimestamp() }, { merge: true });
+    } catch (error) {
+      console.error("Unable to save banners", error);
+    }
+  }
+
   async function seedContentItems() {
     setContentSaveState("saving");
     try {
@@ -2811,7 +2864,7 @@ function StaffConsole({ onLock, firebaseUser }) {
             ["taronga-tv", "play", "Taronga TV"],
             ["professional-learning", "book", "Professional Learning"],
             ["upcoming-events", "calendar", "Upcoming Events"],
-            ["dashboard", "monitor", "Edit Dashboard"],
+            ["banner", "speech", "Banner"],
             ["control-room", "target", "Control Room"],
           ].map(([id, icon, label]) => <button className={panel === id ? "active" : ""} type="button" data-panel={id} key={id} onClick={() => setPanel(id)}><Icon type={icon} className="" />{label}</button>)}
         </nav>
@@ -2839,7 +2892,7 @@ function StaffConsole({ onLock, firebaseUser }) {
         {panel === "taronga-tv" && <TarongaTvPanel items={tarongaTvVideos} contentItems={contentItems} status={tarongaTvStatus} saveState={tarongaTvSaveState} saveVideo={saveTarongaTvVideo} deleteVideo={deleteTarongaTvVideo} />}
         {panel === "professional-learning" && <ProfessionalLearningPanel items={professionalLearningItems} status={professionalLearningStatus} saveState={professionalLearningSaveState} saveItem={saveProfessionalLearningItem} deleteItem={deleteProfessionalLearningItem} />}
         {panel === "upcoming-events" && <UpcomingEventsPanel events={upcomingEvents} saveEvent={saveUpcomingEvent} deleteEvent={deleteUpcomingEvent} />}
-        {panel === "dashboard" && <DashboardEditor config={config} contentItems={contentItems} updateConfig={updateConfig} reset={() => { setConfig(defaultDashboardConfig); setPreviewKey((key) => key + 1); }} previewKey={previewKey} publish={publishDashboardConfig} status={status} saveState={saveState} />}
+        {panel === "banner" && <BannerManager banners={config.banners || []} saveBanners={saveBanners} />}
         {panel === "control-room" && <ControlRoomPanel currentEmail={firebaseUser?.email} users={users} />}
       </main>
     </div>
@@ -3066,7 +3119,7 @@ function OverviewPanel({ contentItems, tvVideos, plItems, upcomingEvents = [], u
     ["taronga-tv", "play", "Taronga TV", "Publish curriculum videos"],
     ["professional-learning", "book", "Professional learning", "Sessions and webinars for teachers"],
     ["upcoming-events", "calendar", "Upcoming events", "What teachers see next"],
-    ["dashboard", "monitor", "Edit teacher dashboard", "Home screen teachers land on"],
+    ["banner", "speech", "Banner", "Announcements on the teacher dashboard"],
     ["users", "users", "Users", "Teachers and staff accounts"],
   ];
 
@@ -4638,9 +4691,138 @@ function UpcomingEventsPanel({ events = [], saveEvent, deleteEvent }) {
   );
 }
 
-function DashboardEditor({ config, contentItems, updateConfig, reset, previewKey, publish, status, saveState }) {
-  const saveText = saveState === "saving" ? "Publishing..." : "Publish changes";
-  return <section className="staff-section staff-panel active"><div className="section-heading"><div><h2>Edit teacher dashboard</h2><p>Live-edit teacher-facing dashboard text, imagery and visibility flags before publishing.</p></div><div className="heading-actions"><button type="button" onClick={reset}>Reset preview</button><button type="button" onClick={publish} disabled={saveState === "saving"}>{saveText}</button></div></div><article className="dashboard-editor live-dashboard-editor"><div className="editor-copy"><span className="content-type">Teacher Dashboard Editor</span><h3>Update teacher-facing dashboard content</h3><p>Changes below update the preview immediately. Publishing writes the values to Firestore at dashboardConfig/main.</p><FirestoreStatus status={status} saveState={saveState} /></div><form className="editor-form"><label>Hero headline<input type="text" value={config.heroTitle} onChange={(event) => updateConfig({ heroTitle: event.target.value })} /></label><label>Hero subheading<input type="text" value={config.heroSubtitle} onChange={(event) => updateConfig({ heroSubtitle: event.target.value })} /></label><label>Hero image<select value={config.heroImageUrl} onChange={(event) => updateConfig({ heroImageUrl: event.target.value })}><option value={assets.heroKoala}>Koala with joey</option><option value={assets.giraffe}>Giraffe at Taronga</option><option value={assets.binturong}>Binturong encounter</option><option value={assets.gorilla}>Gorilla habitat</option></select></label><label>Featured resource title<select value={config.featuredResourceTitle} onChange={(event) => updateConfig({ featuredResourceTitle: event.target.value })}>{contentItems.map((item) => <option key={item.id || item.title}>{item.title}</option>)}</select></label></form><div className="flag-grid" aria-label="Teacher dashboard content flags"><label><input type="checkbox" checked={config.showTrackaCard} onChange={(event) => updateConfig({ showTrackaCard: event.target.checked })} /> Feature Taronga Tracka card</label><label><input type="checkbox" /> Show beta student insights</label><label><input type="checkbox" defaultChecked /> Display new resource badges</label><label><input type="checkbox" /> Lock subject cards during review</label></div><div className="teacher-live-preview"><div className="preview-toolbar"><span>Live teacher dashboard preview</span><a href={routePath("teacher")} target="_blank" rel="noreferrer">Open full view</a></div><div className="preview-frame" key={previewKey}><TeacherDashboard config={config} contentItems={contentItems} /></div></div></article></section>;
+function createBanner() {
+  return { id: `bn-${Date.now().toString(36)}`, eyebrow: "", title: "", message: "", linkLabel: "", linkUrl: "", image: "", imageKey: "", active: true };
+}
+
+function BannerManager({ banners, saveBanners }) {
+  const [editorOpen, setEditorOpen] = useState(false);
+  const [draft, setDraft] = useState(createBanner());
+  const [editingId, setEditingId] = useState(null);
+  const [imageError, setImageError] = useState("");
+
+  function openNew() { setDraft(createBanner()); setEditingId(null); setImageError(""); setEditorOpen(true); }
+  function openEdit(banner) { setDraft({ ...createBanner(), ...banner }); setEditingId(banner.id); setImageError(""); setEditorOpen(true); }
+  function closeEditor() { setEditorOpen(false); setEditingId(null); }
+  function update(patch) { setDraft((d) => ({ ...d, ...patch })); }
+
+  function handleSave(event) {
+    event.preventDefault();
+    const next = editingId ? banners.map((b) => (b.id === draft.id ? draft : b)) : [...banners, draft];
+    saveBanners(next);
+    closeEditor();
+  }
+  function handleDelete(banner) {
+    if (!window.confirm(`Delete banner "${banner.title || "Untitled"}"?`)) return;
+    saveBanners(banners.filter((b) => b.id !== banner.id));
+    closeEditor();
+  }
+  function toggleActive(banner) {
+    saveBanners(banners.map((b) => (b.id === banner.id ? { ...b, active: !b.active } : b)));
+  }
+  function move(index, dir) {
+    const target = index + dir;
+    if (target < 0 || target >= banners.length) return;
+    const next = [...banners];
+    [next[index], next[target]] = [next[target], next[index]];
+    saveBanners(next);
+  }
+  async function uploadImage(event) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    try { const dataUrl = await resizeImageFile(file); update({ image: dataUrl, imageKey: "" }); setImageError(""); }
+    catch (error) { setImageError(error.message); }
+  }
+  function chooseStock(value) {
+    const stock = stockImages.find((im) => im.src === value || im.key === value);
+    update({ imageKey: stock?.key || "", image: stock?.key ? "" : (stock?.src || value) });
+  }
+  const selectedStock = stockImages.find((im) => im.key && im.key === draft.imageKey);
+
+  return (
+    <section className="staff-section staff-panel active">
+      <div className="sc-panel-header">
+        <div><h2>Banner</h2><p>Announcements that rotate at the top of every teacher's dashboard — new content, events and campaigns.</p></div>
+      </div>
+
+      <div className="cc-toolbar">
+        <span>{banners.length} banner{banners.length !== 1 ? "s" : ""}</span>
+        <button type="button" className="cc-new" onClick={openNew}><Icon type="plus" className="" />New banner</button>
+      </div>
+
+      {banners.length ? (
+        <div className="bn-list">
+          {banners.map((banner, i) => (
+            <div key={banner.id} className={`bn-row${banner.active ? "" : " inactive"}`}>
+              <button type="button" className="bn-preview" onClick={() => openEdit(banner)}><TeacherBanner banner={banner} /></button>
+              <div className="bn-controls">
+                <label className="bn-toggle" title={banner.active ? "Live on dashboards" : "Hidden"}>
+                  <input type="checkbox" checked={banner.active} onChange={() => toggleActive(banner)} />
+                  <span>{banner.active ? "Live" : "Hidden"}</span>
+                </label>
+                <div className="bn-order">
+                  <button type="button" onClick={() => move(i, -1)} disabled={i === 0} aria-label="Move up">↑</button>
+                  <button type="button" onClick={() => move(i, 1)} disabled={i === banners.length - 1} aria-label="Move down">↓</button>
+                </div>
+                <button type="button" className="bn-edit" onClick={() => openEdit(banner)}>Edit</button>
+                <button type="button" className="cc-card-del" onClick={() => handleDelete(banner)} aria-label={`Delete ${banner.title}`}>✕</button>
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="cc-empty">
+          <Icon type="speech" className="" />
+          <h3>No banners yet</h3>
+          <p>Add an announcement to show at the top of every teacher's dashboard.</p>
+          <button type="button" className="cc-new" onClick={openNew}><Icon type="plus" className="" />New banner</button>
+        </div>
+      )}
+
+      {editorOpen && (
+      <div className="cc-modal-backdrop" role="dialog" aria-modal="true" onClick={closeEditor}>
+        <form className="cc-modal sc-detail" onSubmit={handleSave} onClick={(e) => e.stopPropagation()}>
+          <div className="sc-detail-header">
+            <div><span className="content-type">{editingId ? "Editing" : "New"}</span><h3>{draft.title || "New banner"}</h3></div>
+            <div className="sc-detail-actions">
+              {editingId ? <button type="button" className="delete-button" onClick={() => handleDelete(draft)}>Delete</button> : null}
+              <button type="button" className="secondary-button" onClick={closeEditor}>Cancel</button>
+              <button type="submit">{editingId ? "Update" : "Add banner"}</button>
+            </div>
+          </div>
+          <div className="sc-form-body">
+            <div className="sc-fields">
+              <label className="bn-active-row">
+                <input type="checkbox" checked={draft.active} onChange={(e) => update({ active: e.target.checked })} />
+                <span><strong>Show banner</strong><small>{draft.active ? "Visible to teachers" : "Hidden from teachers"}</small></span>
+              </label>
+              <div className="sc-field"><label>Eyebrow (small tagline)</label><input type="text" value={draft.eyebrow} onChange={(e) => update({ eyebrow: e.target.value })} placeholder="e.g. NEW THIS TERM" /></div>
+              <div className="sc-field"><label>Title</label><input type="text" value={draft.title} onChange={(e) => update({ title: e.target.value })} placeholder="e.g. Sustainable Futures unit is live" /></div>
+              <div className="sc-field"><label>Message</label><textarea rows={2} value={draft.message} onChange={(e) => update({ message: e.target.value })} placeholder="A short line about what's new" /></div>
+              <div className="sc-field-row">
+                <div className="sc-field"><label>Button label</label><input type="text" value={draft.linkLabel} onChange={(e) => update({ linkLabel: e.target.value })} placeholder="Explore now" /></div>
+                <div className="sc-field"><label>Button link</label><input type="url" value={draft.linkUrl} onChange={(e) => update({ linkUrl: e.target.value })} placeholder="https://..." /></div>
+              </div>
+              <div className="sc-field-row">
+                <div className="sc-field"><label>Stock image</label><select value={selectedStock ? selectedStock.key : ""} onChange={(e) => chooseStock(e.target.value)}><option value="">No image</option>{stockImages.map((si) => <option key={si.key || si.src} value={si.key || si.src}>{si.label}</option>)}</select></div>
+                <div className="sc-field"><label>Image URL</label><input type="url" value={draft.image} onChange={(e) => update({ image: e.target.value, imageKey: "" })} placeholder="https://..." /></div>
+              </div>
+              <div className="sc-field"><label>Or upload image</label>
+                <div className="sc-upload-zone" onClick={() => document.getElementById("bn-img-upload").click()}><Icon type="plus" className="" /><span>Click to upload</span></div>
+                <input type="file" id="bn-img-upload" accept="image/*" onChange={uploadImage} style={{ display: "none" }} />
+              </div>
+              {imageError ? <p className="auth-error">{imageError}</p> : null}
+              <div className="bn-preview-block">
+                <span className="bn-preview-label">Live preview</span>
+                <TeacherBanner banner={draft} />
+              </div>
+            </div>
+          </div>
+        </form>
+      </div>
+      )}
+    </section>
+  );
 }
 
 function FirestoreStatus({ status, saveState }) {

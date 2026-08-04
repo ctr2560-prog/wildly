@@ -3873,3 +3873,71 @@ button.sc-stat-card.accent:hover { border-color: transparent; }
   overflow: hidden;
 }
 .ev-card .cc-card-del { position: absolute; top: 12px; right: 12px; }
+
+/* ── Banner manager ── */
+.bn-list { display: grid; gap: 14px; }
+.bn-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 16px;
+  align-items: center;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: var(--surface-shadow);
+}
+.bn-row.inactive { opacity: 0.6; }
+.bn-preview {
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+}
+.bn-preview .tb-banner { pointer-events: none; }
+.bn-controls { display: flex; align-items: center; gap: 10px; flex: 0 0 auto; }
+.bn-toggle { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 800; color: var(--green-900); cursor: pointer; }
+.bn-toggle input { width: 15px; height: 15px; accent-color: var(--green-800); }
+.bn-order { display: flex; flex-direction: column; }
+.bn-order button {
+  width: 26px; height: 20px;
+  border: 1px solid var(--line);
+  background: #fff;
+  color: var(--green-900);
+  font-size: 12px;
+  cursor: pointer;
+  line-height: 1;
+}
+.bn-order button:first-child { border-radius: 7px 7px 0 0; }
+.bn-order button:last-child { border-radius: 0 0 7px 7px; border-top: 0; }
+.bn-order button:disabled { opacity: 0.35; cursor: default; }
+.bn-edit {
+  height: 34px; padding: 0 14px;
+  border: 1px solid var(--line); border-radius: 8px;
+  background: #fff; color: var(--green-900);
+  font-size: 13px; font-weight: 700; cursor: pointer;
+}
+.bn-edit:hover { border-color: var(--green-800); background: #f4f9f2; }
+
+.bn-active-row {
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--studio-wash, #f4f7f3);
+  cursor: pointer;
+}
+.bn-active-row input { width: 18px; height: 18px; accent-color: var(--green-800); }
+.bn-active-row span { display: flex; flex-direction: column; line-height: 1.3; }
+.bn-active-row strong { color: var(--green-950); font-size: 14px; }
+.bn-active-row small { color: var(--muted); font-size: 12px; }
+
+.bn-preview-block { margin-top: 4px; padding-top: 16px; border-top: 1px solid var(--line); }
+.bn-preview-label { display: block; color: var(--muted); font-size: 11px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 10px; }
+
+@media (max-width: 720px) {
+  .bn-row { grid-template-columns: 1fr; }
+  .bn-controls { justify-content: space-between; }
+}
