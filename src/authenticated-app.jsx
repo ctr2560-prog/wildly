@@ -4022,6 +4022,7 @@ function TarongaTvPanel({ items, contentItems, status, saveState, saveVideo, del
   const [draft, setDraft] = useState(createTarongaTvDraft());
   const [imageError, setImageError] = useState("");
   const [formTab, setFormTab] = useState("details");
+  const [editorOpen, setEditorOpen] = useState(false);
   const selectedItem = items.find((item) => item.id === selectedId) || null;
   const lessonOptions = contentItems.filter((item) => item.type === "Lesson");
   const learningPathOptions = contentItems.filter((item) => item.type === "Learning Path");
@@ -4067,6 +4068,27 @@ function TarongaTvPanel({ items, contentItems, status, saveState, saveVideo, del
     setSelectedId("");
     setDraft(createTarongaTvDraft());
     setImageError("");
+  }
+
+  function openNew() {
+    startNew();
+    setFormTab("details");
+    setEditorOpen(true);
+  }
+
+  function openEdit(item) {
+    setSelectedId(item.id);
+    setFormTab("details");
+    setEditorOpen(true);
+  }
+
+  function closeEditor() {
+    setEditorOpen(false);
+    setSelectedId("");
+  }
+
+  function tvThumb(item) {
+    return item.thumbnailUrl || item.image || assets[item.imageKey] || assets.heroKoala;
   }
 
   async function uploadCardImage(event) {
@@ -4127,15 +4149,17 @@ function TarongaTvPanel({ items, contentItems, status, saveState, saveVideo, del
     event.preventDefault();
     const savedId = await saveVideo(draft);
     if (savedId) {
-      setSelectedId(savedId);
+      setEditorOpen(false);
+      setSelectedId("");
     }
   }
 
-  async function handleDelete() {
-    if (!selectedItem) return;
-    if (!window.confirm(`Delete Taronga TV video "${selectedItem.title}"?`)) return;
-    await deleteVideo(selectedItem);
+  async function handleDelete(item = selectedItem) {
+    if (!item) return;
+    if (!window.confirm(`Delete Taronga TV video "${item.title}"?`)) return;
+    await deleteVideo(item);
     setSelectedId("");
+    setEditorOpen(false);
   }
 
   const tvFormTabs = [
@@ -4155,32 +4179,46 @@ function TarongaTvPanel({ items, contentItems, status, saveState, saveVideo, del
       </div>
       <ContentFirestoreStatus status={status} saveState={saveState} />
 
-      <div className="sc-master-detail">
-        <div className="sc-list">
-          <div className="sc-list-header">
-            <span>{items.length} video{items.length !== 1 ? "s" : ""}</span>
-            <button type="button" onClick={startNew}>+ New</button>
-          </div>
-          <div className="sc-list-items">
-            {!selectedId && (
-              <div className="sc-item active">
-                <span className="sc-status-badge draft">Draft</span>
-                <strong>New video</strong>
-                <span className="sc-item-meta">Unsaved</span>
-              </div>
-            )}
-            {items.map((item) => (
-              <div key={item.id} className={`sc-item${selectedId === item.id ? " active" : ""}`} onClick={() => setSelectedId(item.id)}>
-                <span className={`sc-status-badge ${(item.status || "draft").toLowerCase()}`}>{item.status || "Draft"}</span>
-                <strong>{item.title}</strong>
-                <span className="sc-item-meta">{item.subject} · {item.stage}{item.duration ? ` · ${item.duration}` : ""}</span>
-              </div>
-            ))}
-            {!items.length && <div className="sc-list-empty">No videos yet.</div>}
-          </div>
-        </div>
+      <div className="cc-toolbar">
+        <span>{items.length} video{items.length !== 1 ? "s" : ""}</span>
+        <button type="button" className="cc-new" onClick={openNew}><Icon type="plus" className="" />New video</button>
+      </div>
 
-        <form className="sc-detail" onSubmit={handleSubmit}>
+      {items.length ? (
+        <div className="cc-grid">
+          {items.map((item) => (
+            <article key={item.id} className="cc-card cc-card-media" onClick={() => openEdit(item)}>
+              <div className="cc-card-thumb">
+                <img src={tvThumb(item)} alt="" loading="lazy" />
+                <span className="cc-card-play"><Icon type="mediaPlay" className="" /></span>
+                <button type="button" className="cc-card-del" aria-label={`Delete ${item.title}`} onClick={(e) => { e.stopPropagation(); handleDelete(item); }}>✕</button>
+                {item.duration && <span className="cc-card-duration">{item.duration}</span>}
+              </div>
+              <div className="cc-card-body">
+                <span className={`sc-role-badge ${(item.status || "Draft") === "Published" ? "staff" : "teacher"}`}>{item.status || "Draft"}</span>
+                <h3>{item.title || "Untitled"}</h3>
+                <p className="cc-card-meta">{item.subject} · {item.stage}</p>
+                {item.summary && <p className="cc-card-summary">{item.summary}</p>}
+                <div className="cc-card-foot">
+                  <span>{(item.categories || []).length} categor{(item.categories || []).length === 1 ? "y" : "ies"}</span>
+                  <span className="cc-card-edit">Edit<Icon type="arrowRight" className="" /></span>
+                </div>
+              </div>
+            </article>
+          ))}
+        </div>
+      ) : (
+        <div className="cc-empty">
+          <Icon type="play" className="" />
+          <h3>No videos yet</h3>
+          <p>Publish curriculum-aligned videos with linked lessons, outcomes and timed discussion prompts.</p>
+          <button type="button" className="cc-new" onClick={openNew}><Icon type="plus" className="" />New video</button>
+        </div>
+      )}
+
+      {editorOpen && (
+      <div className="cc-modal-backdrop" role="dialog" aria-modal="true" onClick={closeEditor}>
+        <form className="cc-modal sc-detail" onSubmit={handleSubmit} onClick={(e) => e.stopPropagation()}>
           <div className="sc-detail-header">
             <div>
               <span className="content-type">{selectedId ? "Editing" : "New"}</span>
@@ -4188,8 +4226,8 @@ function TarongaTvPanel({ items, contentItems, status, saveState, saveVideo, del
             </div>
             <div className="sc-detail-actions">
               {selectedItem ? <a className="secondary-button slim-button" style={{textDecoration:"none",display:"inline-flex",alignItems:"center"}} href={teacherTvRoute(selectedItem.id)} target="_blank" rel="noreferrer">Preview</a> : null}
-              {selectedItem ? <button type="button" className="delete-button" onClick={handleDelete}>Delete</button> : null}
-              <button type="button" className="secondary-button" onClick={startNew}>Clear</button>
+              {selectedItem ? <button type="button" className="delete-button" onClick={() => handleDelete()}>Delete</button> : null}
+              <button type="button" className="secondary-button" onClick={closeEditor}>Cancel</button>
               <button type="submit" disabled={saveState === "saving"}>{saveState === "saving" ? "Saving…" : submitLabel}</button>
             </div>
           </div>
@@ -4293,6 +4331,7 @@ function TarongaTvPanel({ items, contentItems, status, saveState, saveVideo, del
           </div>
         </form>
       </div>
+      )}
     </section>
   );
 }

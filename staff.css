@@ -3764,3 +3764,57 @@ button.sc-stat-card.accent:hover { border-color: transparent; }
 }
 /* The modal IS the .sc-detail flex column, so header/tabs pin and body scrolls */
 .cc-modal.sc-detail { display: flex; flex-direction: column; min-height: 0; }
+
+/* ── Content cards: media variant (Taronga TV) ── */
+.cc-card-media { padding: 0; overflow: hidden; }
+.cc-card-thumb {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  background: #0b4c32;
+  overflow: hidden;
+}
+.cc-card-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.cc-card-media:hover .cc-card-thumb img { transform: scale(1.03); }
+.cc-card-thumb img { transition: transform 200ms ease; }
+.cc-card-play {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.9);
+  color: var(--green-900);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25);
+}
+.cc-card-play svg { width: 20px; margin-left: 2px; }
+.cc-card-thumb .cc-card-del {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: rgba(255, 255, 255, 0.9);
+  color: var(--muted);
+}
+.cc-card-thumb .cc-card-del:hover { background: #fff; color: #b4231f; }
+.cc-card-duration {
+  position: absolute;
+  bottom: 8px;
+  right: 8px;
+  padding: 2px 8px;
+  border-radius: 6px;
+  background: rgba(7, 45, 31, 0.82);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+}
+.cc-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 16px 18px 18px;
+  flex: 1;
+}
+.cc-card-body .sc-role-badge { align-self: flex-start; }
