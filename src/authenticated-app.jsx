@@ -2501,9 +2501,11 @@ function StaffPage() {
   }, []);
 
   async function lock() {
+    try { window.sessionStorage.removeItem(STAFF_PREVIEW_KEY); } catch { /* ignore */ }
     if (auth.currentUser) {
       await signOut(auth);
     }
+    window.location.hash = "";
   }
 
   if (!authChecked) {
