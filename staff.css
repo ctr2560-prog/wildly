@@ -3941,3 +3941,39 @@ button.sc-stat-card.accent:hover { border-color: transparent; }
   .bn-row { grid-template-columns: 1fr; }
   .bn-controls { justify-content: space-between; }
 }
+
+/* ── Staff "Teacher view" preview pill ── */
+.staff-preview-pill {
+  position: fixed;
+  bottom: 22px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 10px 12px 10px 20px;
+  border-radius: 999px;
+  background: var(--green-950, #073f2a);
+  color: #fff;
+  box-shadow: 0 16px 40px rgba(6, 22, 13, 0.4);
+  font-size: 14px;
+}
+.staff-preview-pill strong { font-weight: 800; }
+.staff-preview-pill span { color: rgba(255, 255, 255, 0.85); white-space: nowrap; }
+.staff-preview-pill button {
+  border: 0;
+  border-radius: 999px;
+  padding: 8px 16px;
+  background: #a9f0cd;
+  color: #062d20;
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.staff-preview-pill button:hover { background: #8fe6ba; }
+@media (max-width: 560px) {
+  .staff-preview-pill { flex-direction: column; gap: 8px; padding: 12px 16px; width: calc(100% - 32px); }
+  .staff-preview-pill span { white-space: normal; text-align: center; }
+}

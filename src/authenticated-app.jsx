@@ -2415,7 +2415,30 @@ function useUpcomingEvents() {
   return { events };
 }
 
-function TeacherPage({ page = "dashboard", subject = "", contentId = "", tvVideoId = "", preview = false }) {
+const STAFF_PREVIEW_KEY = "wildly-staff-preview";
+function staffPreviewActive() {
+  try { return window.sessionStorage.getItem(STAFF_PREVIEW_KEY) === "1"; } catch { return false; }
+}
+function enterStaffPreview() {
+  try { window.sessionStorage.setItem(STAFF_PREVIEW_KEY, "1"); } catch { /* ignore */ }
+  window.location.hash = "#teacher";
+}
+function exitStaffPreview() {
+  try { window.sessionStorage.removeItem(STAFF_PREVIEW_KEY); } catch { /* ignore */ }
+  window.location.hash = "#staff";
+}
+
+function StaffPreviewBar() {
+  return (
+    <div className="staff-preview-pill" role="status">
+      <span><strong>Preview</strong> — this is what teachers see</span>
+      <button type="button" onClick={exitStaffPreview}>✕ Exit to staff console</button>
+    </div>
+  );
+}
+
+function TeacherPage({ page = "dashboard", subject = "", contentId = "", tvVideoId = "", preview: previewProp = false }) {
+  const preview = previewProp || staffPreviewActive();
   const { config, status } = useDashboardConfig();
   const { items: contentItems, status: contentStatus } = useContentItems();
   const { items: professionalLearningItems } = useProfessionalLearningItems();
@@ -2455,6 +2478,7 @@ function TeacherPage({ page = "dashboard", subject = "", contentId = "", tvVideo
 
   return (
     <>
+      {staffPreviewActive() && <StaffPreviewBar />}
       <TeacherDashboard config={config} contentItems={contentItems} professionalLearningItems={professionalLearningItems} tarongaTvVideos={tarongaTvVideos} page={page} subject={subject} contentId={contentId} tvVideoId={tvVideoId} profile={profile} onSignOut={handleSignOut} preview={preview} workspace={workspace} onToggleSaved={toggleSavedItem} onCreateClass={createClass} upcomingEvents={upcomingEvents} />
     </>
   );
@@ -2469,6 +2493,11 @@ function StaffPage() {
       setFirebaseUser(user);
       setAuthChecked(true);
     });
+  }, []);
+
+  // Back in the console — clear any staff-preview flag so teacher routes behave normally.
+  useEffect(() => {
+    try { window.sessionStorage.removeItem(STAFF_PREVIEW_KEY); } catch { /* ignore */ }
   }, []);
 
   async function lock() {
@@ -2880,7 +2909,7 @@ function StaffConsole({ onLock, firebaseUser }) {
                 <span className="staff-user-meta"><small>Signed in as</small><strong>{firebaseUser.email}</strong></span>
               </div>
             )}
-            <a className="staff-btn staff-btn-ghost" href={routePath("teacher")}>Teacher view</a>
+            <button type="button" className="staff-btn staff-btn-ghost" onClick={enterStaffPreview}>Teacher view</button>
             <button type="button" className="staff-btn staff-btn-quiet" onClick={onLock}>Sign out</button>
           </div>
         </header>
