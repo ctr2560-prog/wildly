@@ -3818,3 +3818,6 @@ button.sc-stat-card.accent:hover { border-color: transparent; }
   flex: 1;
 }
 .cc-card-body .sc-role-badge { align-self: flex-start; }
+
+.cc-card-meta { display: inline-flex; align-items: center; gap: 5px; }
+.cc-card-meta svg { width: 14px; }

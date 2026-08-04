@@ -4339,6 +4339,7 @@ function TarongaTvPanel({ items, contentItems, status, saveState, saveVideo, del
 function ProfessionalLearningPanel({ items, status, saveState, saveItem, deleteItem }) {
   const [selectedId, setSelectedId] = useState("");
   const [formTab, setFormTab] = useState("details");
+  const [editorOpen, setEditorOpen] = useState(false);
   const [draft, setDraft] = useState({
     title: "",
     date: "",
@@ -4386,17 +4387,40 @@ function ProfessionalLearningPanel({ items, status, saveState, saveItem, deleteI
     });
   }, [selectedItem]);
 
+  function openNew() {
+    setSelectedId("");
+    setFormTab("details");
+    setEditorOpen(true);
+  }
+
+  function openEdit(item) {
+    setSelectedId(item.id);
+    setFormTab("details");
+    setEditorOpen(true);
+  }
+
+  function closeEditor() {
+    setEditorOpen(false);
+    setSelectedId("");
+  }
+
+  function plLinkCount(item) {
+    return [item.registrationUrl, item.infoUrl, item.pdfUrl, ...(Array.isArray(item.downloadLinks) ? item.downloadLinks.map((d) => d.url) : [])].filter(Boolean).length;
+  }
+
   async function handleSubmit(event) {
     event.preventDefault();
     await saveItem(draft);
     setSelectedId("");
+    setEditorOpen(false);
   }
 
-  async function handleDelete() {
-    if (!selectedItem) return;
-    if (!window.confirm(`Delete professional learning event "${selectedItem.title}"?`)) return;
-    await deleteItem(selectedItem);
+  async function handleDelete(item = selectedItem) {
+    if (!item) return;
+    if (!window.confirm(`Delete professional learning event "${item.title}"?`)) return;
+    await deleteItem(item);
     setSelectedId("");
+    setEditorOpen(false);
   }
 
   const plFormTabs = [
@@ -4414,40 +4438,49 @@ function ProfessionalLearningPanel({ items, status, saveState, saveItem, deleteI
       </div>
       <ContentFirestoreStatus status={status} saveState={saveState} />
 
-      <div className="sc-master-detail">
-        <div className="sc-list">
-          <div className="sc-list-header">
-            <span>{items.length} session{items.length !== 1 ? "s" : ""}</span>
-            <button type="button" onClick={() => setSelectedId("")}>+ New</button>
-          </div>
-          <div className="sc-list-items">
-            {!selectedId && (
-              <div className="sc-item active">
-                <span className="sc-status-badge draft">Draft</span>
-                <strong>New session</strong>
-                <span className="sc-item-meta">Unsaved</span>
-              </div>
-            )}
-            {items.map((item) => (
-              <div key={item.id} className={`sc-item${selectedId === item.id ? " active" : ""}`} onClick={() => setSelectedId(item.id)}>
-                <span className={`sc-status-badge ${(item.status || "draft").toLowerCase()}`}>{item.status || "Draft"}</span>
-                <strong>{item.title}</strong>
-                <span className="sc-item-meta">{item.date || "No date set"}{item.time ? ` · ${item.time}` : ""}</span>
-              </div>
-            ))}
-            {!items.length && <div className="sc-list-empty">No sessions yet.</div>}
-          </div>
-        </div>
+      <div className="cc-toolbar">
+        <span>{items.length} session{items.length !== 1 ? "s" : ""}</span>
+        <button type="button" className="cc-new" onClick={openNew}><Icon type="plus" className="" />New session</button>
+      </div>
 
-        <form className="sc-detail" onSubmit={handleSubmit}>
+      {items.length ? (
+        <div className="cc-grid">
+          {items.map((item) => (
+            <article key={item.id} className="cc-card" onClick={() => openEdit(item)}>
+              <div className="cc-card-top">
+                <span className={`sc-role-badge ${(item.status || "Draft") === "Published" ? "staff" : "teacher"}`}>{item.status || "Draft"}</span>
+                <button type="button" className="cc-card-del" aria-label={`Delete ${item.title}`} onClick={(e) => { e.stopPropagation(); handleDelete(item); }}>✕</button>
+              </div>
+              <h3>{item.title || "Untitled session"}</h3>
+              <p className="cc-card-meta"><Icon type="calendar" className="" />{item.date || "No date set"}{item.time ? ` · ${item.time}` : ""}</p>
+              {item.summary && <p className="cc-card-summary">{item.summary}</p>}
+              <div className="cc-card-foot">
+                <span>{plLinkCount(item)} link{plLinkCount(item) !== 1 ? "s" : ""}</span>
+                <span className="cc-card-edit">Edit<Icon type="arrowRight" className="" /></span>
+              </div>
+            </article>
+          ))}
+        </div>
+      ) : (
+        <div className="cc-empty">
+          <Icon type="book" className="" />
+          <h3>No sessions yet</h3>
+          <p>Publish sessions for teachers — they surface in the PL page, calendar and notification bell.</p>
+          <button type="button" className="cc-new" onClick={openNew}><Icon type="plus" className="" />New session</button>
+        </div>
+      )}
+
+      {editorOpen && (
+      <div className="cc-modal-backdrop" role="dialog" aria-modal="true" onClick={closeEditor}>
+        <form className="cc-modal sc-detail" onSubmit={handleSubmit} onClick={(e) => e.stopPropagation()}>
           <div className="sc-detail-header">
             <div>
               <span className="content-type">{selectedItem ? "Editing" : "New"}</span>
               <h3>{selectedItem ? (draft.title || "Edit session") : "New PL session"}</h3>
             </div>
             <div className="sc-detail-actions">
-              {selectedItem ? <button type="button" className="delete-button" onClick={handleDelete}>Delete</button> : null}
-              <button type="button" className="secondary-button" onClick={() => setSelectedId("")}>Clear</button>
+              {selectedItem ? <button type="button" className="delete-button" onClick={() => handleDelete()}>Delete</button> : null}
+              <button type="button" className="secondary-button" onClick={closeEditor}>Cancel</button>
               <button type="submit" disabled={saveState === "saving"}>{saveState === "saving" ? "Saving…" : selectedItem ? "Update" : "Save"}</button>
             </div>
           </div>
@@ -4486,6 +4519,7 @@ function ProfessionalLearningPanel({ items, status, saveState, saveItem, deleteI
           </div>
         </form>
       </div>
+      )}
     </section>
   );
 }
