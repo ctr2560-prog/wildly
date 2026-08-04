@@ -3824,7 +3824,6 @@ function ContentPanel({ contentItems, status, saveState, seedContentItems, addCo
           <h2>Content Studio</h2>
           <p>Create and manage learning paths, lessons and resources for teachers.</p>
         </div>
-        <button type="button" className="secondary-button slim-button" onClick={seedContentItems}>Seed defaults</button>
       </div>
       <ContentFirestoreStatus status={status} saveState={saveState} />
 
