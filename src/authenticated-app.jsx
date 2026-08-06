@@ -1545,6 +1545,33 @@ function TeacherDashboard({ config, contentItems = defaultContentItems.map(resol
               </Reveal>
             )}
 
+            <Reveal className="feature-cards">
+              <a className="feature-card feature-tv" href={teacherRoute("taronga-tv")}>
+                <div className="feature-media">
+                  {tarongaTvVideos[0]?.thumbnail ? <img src={tarongaTvVideos[0].thumbnail} alt="" /> : null}
+                  <span className="feature-play"><Icon type="play" className="" /></span>
+                </div>
+                <div className="feature-body">
+                  <span className="feature-eyebrow">Taronga TV</span>
+                  <h3>Keeper clips &amp; series</h3>
+                  <p>Bring the zoo into the classroom with short, curriculum-ready videos.</p>
+                  <span className="feature-cta">Browse videos →</span>
+                </div>
+              </a>
+              <a className="feature-card feature-pl" href={teacherRoute("professional-learning")}>
+                <div className="feature-media">
+                  <img src={assets.teacherPl} alt="" />
+                  <span className="feature-badge"><Icon type="book" className="" /></span>
+                </div>
+                <div className="feature-body">
+                  <span className="feature-eyebrow">Professional Learning</span>
+                  <h3>Grow your practice</h3>
+                  <p>Webinars, courses and resources to build your teaching confidence.</p>
+                  <span className="feature-cta">Explore →</span>
+                </div>
+              </a>
+            </Reveal>
+
             <section className="library-head">
               <div>
                 <h2>Explore by Subject</h2>
