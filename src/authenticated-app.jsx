@@ -530,18 +530,6 @@ const appLinks = {
   professionalLearning: teacherRoute("professional-learning"),
 };
 
-// Shown at the top of the teacher dashboard when no staff-managed banner is
-// active, so the announcement strip is never empty. Staff banners (created in
-// the staff console Banner manager) take precedence over this.
-const DEFAULT_TEACHER_BANNER = {
-  id: "default-welcome",
-  eyebrow: "Featured",
-  title: "Plan your next Taronga excursion",
-  message: "Connect classroom learning to real conservation — book a visit and explore hands-on programs at the zoo.",
-  linkLabel: "Explore excursions",
-  linkUrl: appLinks.excursions,
-};
-
 function subjectSlug(label) {
   return {
     Science: "science",
@@ -1146,41 +1134,49 @@ function Reveal({ children, className = "", delay = 0, as: Tag = "div", ...rest 
   );
 }
 
-function TeacherBanner({ banner }) {
-  const img = bannerImage(banner);
+// A single staff-managed banner rendered as the full teacher-dashboard hero
+// (the big block at the very top). Editing a banner in the staff console
+// changes exactly this. Falls back to the koala hero image when the banner has
+// no image of its own.
+function HeroBannerView({ banner, fallbackImage }) {
+  const img = bannerImage(banner) || fallbackImage;
   return (
-    <div className={`tb-banner${img ? " has-image" : ""}`}>
-      {img && <img className="tb-banner-img" src={img} alt="" />}
-      <div className="tb-banner-body">
-        {banner.eyebrow && <span className="tb-banner-eyebrow">{banner.eyebrow}</span>}
-        {banner.title && <h3>{banner.title}</h3>}
-        {banner.message && <p>{banner.message}</p>}
+    <section className="hero hero-banner">
+      <div className="hero-copy">
+        {banner.eyebrow ? <span className="hero-eyebrow">{banner.eyebrow}</span> : null}
+        {banner.title ? <h1>{banner.title}</h1> : null}
+        {banner.message ? <p className="hero-lead">{banner.message}</p> : null}
+        {banner.linkLabel && banner.linkUrl ? (
+          <div className="hero-actions">
+            <a className="primary-action" href={banner.linkUrl}>{banner.linkLabel}</a>
+          </div>
+        ) : null}
       </div>
-      {banner.linkLabel && banner.linkUrl ? <a className="tb-banner-btn" href={banner.linkUrl}>{banner.linkLabel}</a> : null}
-    </div>
+      {img ? <img className="hero-animal" src={img} alt="" /> : null}
+    </section>
   );
 }
 
-function TeacherBannerStrip({ banners }) {
+// Rotates through the active staff banners in the hero slot.
+function TeacherHeroRotator({ banners, fallbackImage }) {
   const [index, setIndex] = useState(0);
   useEffect(() => {
     if (banners.length <= 1) return undefined;
-    const timer = setInterval(() => setIndex((n) => (n + 1) % banners.length), 6000);
+    const timer = setInterval(() => setIndex((n) => (n + 1) % banners.length), 7000);
     return () => clearInterval(timer);
   }, [banners.length]);
-  if (!banners.length) return null;
   const active = Math.min(index, banners.length - 1);
   return (
-    <section className="tb-strip" aria-label="Announcements">
-      <TeacherBanner key={active} banner={banners[active]} />
+    <div className="hero-rotator">
+      <HeroBannerView key={active} banner={banners[active]} fallbackImage={fallbackImage} />
       {banners.length > 1 && (
-        <div className="tb-dots">
+        <div className="hero-dots">
           {banners.map((banner, n) => (
-            <button key={banner.id || n} type="button" className={n === active ? "active" : ""} onClick={() => setIndex(n)} aria-label={`Show announcement ${n + 1}`} />
+            <button key={banner.id || n} type="button" className={n === active ? "active" : ""} onClick={() => setIndex(n)} aria-label={`Show banner ${n + 1}`} />
           ))}
         </div>
       )}
-    </section>
+    </div>
   );
 }
 
@@ -1292,7 +1288,6 @@ function TeacherDashboard({ config, contentItems = defaultContentItems.map(resol
   const assignedItems = publishedItems.filter((item) => assignedContentIds.has(item.id));
   const contentById = Object.fromEntries(publishedItems.map((item) => [item.id, item]));
   const activeBanners = (config.banners || []).filter((banner) => banner.active);
-  const dashboardBanners = activeBanners.length ? activeBanners : [DEFAULT_TEACHER_BANNER];
   const navItems = [
     ["", "Dashboard", "grid"],
     ["classes", "My Classes", "users"],
@@ -1531,22 +1526,24 @@ function TeacherDashboard({ config, contentItems = defaultContentItems.map(resol
 
         {page === "dashboard" && (
           <>
-            <Reveal className="reveal-block">
-              <TeacherBannerStrip banners={dashboardBanners} />
-            </Reveal>
-
-            <Reveal as="section" className="hero" delay={80}>
-              <div className="hero-copy">
-                <h1>{config.heroTitle}</h1>
-                <p className="hero-subtitle">{config.heroSubtitle}</p>
-                <p>Curriculum-aligned lessons, real-world experiences and conservation connections - for every learner, everywhere.</p>
-                <div className="hero-actions">
-                  <a className="primary-action" href={teacherRoute("subjects")}>Browse Subjects</a>
-                  <a className="secondary-action" href={teacherRoute("paths")}><Icon type="path" className="path-action-icon" />Start a Learning Path</a>
+            {activeBanners.length ? (
+              <Reveal className="reveal-block">
+                <TeacherHeroRotator banners={activeBanners} fallbackImage={config.heroImageUrl} />
+              </Reveal>
+            ) : (
+              <Reveal as="section" className="hero">
+                <div className="hero-copy">
+                  <h1>{config.heroTitle}</h1>
+                  <p className="hero-subtitle">{config.heroSubtitle}</p>
+                  <p>Curriculum-aligned lessons, real-world experiences and conservation connections - for every learner, everywhere.</p>
+                  <div className="hero-actions">
+                    <a className="primary-action" href={teacherRoute("subjects")}>Browse Subjects</a>
+                    <a className="secondary-action" href={teacherRoute("paths")}><Icon type="path" className="path-action-icon" />Start a Learning Path</a>
+                  </div>
                 </div>
-              </div>
-              <img className="hero-animal" src={config.heroImageUrl} alt="Koala with joey at Taronga" />
-            </Reveal>
+                <img className="hero-animal" src={config.heroImageUrl} alt="Koala with joey at Taronga" />
+              </Reveal>
+            )}
 
             <section className="library-head">
               <div>
@@ -4832,7 +4829,7 @@ function BannerManager({ banners, saveBanners }) {
   return (
     <section className="staff-section staff-panel active">
       <div className="sc-panel-header">
-        <div><h2>Banner</h2><p>Announcements that rotate at the top of every teacher's dashboard — new content, events and campaigns.</p></div>
+        <div><h2>Banner</h2><p>The hero banner at the top of every teacher's dashboard. Add one to replace the default "Learning through nature" hero; add several to rotate them.</p></div>
       </div>
 
       <div className="cc-toolbar">
@@ -4844,7 +4841,16 @@ function BannerManager({ banners, saveBanners }) {
         <div className="bn-list">
           {banners.map((banner, i) => (
             <div key={banner.id} className={`bn-row${banner.active ? "" : " inactive"}`}>
-              <button type="button" className="bn-preview" onClick={() => openEdit(banner)}><TeacherBanner banner={banner} /></button>
+              <button type="button" className="bn-preview" onClick={() => openEdit(banner)}>
+                <span className="bn-row-summary">
+                  {bannerImage(banner) ? <img className="bn-row-thumb" src={bannerImage(banner)} alt="" /> : <span className="bn-row-thumb bn-row-thumb-empty" aria-hidden="true" />}
+                  <span className="bn-row-text">
+                    {banner.eyebrow ? <span className="bn-row-eyebrow">{banner.eyebrow}</span> : null}
+                    <strong>{banner.title || "Untitled banner"}</strong>
+                    {banner.message ? <span className="bn-row-msg">{banner.message}</span> : null}
+                  </span>
+                </span>
+              </button>
               <div className="bn-controls">
                 <label className="bn-toggle" title={banner.active ? "Live on dashboards" : "Hidden"}>
                   <input type="checkbox" checked={banner.active} onChange={() => toggleActive(banner)} />
@@ -4903,8 +4909,8 @@ function BannerManager({ banners, saveBanners }) {
               </div>
               {imageError ? <p className="auth-error">{imageError}</p> : null}
               <div className="bn-preview-block">
-                <span className="bn-preview-label">Live preview</span>
-                <TeacherBanner banner={draft} />
+                <span className="bn-preview-label">Live preview — how it appears on the teacher dashboard</span>
+                <HeroBannerView banner={draft} fallbackImage={assets.heroKoala} />
               </div>
             </div>
           </div>

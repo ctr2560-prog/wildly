@@ -4009,6 +4009,46 @@ button.sc-stat-card.accent:hover { border-color: transparent; }
   text-align: left;
 }
 .bn-preview .tb-banner { pointer-events: none; }
+.bn-row-summary { display: flex; align-items: center; gap: 14px; min-width: 0; }
+.bn-row-thumb {
+  flex: 0 0 auto;
+  width: 84px;
+  height: 56px;
+  border-radius: 10px;
+  object-fit: cover;
+  background: #eef4ec;
+}
+.bn-row-thumb-empty {
+  display: inline-block;
+  background: linear-gradient(135deg, #e8f1e6, #dbe9d7);
+}
+.bn-row-text { display: grid; gap: 3px; min-width: 0; }
+.bn-row-eyebrow {
+  color: var(--green-800);
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+.bn-row-text strong {
+  color: var(--green-950);
+  font-size: 15px;
+  line-height: 1.25;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.bn-row-msg {
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.4;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+/* Scale the full hero down a touch inside the editor's live preview. */
+.bn-preview-block .hero { min-height: 240px; }
+.bn-preview-block .hero h1 { font-size: clamp(26px, 2.4vw, 34px); }
 .bn-controls { display: flex; align-items: center; gap: 10px; flex: 0 0 auto; }
 .bn-toggle { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 800; color: var(--green-900); cursor: pointer; }
 .bn-toggle input { width: 15px; height: 15px; accent-color: var(--green-800); }
