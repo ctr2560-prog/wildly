@@ -530,6 +530,18 @@ const appLinks = {
   professionalLearning: teacherRoute("professional-learning"),
 };
 
+// Shown at the top of the teacher dashboard when no staff-managed banner is
+// active, so the announcement strip is never empty. Staff banners (created in
+// the staff console Banner manager) take precedence over this.
+const DEFAULT_TEACHER_BANNER = {
+  id: "default-welcome",
+  eyebrow: "Featured",
+  title: "Plan your next Taronga excursion",
+  message: "Connect classroom learning to real conservation — book a visit and explore hands-on programs at the zoo.",
+  linkLabel: "Explore excursions",
+  linkUrl: appLinks.excursions,
+};
+
 function subjectSlug(label) {
   return {
     Science: "science",
@@ -1245,6 +1257,8 @@ function TeacherDashboard({ config, contentItems = defaultContentItems.map(resol
   const assignedContentIds = new Set(assignments.map((assignment) => assignment.contentId));
   const assignedItems = publishedItems.filter((item) => assignedContentIds.has(item.id));
   const contentById = Object.fromEntries(publishedItems.map((item) => [item.id, item]));
+  const activeBanners = (config.banners || []).filter((banner) => banner.active);
+  const dashboardBanners = activeBanners.length ? activeBanners : [DEFAULT_TEACHER_BANNER];
   const navItems = [
     ["", "Dashboard", "grid"],
     ["classes", "My Classes", "users"],
@@ -1483,6 +1497,8 @@ function TeacherDashboard({ config, contentItems = defaultContentItems.map(resol
 
         {page === "dashboard" && (
           <>
+            <TeacherBannerStrip banners={dashboardBanners} />
+
             <section className="hero">
               <div className="hero-copy">
                 <h1>{config.heroTitle}</h1>
@@ -1495,8 +1511,6 @@ function TeacherDashboard({ config, contentItems = defaultContentItems.map(resol
               </div>
               <img className="hero-animal" src={config.heroImageUrl} alt="Koala with joey at Taronga" />
             </section>
-
-            <TeacherBannerStrip banners={(config.banners || []).filter((b) => b.active)} />
 
             <section className="library-head">
               <div>
