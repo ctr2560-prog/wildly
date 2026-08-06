@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { initializeApp, deleteApp } from "firebase/app";
 import { createUserWithEmailAndPassword, getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut } from "firebase/auth";
 import { addDoc, arrayUnion, collection, collectionGroup, deleteDoc, doc, getCountFromServer, getDoc, getFirestore, increment, onSnapshot, orderBy, query, serverTimestamp, setDoc, updateDoc, where } from "firebase/firestore";
@@ -2447,16 +2447,20 @@ function TeacherPage({ page = "dashboard", subject = "", contentId = "", tvVideo
   const { status: sessionStatus, user, profile } = useSessionUser();
   const { workspace, toggleSavedItem, createClass } = useTeacherWorkspace(user, profile);
 
+  const signingOutRef = useRef(false);
+
   async function handleSignOut() {
+    signingOutRef.current = true;
     window.localStorage.removeItem(demoSessionKey);
     if (auth.currentUser) {
       await signOut(auth);
     }
-    window.location.hash = "#login";
+    window.location.hash = "";
   }
 
   useEffect(() => {
     if (!preview && sessionStatus === "ready" && !user) {
+      if (signingOutRef.current) return;
       window.location.hash = "#login";
     }
     if (!preview && sessionStatus === "ready" && user && !profile && !user.isDemo) {
