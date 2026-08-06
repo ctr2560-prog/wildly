@@ -2550,19 +2550,31 @@ function StaffFirebaseLoginScreen() {
 
   return (
     <main className="staff-auth-page">
-      <section className="staff-auth-card" aria-label="Taronga staff sign in">
-        <img src={assets.wildlyLogo} alt="Wildly by Taronga" />
-        <span>Taronga Staff Console</span>
-        <h1>Staff sign in</h1>
-        <p>Sign in with your Taronga staff account to manage Wildly content.</p>
-        <form onSubmit={handleSubmit}>
-          <label>Email<input type="email" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" autoFocus /></label>
-          <label>Password<input type="password" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="current-password" /></label>
-          {error && <p className="auth-error">{error}</p>}
-          <button type="submit" disabled={loading}>{loading ? "Signing in…" : "Sign in"}</button>
-        </form>
-        <a className="staff-auth-home" href={routePath()}>← Back to home</a>
-      </section>
+      <div className="staff-auth-shell">
+        <aside className="staff-auth-media" aria-hidden="true">
+          <div className="staff-auth-media-inner">
+            <img src={assets.wildlyLogo} alt="" className="staff-auth-media-logo" />
+            <div>
+              <p className="staff-auth-media-eyebrow">Staff Console</p>
+              <h2 className="staff-auth-media-title">Bring Taronga to every classroom.</h2>
+              <p className="staff-auth-media-copy">Manage lessons, resources, Taronga TV and live sessions — all from one place.</p>
+            </div>
+          </div>
+        </aside>
+        <section className="staff-auth-card" aria-label="Taronga staff sign in">
+          <img src={assets.wildlyLogo} alt="Wildly by Taronga" className="staff-auth-card-logo" />
+          <span>Taronga Staff Console</span>
+          <h1>Staff sign in</h1>
+          <p>Sign in with your Taronga staff account to manage Wildly content.</p>
+          <form onSubmit={handleSubmit}>
+            <label>Email<input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@zoo.nsw.gov.au" autoComplete="email" autoFocus /></label>
+            <label>Password<input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" autoComplete="current-password" /></label>
+            {error && <p className="auth-error">{error}</p>}
+            <button type="submit" disabled={loading}>{loading ? "Signing in…" : "Sign in"}</button>
+          </form>
+          <a className="staff-auth-home" href={routePath()}>← Back to home</a>
+        </section>
+      </div>
     </main>
   );
 }
