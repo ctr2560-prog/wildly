@@ -147,6 +147,18 @@ textarea {
   opacity: 0.72;
 }
 
+.staff-auth-home {
+  margin-top: 14px;
+  color: var(--green-900);
+  font-size: 13px;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.staff-auth-home:hover {
+  text-decoration: underline;
+}
+
 .staff-auth-card .auth-error {
   padding: 10px 12px;
   border-radius: 7px;
