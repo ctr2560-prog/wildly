@@ -695,6 +695,14 @@ function formatDisplayDate(value) {
   return date.toLocaleDateString("en-AU", { day: "numeric", month: "short", year: "numeric" });
 }
 
+function statusTone(status = "") {
+  const value = status.toLowerCase();
+  if (value.includes("support") || value.includes("behind")) return "is-support";
+  if (value.includes("extension") || value.includes("ahead") || value.includes("ready")) return "is-extension";
+  if (value.includes("track") || value.includes("complete") || value.includes("done")) return "is-track";
+  return "";
+}
+
 function downloadCalendarInvite(title, date, description = "") {
   if (!date) return;
   const start = date.replace(/-/g, "");
@@ -1269,14 +1277,8 @@ function TeacherDashboard({ config, contentItems = defaultContentItems.map(resol
       assignmentCount,
     };
   });
-  const studentSnapshots = classStudents.map((student) => [student.name, student.focus, classes.find((classroom) => classroom.id === student.classId)?.title || "Unassigned", student.status]);
   const subjectCounts = publishedItems.reduce((accumulator, item) => ({ ...accumulator, [item.subject]: (accumulator[item.subject] || 0) + 1 }), {});
   const topSubject = Object.entries(subjectCounts).sort((a, b) => b[1] - a[1])[0]?.[0] || "Science";
-  const reportSnapshots = [
-    ["Curriculum coverage", `${publishedItems.length} published items across ${Object.keys(subjectCounts).length} subjects`],
-    ["Assigned this term", `${assignments.length} active assignments across ${classes.length} classes`],
-    ["Most represented subject", topSubject],
-  ];
   const calendarEvents = [
     ...assignments.map((assignment) => ({
       id: assignment.id,
@@ -1394,7 +1396,7 @@ function TeacherDashboard({ config, contentItems = defaultContentItems.map(resol
     reports: {
       eyebrow: "Reports",
       title: "Teacher reporting",
-      description: "Curriculum coverage, engagement and next-step recommendations should read as a proper reporting page.",
+      description: "Curriculum coverage, engagement and recommended next steps across your classes.",
       action: <button type="button" className="secondary-action" onClick={exportReportsCsv}>Download report CSV</button>,
     },
     saved: {
@@ -1892,15 +1894,6 @@ function TeacherDashboard({ config, contentItems = defaultContentItems.map(resol
 
         {page === "classes" && (
           <>
-            <section className="teacher-summary-grid page-summary-grid">
-              {teacherClasses.map((classroom) => (
-                <article key={classroom.title} className="summary-card">
-                  <h3>{classroom.title}</h3>
-                  <p>{classroom.detail}</p>
-                  <small>{classroom.assignmentCount} active assignments</small>
-                </article>
-              ))}
-            </section>
             <section className="teacher-panel">
               <div className="teacher-panel-header">
                 <div>
@@ -1952,16 +1945,6 @@ function TeacherDashboard({ config, contentItems = defaultContentItems.map(resol
 
         {page === "students" && (
           <>
-            <section className="teacher-summary-grid page-summary-grid">
-              {studentSnapshots.slice(0, 3).map(([name, note, group, status]) => (
-                <article key={name} className="summary-card">
-                  <h3>{name}</h3>
-                  <p>{note}</p>
-                  <small>{group}</small>
-                  <small>{status}</small>
-                </article>
-              ))}
-            </section>
             <section className="teacher-panel">
               <div className="teacher-panel-header">
                 <div>
@@ -1974,13 +1957,13 @@ function TeacherDashboard({ config, contentItems = defaultContentItems.map(resol
                   const classroom = classes.find((item) => item.id === student.classId);
                   const assignedCount = assignmentsByClass[student.classId]?.length || 0;
                   return (
-                    <article className="student-card" key={student.id}>
+                    <article className={`student-card ${statusTone(student.status)}`} key={student.id}>
                       <div className="student-card-head">
                         <div>
                           <h3>{student.name}</h3>
                           <p>{classroom?.title || "Class"} · {classroom?.stage || ""}</p>
                         </div>
-                        <span className="pill">{student.status}</span>
+                        <span className={`pill ${statusTone(student.status)}`}>{student.status}</span>
                       </div>
                       <p>{student.focus}</p>
                       <div className="detail-meta">
@@ -2015,25 +1998,25 @@ function TeacherDashboard({ config, contentItems = defaultContentItems.map(resol
               <div className="teacher-panel-header">
                 <div>
                   <h2>Reporting overview</h2>
-                  <p>This now behaves like a proper reporting destination instead of reusing the dashboard hero.</p>
+                  <p>A breakdown of activity, subject balance and what's coming up across your classes.</p>
                 </div>
-              </div>
-              <div className="teacher-summary-grid">
-                {reportSnapshots.map(([title, copy]) => (
-                  <article key={title} className="summary-card">
-                    <h3>{title}</h3>
-                    <p>{copy}</p>
-                  </article>
-                ))}
               </div>
               <div className="teacher-summary-grid report-detail-grid">
                 <article className="summary-card">
-                  <h3>Saved for later</h3>
-                  <p>{savedItems.length} items bookmarked for planning and future assignment.</p>
+                  <h3>Assigned this term</h3>
+                  <p>{assignments.length} active assignments across {classes.length} classes.</p>
+                </article>
+                <article className="summary-card">
+                  <h3>Most represented subject</h3>
+                  <p>{topSubject}</p>
                 </article>
                 <article className="summary-card">
                   <h3>Classes active</h3>
                   <p>{classes.length} teaching groups currently set up in the workspace.</p>
+                </article>
+                <article className="summary-card">
+                  <h3>Saved for later</h3>
+                  <p>{savedItems.length} items bookmarked for planning and future assignment.</p>
                 </article>
                 <article className="summary-card">
                   <h3>Upcoming due dates</h3>

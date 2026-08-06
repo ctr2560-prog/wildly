@@ -1622,8 +1622,29 @@ h2 {
 
 .class-room-card,
 .student-card {
-  padding: 18px;
+  position: relative;
+  padding: 18px 18px 18px 22px;
+  overflow: hidden;
 }
+
+.class-room-card::before,
+.student-card::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: var(--green-800);
+}
+
+.student-card.is-support::before { background: #d9534f; }
+.student-card.is-track::before { background: #2f9e5c; }
+.student-card.is-extension::before { background: #3f6fd0; }
+
+.pill.is-support { background: #fdecec; color: #a5323b; }
+.pill.is-track { background: #e7f5ec; color: #1f7a45; }
+.pill.is-extension { background: #eaf0fb; color: #2b5fb0; }
 
 .class-room-header,
 .student-card-head {
