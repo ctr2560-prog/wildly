@@ -1430,6 +1430,12 @@ function TeacherDashboard({ config, contentItems = defaultContentItems.map(resol
             </a>
           ))}
         </nav>
+        <section className="side-section" aria-labelledby="library-title">
+          <h2 id="library-title">Library</h2>
+          <a className={`nav-item ${page === "resources" ? "active" : ""}`} href={teacherRoute("resources")}><Icon type="book" />Resources</a>
+          <a className={`nav-item ${page === "taronga-tv" ? "active" : ""}`} href={teacherRoute("taronga-tv")}><Icon type="monitor" />Taronga TV</a>
+          <a className={`nav-item ${page === "professional-learning" ? "active" : ""}`} href={teacherRoute("professional-learning")}><Icon type="speech" />Professional Learning</a>
+        </section>
         <section className="side-section" aria-labelledby="subjects-title">
           <h2 id="subjects-title">Subject Areas</h2>
           {subjects.map(([label, cls]) => (
@@ -1441,7 +1447,6 @@ function TeacherDashboard({ config, contentItems = defaultContentItems.map(resol
         </section>
         <section className="side-section" aria-labelledby="explore-title">
           <h2 id="explore-title">Explore</h2>
-          <a className="nav-item small" href={teacherRoute("professional-learning")}><Icon type="book" />Professional Learning</a>
           <a className="nav-item small" href={appLinks.excursions}><Icon type="pin" />Excursions & Zoo Links</a>
           <a className="nav-item small" href={appLinks.tracka || appLinks.excursions}><Icon type="target" />Tracka Missions<span className="external"></span></a>
         </section>
@@ -1460,12 +1465,6 @@ function TeacherDashboard({ config, contentItems = defaultContentItems.map(resol
       <main className="workspace">
         <header className="topbar">
           <button className="menu-button" type="button" aria-label="Open navigation"></button>
-          <nav className="top-links" aria-label="Primary">
-            <a className={page === "dashboard" ? "selected" : ""} href={teacherRoute()}>Dashboard</a>
-            <a className={page === "resources" ? "selected" : ""} href={teacherRoute("resources")}>Resources</a>
-            <a className={page === "taronga-tv" ? "selected" : ""} href={teacherRoute("taronga-tv")}>Taronga TV</a>
-            <a className={page === "professional-learning" ? "selected" : ""} href={teacherRoute("professional-learning")}>Professional Learning</a>
-          </nav>
           <div className="top-actions">
             {!preview && onSignOut ? <button type="button" className="top-text-action" onClick={onSignOut}>Sign out</button> : null}
             <button type="button" className="top-icon-button" aria-label="Notifications" onClick={() => setNotice(notificationItems.length ? notificationItems.map((item) => `${item.title} - ${item.date}${item.time ? `, ${item.time}` : ""}`).join("\n") : "No new professional learning notifications yet.")}>
