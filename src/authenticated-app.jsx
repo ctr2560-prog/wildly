@@ -890,17 +890,25 @@ function AuthScreen({ mode = "login" }) {
 
   return (
     <main className="auth-page">
-      <section className="auth-card">
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "1.25rem", marginBottom: "1.5rem" }}>
-          <img src={assets.trackaLogoFull} alt="Taronga Tracka" style={{ height: "72px", width: "auto" }} />
-          <span style={{ color: "#D4D4D8", fontSize: "1.6rem", fontWeight: 200 }}>+</span>
-          <img src={assets.wildlyLogo} alt="Wildly by Taronga" style={{ height: "64px", width: "auto" }} />
-        </div>
-        <h1 style={{ fontFamily: '"Taronga Headline", "Avenir Next", Avenir, sans-serif', fontWeight: 400 }}>Taronga Education</h1>
-        <p style={{ fontSize: "0.78rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.09em", color: "#71717A" }}>Multiple applications, one log-in</p>
-        <span className="audience-pill">{isSignup ? "Create account" : "Welcome back"}</span>
-        <p>{isSignup ? "Create one account for Taronga Tracka, Wildly by Taronga, and more." : "Sign in to access Taronga Tracka, Wildly by Taronga, and more."}</p>
-        <form className="auth-form" onSubmit={handleSubmit}>
+      <div className="auth-shell">
+        <aside className="auth-media" aria-hidden="true">
+          <div className="auth-media-inner">
+            <p className="auth-media-eyebrow">Taronga Education</p>
+            <div>
+              <h2 className="auth-media-title">One login for the whole ecosystem.</h2>
+              <p className="auth-media-copy">Access Taronga Tracka, Wildly by Taronga, and more with a single account.</p>
+            </div>
+          </div>
+        </aside>
+        <section className="auth-card">
+          <div className="auth-logo-lockup">
+            <img src={assets.trackaLogoFull} alt="Taronga Tracka" />
+            <span className="auth-logo-plus">+</span>
+            <img src={assets.wildlyLogo} alt="Wildly by Taronga" />
+          </div>
+          <h1>{isSignup ? "Create your account" : "Welcome back"}</h1>
+          <p>{isSignup ? "Create one account for Taronga Tracka, Wildly by Taronga, and more." : "Sign in to access Taronga Tracka, Wildly by Taronga, and more."}</p>
+          <form className="auth-form" onSubmit={handleSubmit}>
           <label>
             Email
             <input type="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder={isSignup ? "you@school.edu" : "Enter your email"} autoComplete="email" required />
@@ -934,15 +942,17 @@ function AuthScreen({ mode = "login" }) {
               ) : null}
             </>
           ) : null}
-          {!isSignup ? <p className="auth-helper">Use `demo@zoo` to enter the demo teacher account instantly.</p> : null}
-          {notice ? <p className="auth-error">{notice}</p> : null}
-          <button type="submit" disabled={busy}>{busy ? "Working..." : isSignup ? "Create account" : "Log in"}</button>
-        </form>
-        <div className="auth-links">
-          {isSignup ? <a href={loginRoute()}>Already have an account? Log in</a> : <a href={signupRoute()}>Need an account? Get started</a>}
-          <a href={routePath("staff")}>Taronga staff login</a>
-        </div>
-      </section>
+            {!isSignup ? <p className="auth-helper">Use `demo@zoo` to enter the demo teacher account instantly.</p> : null}
+            {notice ? <p className="auth-error">{notice}</p> : null}
+            <button type="submit" disabled={busy}>{busy ? "Working..." : isSignup ? "Create account" : "Log in"}</button>
+          </form>
+          <div className="auth-links">
+            {isSignup ? <a href={loginRoute()}>Already have an account? Log in</a> : <a href={signupRoute()}>Need an account? Get started</a>}
+            <a href={routePath("staff")}>Taronga staff login</a>
+          </div>
+          <a className="auth-home" href={routePath()}>← Back to home</a>
+        </section>
+      </div>
     </main>
   );
 }
