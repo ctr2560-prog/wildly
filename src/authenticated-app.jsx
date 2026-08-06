@@ -1114,6 +1114,38 @@ function bannerImage(banner) {
   return banner.image || (banner.imageKey ? assets[banner.imageKey] : "") || "";
 }
 
+// Reveal-on-scroll: fades/slides a block into view the first time it enters the
+// viewport. Falls back to shown-immediately when IntersectionObserver is absent.
+function useInView(options) {
+  const ref = useRef(null);
+  const [inView, setInView] = useState(false);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return undefined;
+    if (typeof IntersectionObserver === "undefined") { setInView(true); return undefined; }
+    const obs = new IntersectionObserver((entries) => {
+      if (entries.some((entry) => entry.isIntersecting)) { setInView(true); obs.disconnect(); }
+    }, options || { threshold: 0.12, rootMargin: "0px 0px -40px 0px" });
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, []);
+  return [ref, inView];
+}
+
+function Reveal({ children, className = "", delay = 0, as: Tag = "div", ...rest }) {
+  const [ref, inView] = useInView();
+  return (
+    <Tag
+      ref={ref}
+      className={`reveal ${inView ? "is-visible" : ""} ${className}`.trim()}
+      style={delay ? { transitionDelay: `${delay}ms` } : undefined}
+      {...rest}
+    >
+      {children}
+    </Tag>
+  );
+}
+
 function TeacherBanner({ banner }) {
   const img = bannerImage(banner);
   return (
@@ -1140,7 +1172,7 @@ function TeacherBannerStrip({ banners }) {
   const active = Math.min(index, banners.length - 1);
   return (
     <section className="tb-strip" aria-label="Announcements">
-      <TeacherBanner banner={banners[active]} />
+      <TeacherBanner key={active} banner={banners[active]} />
       {banners.length > 1 && (
         <div className="tb-dots">
           {banners.map((banner, n) => (
@@ -1158,6 +1190,8 @@ function TeacherDashboard({ config, contentItems = defaultContentItems.map(resol
   const [query, setQuery] = useState("");
   const [notice, setNotice] = useState("");
   const [classDraft, setClassDraft] = useState({ title: "", stage: "Stage 2" });
+  const [subjectGridRef, subjectGridIn] = useInView();
+  const [columnsRef, columnsIn] = useInView();
   const routeSubject = subjectFromSlug(subject);
 
   useEffect(() => {
@@ -1497,9 +1531,11 @@ function TeacherDashboard({ config, contentItems = defaultContentItems.map(resol
 
         {page === "dashboard" && (
           <>
-            <TeacherBannerStrip banners={dashboardBanners} />
+            <Reveal className="reveal-block">
+              <TeacherBannerStrip banners={dashboardBanners} />
+            </Reveal>
 
-            <section className="hero">
+            <Reveal as="section" className="hero" delay={80}>
               <div className="hero-copy">
                 <h1>{config.heroTitle}</h1>
                 <p className="hero-subtitle">{config.heroSubtitle}</p>
@@ -1510,7 +1546,7 @@ function TeacherDashboard({ config, contentItems = defaultContentItems.map(resol
                 </div>
               </div>
               <img className="hero-animal" src={config.heroImageUrl} alt="Koala with joey at Taronga" />
-            </section>
+            </Reveal>
 
             <section className="library-head">
               <div>
@@ -1524,9 +1560,9 @@ function TeacherDashboard({ config, contentItems = defaultContentItems.map(resol
               <button type="button" className="text-link" onClick={resetFilters}>View All Subjects</button>
             </section>
 
-            <section className="subject-grid" aria-label="Subject cards">
-              {subjects.map(([label, cls, copy]) => (
-                <a className={`subject-card ${cls} ${activeSubject === label ? "selected" : ""}`} key={label} href={teacherRoute(`subjects/${subjectSlug(label)}`)}>
+            <section ref={subjectGridRef} className={`subject-grid ${subjectGridIn ? "in" : ""}`} aria-label="Subject cards">
+              {subjects.map(([label, cls, copy], index) => (
+                <a className={`subject-card ${cls} ${activeSubject === label ? "selected" : ""}`} style={{ "--i": index }} key={label} href={teacherRoute(`subjects/${subjectSlug(label)}`)}>
                   <Icon type={subjectIconType(label)} className="subject-icon" />
                   <h3>{label}</h3>
                   <p>{copy}</p>
@@ -1535,8 +1571,8 @@ function TeacherDashboard({ config, contentItems = defaultContentItems.map(resol
               ))}
             </section>
 
-            <div className="dashboard-columns">
-              <section className="dashboard-col">
+            <div ref={columnsRef} className={`dashboard-columns ${columnsIn ? "in" : ""}`}>
+              <section className="dashboard-col" style={{ "--i": 0 }}>
                 <h2 className="col-heading">Continue Learning</h2>
                 {recentItems.length === 0 ? (
                   <p className="col-empty">Resources you open will appear here so you can pick up where you left off.</p>
@@ -1553,7 +1589,7 @@ function TeacherDashboard({ config, contentItems = defaultContentItems.map(resol
                 )}
               </section>
 
-              <section className="dashboard-col">
+              <section className="dashboard-col" style={{ "--i": 1 }}>
                 <h2 className="col-heading">What's New</h2>
                 {newestItems.length === 0 ? (
                   <p className="col-empty">Newly published resources from Taronga will appear here.</p>
@@ -1570,7 +1606,7 @@ function TeacherDashboard({ config, contentItems = defaultContentItems.map(resol
                 )}
               </section>
 
-              <section className="dashboard-col">
+              <section className="dashboard-col" style={{ "--i": 2 }}>
                 <h2 className="col-heading">Upcoming</h2>
                 {upcomingEvents.length === 0 ? (
                   <p className="col-empty">Events and sessions added by Taronga staff will appear here.</p>

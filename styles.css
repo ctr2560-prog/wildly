@@ -2484,3 +2484,83 @@ h2 {
   .tb-banner-body { padding: 0 22px; }
   .tb-banner-btn { margin: 0 22px; }
 }
+
+/* ── Dashboard motion — entrance reveals, stagger, micro-interactions ─────── */
+.reveal {
+  opacity: 0;
+  transform: translateY(16px);
+  transition: opacity 0.6s ease, transform 0.6s ease;
+}
+
+.reveal.is-visible {
+  opacity: 1;
+  transform: none;
+}
+
+@keyframes cardRise {
+  from { opacity: 0; transform: translateY(18px) scale(0.98); }
+  to { opacity: 1; transform: none; }
+}
+
+.subject-grid .subject-card { opacity: 0; }
+.subject-grid.in .subject-card {
+  opacity: 1;
+  animation: cardRise 0.55s cubic-bezier(0.22, 0.61, 0.36, 1) backwards;
+  animation-delay: calc(var(--i, 0) * 55ms);
+}
+
+.subject-card .subject-icon {
+  transition: transform 0.2s ease;
+}
+
+.subject-card:hover .subject-icon {
+  transform: scale(1.08) rotate(-2deg);
+}
+
+.dashboard-columns .dashboard-col { opacity: 0; }
+.dashboard-columns.in .dashboard-col {
+  opacity: 1;
+  animation: cardRise 0.55s cubic-bezier(0.22, 0.61, 0.36, 1) backwards;
+  animation-delay: calc(var(--i, 0) * 90ms);
+}
+
+.dash-item-card {
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
+}
+
+.dash-item-card:hover {
+  transform: translateX(3px);
+}
+
+@keyframes bannerFade {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: none; }
+}
+
+.tb-banner {
+  animation: bannerFade 0.5s ease;
+}
+
+@keyframes kenburns {
+  from { transform: scale(1); }
+  to { transform: scale(1.06); }
+}
+
+.hero-animal {
+  animation: kenburns 24s ease-in-out infinite alternate;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal,
+  .subject-grid .subject-card,
+  .dashboard-columns .dashboard-col {
+    opacity: 1 !important;
+    transform: none !important;
+    animation: none !important;
+    transition: none !important;
+  }
+  .hero-animal,
+  .tb-banner {
+    animation: none !important;
+  }
+}
