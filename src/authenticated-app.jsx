@@ -1038,11 +1038,29 @@ function useTrackaClassStudents(code) {
         const snap = await getDocs(collection(db, "classes", code, "students"));
         const students = snap.docs.map((docSnap) => {
           const data = docSnap.data();
+          const badges = Array.isArray(data.badges) ? data.badges : [];
+          let quizTotal = 0;
+          let quizCorrect = 0;
+          let writingSum = 0;
+          let writingCount = 0;
+          badges.forEach((badge) => {
+            const results = Array.isArray(badge.quizResults) ? badge.quizResults : [];
+            quizTotal += results.length;
+            quizCorrect += results.filter((q) => q.correctOnFirstAttempt).length;
+            const writing = badge.observationScore?.writing;
+            if (typeof writing === "number") { writingSum += writing; writingCount += 1; }
+          });
           return {
             id: docSnap.id,
             name: data.studentName || data.alias || data.name || docSnap.id,
             points: Number(data.totalPoints) || 0,
-            badges: Array.isArray(data.badges) ? data.badges.length : 0,
+            badges: badges.length,
+            quizTotal,
+            quizCorrect,
+            quizPct: quizTotal ? Math.round((quizCorrect / quizTotal) * 100) : null,
+            writingSum,
+            writingCount,
+            literacy: writingCount ? writingSum / writingCount : null,
           };
         }).sort((a, b) => b.points - a.points);
         if (!cancelled) setState({ status: "ready", students });
@@ -2358,8 +2376,12 @@ function TeacherDashboard({ config, contentItems = defaultContentItems.map(resol
           if (!cls) { setDetailClass(null); return null; }
           const assigned = (assignmentsByClass[cls.id] || []).map((a) => ({ assignment: a, item: contentById[a.contentId] })).filter((x) => x.item);
           const subjectsCovered = new Set(assigned.map((x) => x.item.subject).filter(Boolean)).size;
-          const quizCount = assigned.filter((x) => x.item.materials?.quiz?.questions?.length).length;
+          const quizzed = assigned.filter((x) => x.item.materials?.quiz?.questions?.length);
+          const quizCount = quizzed.length;
           const totalMinutes = assigned.reduce((sum, x) => sum + (Number(x.item.durationMinutes) || 0), 0);
+          const quizQuestions = quizzed.reduce((all, x) => all.concat(x.item.materials.quiz.questions), []);
+          const tfCount = quizQuestions.filter((q) => q.type === "true-false").length;
+          const mcCount = quizQuestions.length - tfCount;
           return (
             <section className="mc-page mc-detail">
               <button type="button" className="mc-back" onClick={() => setDetailClass(null)}>← All classes</button>
@@ -2400,6 +2422,30 @@ function TeacherDashboard({ config, contentItems = defaultContentItems.map(resol
               ) : (
                 <div className="lib-empty"><Icon type="book" className="" /><h3>No lessons assigned</h3><p>Assign lessons and units to build this class's plan.</p><button type="button" className="primary-action" onClick={() => setAssignClassId(cls.id)}>+ Assign lessons</button></div>
               )}
+
+              {quizCount ? (
+                <>
+                  <div className="mc-section-head mc-quiz-head"><div><h2>Check-in quizzes</h2><p>Teacher-led quizzes in this class's lessons. Run them from each lesson — the class answers together, so there are no per-student scores to record.</p></div></div>
+                  <div className="mc-stat-row">
+                    <div className="mc-stat"><strong>{quizCount}</strong><span>{quizCount === 1 ? "quiz" : "quizzes"}</span></div>
+                    <div className="mc-stat"><strong>{quizQuestions.length}</strong><span>questions</span></div>
+                    <div className="mc-stat"><strong>{tfCount}</strong><span>true / false</span></div>
+                    <div className="mc-stat"><strong>{mcCount}</strong><span>multiple choice</span></div>
+                  </div>
+                  <div className="mc-detail-list">
+                    {quizzed.map(({ item }) => (
+                      <article className="mc-quiz-row" key={item.id}>
+                        <div className="mc-quiz-row-body">
+                          <span className="mc-detail-item-type">{item.subject}{item.stage ? ` · ${item.stage}` : ""}</span>
+                          <h3>{item.title}</h3>
+                          <span className="mc-quiz-count">{item.materials.quiz.questions.length} question{item.materials.quiz.questions.length !== 1 ? "s" : ""}</span>
+                        </div>
+                        <a className="primary-action" href={teacherRoute(`quiz/${item.id}`)}>▶ Play quiz</a>
+                      </article>
+                    ))}
+                  </div>
+                </>
+              ) : null}
             </section>
           );
         })()}
@@ -2407,6 +2453,13 @@ function TeacherDashboard({ config, contentItems = defaultContentItems.map(resol
         {page === "classes" && detailClass?.kind === "tracka" && (() => {
           const tc = detailClass;
           const avg = tc.studentCount ? Math.round((tc.totalPoints || 0) / tc.studentCount) : 0;
+          const roster = trackaStudents.students;
+          const quizQTotal = roster.reduce((sum, s) => sum + (s.quizTotal || 0), 0);
+          const quizCorrectTotal = roster.reduce((sum, s) => sum + (s.quizCorrect || 0), 0);
+          const classQuizPct = quizQTotal ? Math.round((quizCorrectTotal / quizQTotal) * 100) : null;
+          const writingSumTotal = roster.reduce((sum, s) => sum + (s.writingSum || 0), 0);
+          const writingCountTotal = roster.reduce((sum, s) => sum + (s.writingCount || 0), 0);
+          const classLiteracy = writingCountTotal ? (writingSumTotal / writingCountTotal) : null;
           return (
             <section className="mc-page mc-detail">
               <button type="button" className="mc-back" onClick={() => setDetailClass(null)}>← All classes</button>
@@ -2420,19 +2473,28 @@ function TeacherDashboard({ config, contentItems = defaultContentItems.map(resol
               </div>
               <div className="mc-stat-row">
                 <div className="mc-stat"><strong>{tc.studentCount ?? "—"}</strong><span>students</span></div>
-                <div className="mc-stat"><strong>{tc.totalPoints != null ? tc.totalPoints.toLocaleString() : "—"}</strong><span>total points</span></div>
                 <div className="mc-stat"><strong>{avg.toLocaleString()}</strong><span>avg points</span></div>
+                <div className="mc-stat"><strong>{classQuizPct != null ? `${classQuizPct}%` : "—"}</strong><span>avg quiz score</span></div>
+                <div className="mc-stat"><strong>{classLiteracy != null ? `${classLiteracy.toFixed(1)}/5` : "—"}</strong><span>avg literacy</span></div>
               </div>
-              <div className="mc-section-head"><div><h2>Students</h2><p>Sorted by points — live from Taronga Tracka.</p></div></div>
+              <div className="mc-section-head"><div><h2>Students</h2><p>Live from Taronga Tracka — quiz score is first-attempt correct; literacy is the writing score out of 5.</p></div></div>
               {trackaStudents.status === "loading" && <p className="mc-empty-line">Loading students…</p>}
               {trackaStudents.status === "error" && <p className="mc-empty-line">Couldn't load students right now.</p>}
-              {trackaStudents.status === "ready" && (trackaStudents.students.length ? (
-                <ol className="mc-leaderboard">
-                  {trackaStudents.students.map((student, index) => (
+              {trackaStudents.status === "ready" && (roster.length ? (
+                <ol className="mc-leaderboard mc-leaderboard-wide">
+                  <li className="mc-lb-head">
+                    <span className="mc-rank"></span>
+                    <span className="mc-student-name">Student</span>
+                    <span className="mc-lb-metric">Quiz</span>
+                    <span className="mc-lb-metric">Literacy</span>
+                    <span className="mc-student-points">Points</span>
+                  </li>
+                  {roster.map((student, index) => (
                     <li key={student.id}>
                       <span className="mc-rank">{index + 1}</span>
                       <span className="mc-student-name">{student.name}</span>
-                      {student.badges ? <span className="mc-student-badges">{student.badges} badge{student.badges !== 1 ? "s" : ""}</span> : null}
+                      <span className="mc-lb-metric">{student.quizPct != null ? `${student.quizPct}%` : "—"}</span>
+                      <span className="mc-lb-metric">{student.literacy != null ? `${student.literacy.toFixed(1)}/5` : "—"}</span>
                       <span className="mc-student-points">{student.points.toLocaleString()} pts</span>
                     </li>
                   ))}
