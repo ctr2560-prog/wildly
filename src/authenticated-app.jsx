@@ -1429,6 +1429,8 @@ function TeacherDashboard({ config, contentItems = defaultContentItems.map(resol
   const contentDownloads = contentDetail ? buildContentDownloads(contentDetail) : [];
   const tarongaTvDownloads = tarongaTvDetail?.downloadLinks || [];
   const allResourceItems = [...lessons, ...resources];
+  const librarySubjectCount = new Set(allResourceItems.map((item) => item.subject).filter(Boolean)).size;
+  const libraryQuizCount = allResourceItems.filter((item) => item.materials?.quiz?.questions?.length).length;
   const libraryQuery = query.trim().toLowerCase();
   const filteredLibrary = allResourceItems.filter((item) => {
     if (activeSubject && item.subject !== activeSubject) return false;
@@ -1808,7 +1810,7 @@ function TeacherDashboard({ config, contentItems = defaultContentItems.map(resol
           </>
         )}
 
-        {pageMeta && page !== "dashboard" && page !== "content" && (
+        {pageMeta && page !== "dashboard" && page !== "content" && page !== "resources" && (
           <section className="workspace-page">
             <div className="workspace-page-header">
               <div>
@@ -2097,6 +2099,22 @@ function TeacherDashboard({ config, contentItems = defaultContentItems.map(resol
 
         {page === "resources" && (
           <section className="lib-page">
+            <div className="lib-hero">
+              <div className="lib-hero-inner">
+                <span className="lib-hero-eyebrow">Teacher Library</span>
+                <h1>Your teaching library</h1>
+                <p>Every published lesson, presentation, worksheet and check-in quiz — curriculum-aligned and ready to preview, assign or open.</p>
+                <div className="lib-hero-stats">
+                  <div><strong>{allResourceItems.length}</strong><span>{allResourceItems.length === 1 ? "resource" : "resources"}</span></div>
+                  <div><strong>{librarySubjectCount}</strong><span>{librarySubjectCount === 1 ? "subject" : "subjects"}</span></div>
+                  {libraryQuizCount ? <div><strong>{libraryQuizCount}</strong><span>check-in {libraryQuizCount === 1 ? "quiz" : "quizzes"}</span></div> : null}
+                </div>
+              </div>
+              <a className="lib-hero-saved" href={teacherRoute("saved")}><Icon type="bookmark" className="" />Saved ({savedItemIds.length})</a>
+              <div className="lib-hero-art" aria-hidden="true">
+                <img src={assets.giraffe} alt="" />
+              </div>
+            </div>
             <div className="lib-toolbar">
               <label className="search-box lib-search">
                 <span></span>
