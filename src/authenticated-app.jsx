@@ -341,6 +341,37 @@ function listFromText(value) {
     .filter(Boolean);
 }
 
+// Class check-in quiz — teacher-led, projected, no student devices. The class
+// answers physically (heads/tails, corners, hands up). Response modes carry the
+// default on-screen instruction, which staff can override per quiz.
+const QUIZ_RESPONSE_MODES = [
+  { id: "heads-tails", label: "Heads or Tails (true / false)", instructions: "TRUE → hands on your HEAD.  FALSE → hands on your TAIL (hands on hips)!" },
+  { id: "stand-sit", label: "Stand or Sit (true / false)", instructions: "Stand up for TRUE.  Stay seated for FALSE." },
+  { id: "four-corners", label: "Four Corners (multiple choice)", instructions: "Each answer is a corner of the room — move to the corner you think is correct." },
+  { id: "hands-up", label: "Hands Up (multiple choice)", instructions: "Hold up your fingers — 1 for A, 2 for B, 3 for C, 4 for D." },
+  { id: "custom", label: "Custom instructions", instructions: "" },
+];
+
+function quizModeInstructions(id) {
+  return (QUIZ_RESPONSE_MODES.find((mode) => mode.id === id) || {}).instructions || "";
+}
+
+function normalizeQuiz(quiz) {
+  const questions = Array.isArray(quiz?.questions) ? quiz.questions : [];
+  return {
+    responseMode: quiz?.responseMode || "heads-tails",
+    instructions: quiz?.instructions || "",
+    questions: questions.map((q, i) => ({
+      id: q.id || `q-${i + 1}`,
+      type: q.type === "multiple-choice" ? "multiple-choice" : "true-false",
+      prompt: q.prompt || "",
+      options: Array.isArray(q.options) && q.options.length ? q.options : (q.type === "multiple-choice" ? ["", ""] : ["True", "False"]),
+      answerIndex: Number.isInteger(q.answerIndex) ? q.answerIndex : 0,
+      fact: q.fact || "",
+    })),
+  };
+}
+
 function createContentDraft(type = "Lesson") {
   return {
     title: "",
@@ -369,6 +400,9 @@ function createContentDraft(type = "Lesson") {
     resourceUrl: "",
     resourceLinks: "",
     downloadLinks: "",
+    quizResponseMode: "heads-tails",
+    quizInstructions: quizModeInstructions("heads-tails"),
+    quizQuestions: [],
     activityBlocks: type === "Lesson" ? defaultLiveActivityBlocks.map((block) => ({ ...block })) : [],
     learningPathId: "",
     lessonId: "",
@@ -2181,6 +2215,7 @@ function TeacherDashboard({ config, contentItems = defaultContentItems.map(resol
                   ) : (
                     <button type="button" className="primary-action" onClick={() => setNotice("Add the main lesson/resource URL in staff content to activate this button.")}>Main link needed</button>
                   )}
+                  {contentDetail.materials?.quiz?.questions?.length ? <a className="primary-action" href={teacherRoute(`quiz/${contentDetail.id}`)}>▶ Play check-in quiz</a> : null}
                   {contentActivityBlocks.length ? <a className="secondary-action" href={teacherRoute(`present/${contentDetail.id}`)}>Present</a> : null}
                   <button type="button" className="secondary-action" onClick={() => onToggleSaved(contentDetail.id)}>{savedItemIds.includes(contentDetail.id) ? "Saved" : "Save"}</button>
                 </div>
@@ -2760,6 +2795,11 @@ function StaffConsole({ onLock, firebaseUser }) {
           resourceLinks: Array.isArray(item.resourceLinks) ? item.resourceLinks : listFromText(item.resourceLinks || ""),
           downloadLinks: Array.isArray(item.downloadLinks) ? item.downloadLinks : parseNamedLinks(item.downloadLinks || ""),
           activityBlocks: normalizeActivityBlocks(item.activityBlocks || []),
+          quiz: normalizeQuiz({
+            responseMode: item.quizResponseMode,
+            instructions: item.quizInstructions,
+            questions: item.quizQuestions,
+          }),
         },
         lessonIds: Array.isArray(item.lessonIds) ? item.lessonIds : [],
         resourceIds: Array.isArray(item.resourceIds) ? item.resourceIds : [],
@@ -2780,6 +2820,9 @@ function StaffConsole({ onLock, firebaseUser }) {
       delete contentPayload.resourceLinks;
       delete contentPayload.downloadLinks;
       delete contentPayload.activityBlocks;
+      delete contentPayload.quizResponseMode;
+      delete contentPayload.quizInstructions;
+      delete contentPayload.quizQuestions;
       delete contentPayload.customImageUrl;
       delete contentPayload.uploadedImageDataUrl;
 
@@ -3837,6 +3880,9 @@ function ContentPanel({ contentItems, status, saveState, seedContentItems, addCo
       resourceUrl: item.materials?.resourceUrl || "",
       downloadLinks: Array.isArray(item.materials?.downloadLinks) ? item.materials.downloadLinks.map((entry) => `${entry.label} | ${entry.url}`).join("\n") : "",
       resourceLinks: Array.isArray(item.materials?.resourceLinks) ? item.materials.resourceLinks.join("\n") : "",
+      quizResponseMode: item.materials?.quiz?.responseMode || "heads-tails",
+      quizInstructions: item.materials?.quiz?.instructions ?? quizModeInstructions(item.materials?.quiz?.responseMode || "heads-tails"),
+      quizQuestions: normalizeQuiz(item.materials?.quiz).questions,
       activityBlocks: buildLessonActivityBlocks(item),
       lessonIds: item.lessonIds || [],
       resourceIds: item.resourceIds || [],
@@ -3937,6 +3983,43 @@ function ContentPanel({ contentItems, status, saveState, seedContentItems, addCo
     );
   }
 
+  function setQuizMode(mode) {
+    const preset = quizModeInstructions(mode);
+    updateDraft({ quizResponseMode: mode, quizInstructions: mode === "custom" ? draft.quizInstructions : preset });
+  }
+  function addQuizQuestion(type) {
+    const question = {
+      id: `q-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`,
+      type,
+      prompt: "",
+      options: type === "true-false" ? ["True", "False"] : ["", ""],
+      answerIndex: 0,
+      fact: "",
+    };
+    updateDraft({ quizQuestions: [...(draft.quizQuestions || []), question] });
+  }
+  function updateQuizQuestion(id, patch) {
+    updateDraft({ quizQuestions: (draft.quizQuestions || []).map((q) => (q.id === id ? { ...q, ...patch } : q)) });
+  }
+  function removeQuizQuestion(id) {
+    updateDraft({ quizQuestions: (draft.quizQuestions || []).filter((q) => q.id !== id) });
+  }
+  function updateQuizOption(id, index, value) {
+    updateQuizQuestion(id, { options: (draft.quizQuestions.find((q) => q.id === id)?.options || []).map((opt, i) => (i === index ? value : opt)) });
+  }
+  function addQuizOption(id) {
+    const q = draft.quizQuestions.find((item) => item.id === id);
+    if (!q || q.options.length >= 4) return;
+    updateQuizQuestion(id, { options: [...q.options, ""] });
+  }
+  function removeQuizOption(id, index) {
+    const q = draft.quizQuestions.find((item) => item.id === id);
+    if (!q || q.options.length <= 2) return;
+    const options = q.options.filter((_, i) => i !== index);
+    const answerIndex = q.answerIndex === index ? 0 : q.answerIndex > index ? q.answerIndex - 1 : q.answerIndex;
+    updateQuizQuestion(id, { options, answerIndex });
+  }
+
   async function submitContent(event) {
     event.preventDefault();
     await addContentItem(draft);
@@ -4024,7 +4107,7 @@ function ContentPanel({ contentItems, status, saveState, seedContentItems, addCo
   const contentFormTabs = [
     { id: "details", label: "Details" },
     { id: "files", label: "Files & Image" },
-    ...(draft.type !== "Learning Path" ? [{ id: "engagement", label: "Engagement" }] : []),
+    ...(draft.type !== "Learning Path" ? [{ id: "engagement", label: draft.type === "Resource" ? "Check-in Quiz" : "Engagement" }] : []),
     { id: "structure", label: "Structure" },
   ];
 
@@ -4147,16 +4230,66 @@ function ContentPanel({ contentItems, status, saveState, seedContentItems, addCo
                   <div className="sc-field"><label>Student worksheet</label><input type="url" value={draft.studentWorksheetUrl} onChange={(e) => updateDraft({ studentWorksheetUrl: e.target.value })} placeholder="Worksheet link or upload a PDF" />{pdfUploadControl("studentWorksheetUrl")}</div>
                 </>}
                 {draft.type === "Resource" && <>
-                  <div className="sc-field"><label>Resource file or Canva URL</label><input type="url" value={draft.resourceUrl} onChange={(e) => updateDraft({ resourceUrl: e.target.value })} placeholder="PDF, image, video, Canva or Drive link" />{pdfUploadControl("resourceUrl")}</div>
-                  <div className="sc-field"><label>Student worksheet</label><input type="url" value={draft.studentWorksheetUrl} onChange={(e) => updateDraft({ studentWorksheetUrl: e.target.value })} placeholder="Worksheet link or upload a PDF" />{pdfUploadControl("studentWorksheetUrl")}</div>
-                  <div className="sc-field"><label>Extra resource links</label><textarea placeholder="One URL per line" value={draft.resourceLinks} rows={3} onChange={(e) => updateDraft({ resourceLinks: e.target.value })} /></div>
+                  <div className="sc-field"><label>Presentation (Canva embed link)</label><input type="url" value={draft.canvaEmbedUrl} onChange={(e) => updateDraft({ canvaEmbedUrl: e.target.value })} placeholder="Canva share / embed link for the deck" /></div>
+                  <div className="sc-field"><label>Student worksheet (downloadable)</label><input type="url" value={draft.studentWorksheetUrl} onChange={(e) => updateDraft({ studentWorksheetUrl: e.target.value })} placeholder="Worksheet link or upload a PDF" />{pdfUploadControl("studentWorksheetUrl")}</div>
                 </>}
-                <div className="sc-field"><label>Download links</label><textarea placeholder="One per line: Label | URL" value={draft.downloadLinks} rows={3} onChange={(e) => updateDraft({ downloadLinks: e.target.value })} /></div>
+                {draft.type !== "Resource" && <div className="sc-field"><label>Download links</label><textarea placeholder="One per line: Label | URL" value={draft.downloadLinks} rows={3} onChange={(e) => updateDraft({ downloadLinks: e.target.value })} /></div>}
                 {uploadError ? <p className="auth-error">{uploadError}</p> : null}
               </div>
             )}
 
-            {formTab === "engagement" && draft.type !== "Learning Path" && (
+            {formTab === "engagement" && draft.type === "Resource" && (
+              <div className="sc-fields">
+                <div className="sc-quiz-intro">
+                  <h3>Class check-in quiz</h3>
+                  <p>A teacher-led, Taronga-themed quiz to run on the board. The class answers together — no student devices needed.</p>
+                </div>
+                <div className="sc-field-row">
+                  <div className="sc-field"><label>Class response mode</label>
+                    <select value={draft.quizResponseMode} onChange={(e) => setQuizMode(e.target.value)}>
+                      {QUIZ_RESPONSE_MODES.map((mode) => <option key={mode.id} value={mode.id}>{mode.label}</option>)}
+                    </select>
+                  </div>
+                </div>
+                <div className="sc-field"><label>How the class answers (shown on screen)</label><textarea rows={2} value={draft.quizInstructions} onChange={(e) => updateDraft({ quizInstructions: e.target.value })} placeholder="e.g. TRUE → hands on head. FALSE → hands on tail!" /></div>
+
+                <div className="sc-quiz-add">
+                  <button type="button" className="secondary-button slim-button" onClick={() => addQuizQuestion("true-false")}>+ True / False</button>
+                  <button type="button" className="secondary-button slim-button" onClick={() => addQuizQuestion("multiple-choice")}>+ Multiple choice</button>
+                </div>
+
+                {(draft.quizQuestions || []).length ? (draft.quizQuestions || []).map((q, index) => (
+                  <div className="sc-quiz-q" key={q.id}>
+                    <div className="sc-quiz-q-head">
+                      <span className="sc-quiz-q-num">Question {index + 1} · {q.type === "true-false" ? "True / False" : "Multiple choice"}</span>
+                      <button type="button" className="delete-button slim-button" onClick={() => removeQuizQuestion(q.id)}>Remove</button>
+                    </div>
+                    <div className="sc-field"><label>Question</label><textarea rows={2} value={q.prompt} onChange={(e) => updateQuizQuestion(q.id, { prompt: e.target.value })} placeholder="Ask the class something…" /></div>
+                    <label className="sc-quiz-opt-label">Answers — tick the correct one</label>
+                    <div className="sc-quiz-options">
+                      {q.options.map((opt, optIndex) => (
+                        <div className={`sc-quiz-option${q.answerIndex === optIndex ? " is-correct" : ""}`} key={optIndex}>
+                          <button type="button" className="sc-quiz-correct" onClick={() => updateQuizQuestion(q.id, { answerIndex: optIndex })} aria-label="Mark correct">{q.answerIndex === optIndex ? "✓" : ""}</button>
+                          {q.type === "true-false"
+                            ? <span className="sc-quiz-tf">{opt}</span>
+                            : <input type="text" value={opt} onChange={(e) => updateQuizOption(q.id, optIndex, e.target.value)} placeholder={`Answer ${String.fromCharCode(65 + optIndex)}`} />}
+                          {q.type === "multiple-choice" && q.options.length > 2 ? <button type="button" className="sc-quiz-opt-del" onClick={() => removeQuizOption(q.id, optIndex)} aria-label="Remove answer">✕</button> : null}
+                        </div>
+                      ))}
+                      {q.type === "multiple-choice" && q.options.length < 4 ? <button type="button" className="sc-quiz-add-opt" onClick={() => addQuizOption(q.id)}>+ Add answer</button> : null}
+                    </div>
+                    <div className="sc-field"><label>Taronga fact (optional — shown when you reveal the answer)</label><input type="text" value={q.fact} onChange={(e) => updateQuizQuestion(q.id, { fact: e.target.value })} placeholder="A fun fact to share after the answer" /></div>
+                  </div>
+                )) : (
+                  <div className="sc-empty-engagement">
+                    <Icon type="plus" className="" />
+                    <p>Add true/false or multiple-choice questions for a quick class check-in.</p>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {formTab === "engagement" && draft.type === "Lesson" && (
               <div className="sc-fields">
                 <div className="sc-engagement-actions">
                   {["slide", "quiz", "poll", "extended-response"].map((t) => (
@@ -5089,6 +5222,97 @@ function StudentRedirectPage() {
   );
 }
 
+function QuizPresenterPage({ contentId = "" }) {
+  const { items: contentItems } = useContentItems();
+  const contentItem = contentItems.find((item) => item.id === contentId) || null;
+  const quiz = normalizeQuiz(contentItem?.materials?.quiz);
+  const questions = quiz.questions;
+  const [stage, setStage] = useState("intro"); // "intro" | "q" | "done"
+  const [index, setIndex] = useState(0);
+  const [revealed, setRevealed] = useState(false);
+
+  function startQuiz() { setStage("q"); setIndex(0); setRevealed(false); }
+  function nextQuestion() {
+    if (index + 1 >= questions.length) { setStage("done"); return; }
+    setIndex((n) => n + 1);
+    setRevealed(false);
+  }
+  function prevQuestion() {
+    if (index === 0) { setStage("intro"); return; }
+    setIndex((n) => n - 1);
+    setRevealed(false);
+  }
+
+  if (!contentItem) {
+    return <main className="auth-page"><section className="auth-card"><p>Quiz not found.</p></section></main>;
+  }
+  if (!questions.length) {
+    return <main className="auth-page"><section className="auth-card"><p>This resource has no check-in quiz yet.</p><a className="primary-action" href={teacherContentRoute(contentId)}>Back to resource</a></section></main>;
+  }
+
+  const question = questions[index];
+  const optionLetters = ["A", "B", "C", "D"];
+
+  return (
+    <div className="quiz-stage">
+      <a className="quiz-exit" href={teacherContentRoute(contentId)} aria-label="Exit quiz">✕ Exit</a>
+
+      {stage === "intro" && (
+        <div className="quiz-card quiz-intro">
+          <span className="quiz-eyebrow">Class check-in quiz</span>
+          <h1>{contentItem.title}</h1>
+          <div className="quiz-howto">
+            <span className="quiz-howto-label">How to answer</span>
+            <p>{quiz.instructions || "Answer together as a class."}</p>
+          </div>
+          <p className="quiz-count">{questions.length} question{questions.length !== 1 ? "s" : ""}</p>
+          <button type="button" className="quiz-btn quiz-btn-lg" onClick={startQuiz}>Start quiz →</button>
+        </div>
+      )}
+
+      {stage === "q" && (
+        <div className="quiz-card quiz-question">
+          <div className="quiz-progress">Question {index + 1} of {questions.length}</div>
+          <h1 className="quiz-prompt">{question.prompt || "…"}</h1>
+          <div className={`quiz-options quiz-options-${question.options.length}`}>
+            {question.options.map((opt, optIndex) => {
+              const isAnswer = optIndex === question.answerIndex;
+              const cls = `quiz-option${revealed && isAnswer ? " is-correct" : ""}${revealed && !isAnswer ? " is-dim" : ""}`;
+              return (
+                <div className={cls} key={optIndex}>
+                  <span className="quiz-option-letter">{question.type === "true-false" ? (opt === "True" ? "✓" : "✗") : optionLetters[optIndex]}</span>
+                  <span className="quiz-option-text">{opt}</span>
+                  {revealed && isAnswer ? <span className="quiz-option-tick">Correct</span> : null}
+                </div>
+              );
+            })}
+          </div>
+          {revealed && question.fact ? <div className="quiz-fact"><strong>Did you know?</strong> {question.fact}</div> : null}
+          <div className="quiz-controls">
+            <button type="button" className="quiz-btn quiz-btn-ghost" onClick={prevQuestion}>← Back</button>
+            {!revealed
+              ? <button type="button" className="quiz-btn" onClick={() => setRevealed(true)}>Reveal answer</button>
+              : <button type="button" className="quiz-btn" onClick={nextQuestion}>{index + 1 >= questions.length ? "Finish" : "Next →"}</button>}
+          </div>
+          <div className="quiz-howto quiz-howto-mini"><p>{quiz.instructions}</p></div>
+        </div>
+      )}
+
+      {stage === "done" && (
+        <div className="quiz-card quiz-intro">
+          <span className="quiz-eyebrow">All done</span>
+          <h1>Great checking in! 🐨</h1>
+          <p className="quiz-count">You worked through {questions.length} question{questions.length !== 1 ? "s" : ""} together.</p>
+          <div className="quiz-controls">
+            <button type="button" className="quiz-btn quiz-btn-ghost" onClick={startQuiz}>Run it again</button>
+            <a className="quiz-btn" href={teacherContentRoute(contentId)}>Back to resource</a>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function TeacherPresenterPage({ contentId = "" }) {
   const { items: contentItems } = useContentItems();
   const contentItem = contentItems.find((item) => item.id === contentId) || null;
@@ -5165,6 +5389,7 @@ export default function AuthenticatedApp() {
     if (section === "content") return <TeacherPage page="content" contentId={third} />;
     if (section === "taronga-tv") return <TeacherPage page="taronga-tv" tvVideoId={third} />;
     if (section === "present") return <TeacherPresenterPage contentId={third} />;
+    if (section === "quiz") return <QuizPresenterPage contentId={third} />;
     if (section === "professional-learning") return <TeacherPage page="professional-learning" />;
     return <TeacherPage page={section || "dashboard"} />;
   }

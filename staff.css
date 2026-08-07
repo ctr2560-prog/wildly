@@ -2729,6 +2729,66 @@ td {
   font-weight: 800;
 }
 
+.sc-quiz-intro { margin-bottom: 4px; }
+.sc-quiz-intro h3 { margin: 0 0 4px; color: var(--green-950); font-size: 16px; }
+.sc-quiz-intro p { margin: 0; color: var(--muted); font-size: 13px; line-height: 1.5; }
+
+.sc-quiz-add { display: flex; flex-wrap: wrap; gap: 10px; margin: 4px 0; }
+
+.sc-quiz-q {
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: #fbfdfb;
+}
+.sc-quiz-q-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.sc-quiz-q-num { color: var(--green-900); font-size: 12px; font-weight: 900; letter-spacing: 0.03em; text-transform: uppercase; }
+
+.sc-quiz-opt-label { color: #516058; font-size: 12px; font-weight: 900; }
+.sc-quiz-options { display: grid; gap: 8px; }
+.sc-quiz-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 10px 6px 6px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: #fff;
+}
+.sc-quiz-option.is-correct { border-color: var(--green-700); background: #eef6ec; }
+.sc-quiz-option input { flex: 1; min-height: 38px; border: 0; background: transparent; }
+.sc-quiz-option input:focus { outline: none; }
+.sc-quiz-tf { flex: 1; font-weight: 800; color: var(--green-950); }
+.sc-quiz-correct {
+  flex: 0 0 auto;
+  width: 26px; height: 26px;
+  display: grid; place-items: center;
+  border: 2px solid var(--line);
+  border-radius: 50%;
+  background: #fff;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 900;
+  cursor: pointer;
+}
+.sc-quiz-option.is-correct .sc-quiz-correct { border-color: var(--green-800); background: var(--green-800); }
+.sc-quiz-opt-del { flex: 0 0 auto; border: 0; background: transparent; color: var(--muted); font-size: 13px; cursor: pointer; }
+.sc-quiz-opt-del:hover { color: #a5323b; }
+.sc-quiz-add-opt {
+  justify-self: start;
+  padding: 6px 12px;
+  border: 1px dashed var(--line);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--green-900);
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+}
+.sc-quiz-add-opt:hover { border-color: var(--green-700); background: var(--green-100); }
+
 .sc-checkbox-list {
   display: grid;
   gap: 8px;
