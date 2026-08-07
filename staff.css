@@ -2683,6 +2683,52 @@ td {
   flex-shrink: 0;
 }
 
+.sc-files-hint {
+  margin: 0 0 4px;
+  color: var(--muted);
+  font-size: 12.5px;
+  line-height: 1.5;
+}
+.sc-files-hint strong { color: var(--green-900); }
+
+.sc-pdf-upload {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 6px;
+}
+
+.sc-pdf-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border: 1px solid var(--green-800);
+  border-radius: 7px;
+  color: var(--green-900);
+  background: #fff;
+  font-size: 12px;
+  font-weight: 900;
+  cursor: pointer;
+  transition: background 150ms ease, color 150ms ease;
+}
+
+.sc-pdf-btn:hover {
+  background: var(--green-900);
+  color: #fff;
+}
+
+.sc-pdf-btn.is-busy {
+  opacity: 0.7;
+  cursor: wait;
+}
+
+.sc-pdf-done {
+  color: var(--green-800);
+  font-size: 12px;
+  font-weight: 800;
+}
+
 .sc-checkbox-list {
   display: grid;
   gap: 8px;

@@ -2,7 +2,8 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { initializeApp, deleteApp } from "firebase/app";
 import { createUserWithEmailAndPassword, getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut } from "firebase/auth";
 import { addDoc, arrayUnion, collection, collectionGroup, deleteDoc, doc, getCountFromServer, getDoc, getFirestore, increment, onSnapshot, orderBy, query, serverTimestamp, setDoc, updateDoc, where } from "firebase/firestore";
-import { auth, db } from "./firebase";
+import { ref as storageRef, uploadBytes, getDownloadURL } from "firebase/storage";
+import { auth, db, storage } from "./firebase";
 import "../landing.css";
 import "../styles.css";
 import "../staff.css";
@@ -3893,6 +3894,49 @@ function ContentPanel({ contentItems, status, saveState, seedContentItems, addCo
     setDraft((current) => ({ ...current, ...patch }));
   }
 
+  const [uploadingField, setUploadingField] = useState("");
+  const [uploadError, setUploadError] = useState("");
+
+  async function uploadPdf(event, field) {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+    if (file.size > 50 * 1024 * 1024) {
+      setUploadError("That file is over 50 MB — please compress it or use a link instead.");
+      return;
+    }
+    setUploadError("");
+    setUploadingField(field);
+    try {
+      const safeName = file.name.replace(/[^a-z0-9._-]+/gi, "-");
+      const path = `resources/${Date.now()}-${safeName}`;
+      const fileRef = storageRef(storage, path);
+      await uploadBytes(fileRef, file, { contentType: file.type || "application/pdf" });
+      const url = await getDownloadURL(fileRef);
+      updateDraft({ [field]: url });
+    } catch (error) {
+      console.error("PDF upload failed", error);
+      setUploadError("Upload failed. Check your connection and try again.");
+    } finally {
+      setUploadingField("");
+    }
+  }
+
+  function pdfUploadControl(field) {
+    const id = `pdf-upload-${field}`;
+    const value = draft[field] || "";
+    const uploaded = value.includes("firebasestorage.googleapis.com") || value.includes(".firebasestorage.app");
+    return (
+      <div className="sc-pdf-upload">
+        <label htmlFor={id} className={`sc-pdf-btn${uploadingField === field ? " is-busy" : ""}`}>
+          {uploadingField === field ? "Uploading…" : uploaded ? "Replace PDF" : "Upload PDF"}
+        </label>
+        <input id={id} type="file" accept="application/pdf,.pdf" style={{ display: "none" }} onChange={(e) => uploadPdf(e, field)} disabled={uploadingField === field} />
+        {uploaded ? <span className="sc-pdf-done">✓ PDF uploaded</span> : null}
+      </div>
+    );
+  }
+
   async function submitContent(event) {
     event.preventDefault();
     await addContentItem(draft);
@@ -4091,21 +4135,24 @@ function ContentPanel({ contentItems, status, saveState, seedContentItems, addCo
                   </div>
                 </div>
 
+                <p className="sc-files-hint">Paste a link (Canva, Drive, YouTube…) <strong>or</strong> upload a PDF — uploaded PDFs give teachers a clean, reliable download even when Canva is blocked.</p>
                 {draft.type === "Learning Path" && <>
-                  <div className="sc-field"><label>Teacher admin documents URL</label><input type="url" value={draft.teacherAdminUrl} onChange={(e) => updateDraft({ teacherAdminUrl: e.target.value })} placeholder="Drive, PDF or Canva link" /></div>
-                  <div className="sc-field"><label>Unit plan URL</label><input type="url" value={draft.unitPlanUrl} onChange={(e) => updateDraft({ unitPlanUrl: e.target.value })} placeholder="Scope, sequence or program link" /></div>
+                  <div className="sc-field"><label>Teacher admin documents</label><input type="url" value={draft.teacherAdminUrl} onChange={(e) => updateDraft({ teacherAdminUrl: e.target.value })} placeholder="Drive, PDF or Canva link" />{pdfUploadControl("teacherAdminUrl")}</div>
+                  <div className="sc-field"><label>Unit plan</label><input type="url" value={draft.unitPlanUrl} onChange={(e) => updateDraft({ unitPlanUrl: e.target.value })} placeholder="Scope, sequence or program link" />{pdfUploadControl("unitPlanUrl")}</div>
                   <div className="sc-field"><label>Teacher notes</label><textarea placeholder="One note per line" value={draft.activityPrompts} rows={3} onChange={(e) => updateDraft({ activityPrompts: e.target.value })} /></div>
                 </>}
                 {draft.type === "Lesson" && <>
-                  <div className="sc-field"><label>Lesson plan URL</label><input type="url" value={draft.lessonPlanUrl} onChange={(e) => updateDraft({ lessonPlanUrl: e.target.value })} placeholder="PDF, Drive or Canva link" /></div>
-                  <div className="sc-field"><label>Teacher guide URL</label><input type="url" value={draft.teacherGuideUrl} onChange={(e) => updateDraft({ teacherGuideUrl: e.target.value })} placeholder="Optional support material" /></div>
+                  <div className="sc-field"><label>Lesson plan</label><input type="url" value={draft.lessonPlanUrl} onChange={(e) => updateDraft({ lessonPlanUrl: e.target.value })} placeholder="PDF, Drive or Canva link" />{pdfUploadControl("lessonPlanUrl")}</div>
+                  <div className="sc-field"><label>Teacher guide</label><input type="url" value={draft.teacherGuideUrl} onChange={(e) => updateDraft({ teacherGuideUrl: e.target.value })} placeholder="Optional support material" />{pdfUploadControl("teacherGuideUrl")}</div>
+                  <div className="sc-field"><label>Student worksheet</label><input type="url" value={draft.studentWorksheetUrl} onChange={(e) => updateDraft({ studentWorksheetUrl: e.target.value })} placeholder="Worksheet link or upload a PDF" />{pdfUploadControl("studentWorksheetUrl")}</div>
                 </>}
                 {draft.type === "Resource" && <>
-                  <div className="sc-field"><label>Resource file or Canva URL</label><input type="url" value={draft.resourceUrl} onChange={(e) => updateDraft({ resourceUrl: e.target.value })} placeholder="PDF, image, video, Canva or Drive link" /></div>
-                  <div className="sc-field"><label>Student worksheet URL</label><input type="url" value={draft.studentWorksheetUrl} onChange={(e) => updateDraft({ studentWorksheetUrl: e.target.value })} placeholder="Optional worksheet or download" /></div>
+                  <div className="sc-field"><label>Resource file or Canva URL</label><input type="url" value={draft.resourceUrl} onChange={(e) => updateDraft({ resourceUrl: e.target.value })} placeholder="PDF, image, video, Canva or Drive link" />{pdfUploadControl("resourceUrl")}</div>
+                  <div className="sc-field"><label>Student worksheet</label><input type="url" value={draft.studentWorksheetUrl} onChange={(e) => updateDraft({ studentWorksheetUrl: e.target.value })} placeholder="Worksheet link or upload a PDF" />{pdfUploadControl("studentWorksheetUrl")}</div>
                   <div className="sc-field"><label>Extra resource links</label><textarea placeholder="One URL per line" value={draft.resourceLinks} rows={3} onChange={(e) => updateDraft({ resourceLinks: e.target.value })} /></div>
                 </>}
                 <div className="sc-field"><label>Download links</label><textarea placeholder="One per line: Label | URL" value={draft.downloadLinks} rows={3} onChange={(e) => updateDraft({ downloadLinks: e.target.value })} /></div>
+                {uploadError ? <p className="auth-error">{uploadError}</p> : null}
               </div>
             )}
 
