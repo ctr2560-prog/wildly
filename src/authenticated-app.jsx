@@ -1146,9 +1146,9 @@ function HeroBannerView({ banner, fallbackImage }) {
         {banner.eyebrow ? <span className="hero-eyebrow">{banner.eyebrow}</span> : null}
         {banner.title ? <h1>{banner.title}</h1> : null}
         {banner.message ? <p className="hero-lead">{banner.message}</p> : null}
-        {banner.linkLabel && banner.linkUrl ? (
+        {banner.linkUrl && banner.linkUrl.trim() ? (
           <div className="hero-actions">
-            <a className="primary-action" href={banner.linkUrl}>{banner.linkLabel}</a>
+            <a className="primary-action" href={banner.linkUrl.trim()}>{(banner.linkLabel || "").trim() || "Learn more"}</a>
           </div>
         ) : null}
       </div>
@@ -4926,6 +4926,7 @@ function BannerManager({ banners, saveBanners }) {
                 <div className="sc-field"><label>Button label</label><input type="text" value={draft.linkLabel} onChange={(e) => update({ linkLabel: e.target.value })} placeholder="Explore now" /></div>
                 <div className="sc-field"><label>Button link</label><input type="url" value={draft.linkUrl} onChange={(e) => update({ linkUrl: e.target.value })} placeholder="https://..." /></div>
               </div>
+              <p className="bn-field-hint">Add a <strong>button link</strong> to show a button on the banner — the label is optional (defaults to “Learn more”). No link means no button.</p>
               <div className="sc-field-row">
                 <div className="sc-field"><label>Stock image</label><select value={selectedStock ? selectedStock.key : ""} onChange={(e) => chooseStock(e.target.value)}><option value="">No image</option>{stockImages.map((si) => <option key={si.key || si.src} value={si.key || si.src}>{si.label}</option>)}</select></div>
                 <div className="sc-field"><label>Image URL</label><input type="url" value={draft.image} onChange={(e) => update({ image: e.target.value, imageKey: "" })} placeholder="https://..." /></div>
