@@ -2946,6 +2946,36 @@ h2 {
 
 .lib-hero-inner { position: relative; z-index: 2; max-width: 600px; }
 
+/* Per-subject hero — tinted by the subject's accent colour, with a large
+   subject icon watermark. Falls back to the green .lib-hero background if
+   color-mix isn't supported. */
+.subject-hero {
+  background:
+    radial-gradient(680px 300px at 84% -30%, color-mix(in srgb, var(--subject) 55%, transparent) 0%, transparent 62%),
+    linear-gradient(120deg, color-mix(in srgb, var(--subject) 82%, #05231a) 0%, #061a12 100%);
+}
+.subject-hero.is-all {
+  background:
+    radial-gradient(760px 320px at 82% -30%, #17714a 0%, rgba(23, 113, 74, 0) 62%),
+    linear-gradient(118deg, #0b4c32 0%, #072e1d 100%);
+}
+.subject-hero-art {
+  display: grid;
+  place-items: center;
+  width: 38%;
+}
+.subject-hero-icon {
+  width: 200px;
+  height: 200px;
+  fill: none;
+  stroke: #fff;
+  stroke-width: 1.4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  opacity: 0.16;
+  transform: rotate(-6deg);
+}
+
 .lib-hero-eyebrow {
   display: inline-block;
   padding: 6px 14px;

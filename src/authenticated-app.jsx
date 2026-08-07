@@ -1382,6 +1382,9 @@ function TeacherDashboard({ config, contentItems = defaultContentItems.map(resol
     const haystack = `${item.title} ${item.subject} ${item.stage} ${item.type} ${item.summary} ${item.description}`.toLowerCase();
     return matchesSubject && haystack.includes(query.toLowerCase());
   }), [activeSubject, publishedItems, query]);
+  const subjectScopedItems = publishedItems.filter((item) => !activeSubject || item.subject === activeSubject);
+  const subjectStageCount = new Set(subjectScopedItems.map((item) => item.stage).filter(Boolean)).size;
+  const activeSubjectCopy = subjects.find(([label]) => label === activeSubject)?.[2] || "";
   const contentDetail = publishedItems.find((item) => item.id === contentId) || null;
   const contentActivityBlocks = contentDetail ? buildLessonActivityBlocks(contentDetail) : [];
 
@@ -1810,7 +1813,7 @@ function TeacherDashboard({ config, contentItems = defaultContentItems.map(resol
           </>
         )}
 
-        {pageMeta && page !== "dashboard" && page !== "content" && page !== "resources" && (
+        {pageMeta && page !== "dashboard" && page !== "content" && page !== "resources" && page !== "subjects" && (
           <section className="workspace-page">
             <div className="workspace-page-header">
               <div>
@@ -1821,7 +1824,7 @@ function TeacherDashboard({ config, contentItems = defaultContentItems.map(resol
               <div className="workspace-page-actions">{pageMeta.action}</div>
             </div>
 
-            {(page === "subjects" || page === "taronga-tv") && !tarongaTvDetail && (
+            {page === "taronga-tv" && !tarongaTvDetail && (
               <div className="workspace-page-toolbar">
                 <label className="search-box">
                   <span></span>
@@ -1864,29 +1867,76 @@ function TeacherDashboard({ config, contentItems = defaultContentItems.map(resol
         )}
 
         {page === "subjects" && (
-          <section className="teacher-panel">
-            <div className="teacher-library-grid">
-              {filteredItems.length ? filteredItems.map((item) => (
-                <article className="teacher-library-card" key={item.id || item.title}>
-                  <img src={item.image} alt="" />
-                  <div>
-                    <span className="pill">{item.type}</span>
-                    <h3>{item.title}</h3>
-                    <p>{item.summary || item.description}</p>
-                    <small>{item.subject} - {item.stage}</small>
-                    <div className="teacher-card-actions">
-                      <a className="primary-action" href={teacherContentRoute(item.id)}>Open</a>
-                      <button type="button" className="secondary-action" onClick={() => onToggleSaved(item.id)}>{savedItemIds.includes(item.id) ? "Saved" : "Save"}</button>
-                    </div>
-                  </div>
-                </article>
-              )) : (
-                <article className="placeholder-card">
-                  <h3>No content matches this filter yet</h3>
-                  <p>Try another subject, clear the search, or add more published content from the staff console.</p>
-                </article>
-              )}
+          <section className="lib-page">
+            <div className={`lib-hero subject-hero${activeSubject ? "" : " is-all"}`} style={{ "--subject": subjectAccent(activeSubject) }}>
+              <div className="lib-hero-inner">
+                <span className="lib-hero-eyebrow">{activeSubject ? "Subject" : "Browse by subject"}</span>
+                <h1>{activeSubject || "All subjects"}</h1>
+                <p>{activeSubject ? (activeSubjectCopy || `Every published ${activeSubject} lesson and resource, ready to teach.`) : "Explore every curriculum area in one place — pick a subject to dive in."}</p>
+                <div className="lib-hero-stats">
+                  <div><strong>{subjectScopedItems.length}</strong><span>{subjectScopedItems.length === 1 ? "resource" : "resources"}</span></div>
+                  <div><strong>{subjectStageCount}</strong><span>{subjectStageCount === 1 ? "stage" : "stages"}</span></div>
+                </div>
+              </div>
+              <div className="lib-hero-art subject-hero-art" aria-hidden="true">
+                <Icon type={activeSubject ? subjectIconType(activeSubject) : "leaf"} className="subject-hero-icon" />
+              </div>
             </div>
+
+            <div className="lib-toolbar">
+              <label className="search-box lib-search">
+                <span></span>
+                <input value={query} onChange={(event) => setQuery(event.target.value)} type="search" placeholder="Search this subject…" />
+              </label>
+              <div className="page-chip-row">
+                <a className={`page-chip ${!activeSubject ? "selected" : ""}`} href={teacherRoute("subjects")}>All subjects</a>
+                {subjects.map(([label]) => (
+                  <a className={`page-chip ${activeSubject === label ? "selected" : ""}`} key={label} href={teacherRoute(`subjects/${subjectSlug(label)}`)}>{label}</a>
+                ))}
+              </div>
+            </div>
+
+            {filteredItems.length ? (
+              <>
+                <p className="lib-count">{filteredItems.length} {filteredItems.length === 1 ? "item" : "items"}{activeSubject ? ` in ${activeSubject}` : ""}{query.trim() ? ` matching “${query.trim()}”` : ""}</p>
+                <div className="lib-grid">
+                  {filteredItems.map((item, index) => {
+                    const saved = savedItemIds.includes(item.id);
+                    return (
+                      <Reveal as="article" className="lib-card" key={item.id || item.title} delay={Math.min(index, 8) * 45} style={{ "--accent": subjectAccent(item.subject) }}>
+                        <a className="lib-card-media" href={teacherContentRoute(item.id)}>
+                          <img src={item.image} alt="" loading="lazy" />
+                          <span className="lib-card-type">{item.type}</span>
+                        </a>
+                        <div className="lib-card-body">
+                          <div className="lib-card-subject"><span className="lib-card-dot" />{item.subject}</div>
+                          <h3><a href={teacherContentRoute(item.id)}>{item.title}</a></h3>
+                          <p>{item.summary || item.description}</p>
+                          <div className="lib-card-meta">
+                            {item.stage ? <span>{item.stage}</span> : null}
+                            {item.durationMinutes ? <span>{item.durationMinutes} min</span> : null}
+                            {item.materials?.quiz?.questions?.length ? <span>Check-in quiz</span> : null}
+                          </div>
+                          <div className="lib-card-actions">
+                            <a className="primary-action" href={teacherContentRoute(item.id)}>Open</a>
+                            <button type="button" className={`lib-save${saved ? " is-saved" : ""}`} onClick={() => onToggleSaved(item.id)} aria-pressed={saved} aria-label={saved ? "Saved" : "Save"}>
+                              <Icon type="bookmark" className="" />{saved ? "Saved" : "Save"}
+                            </button>
+                          </div>
+                        </div>
+                      </Reveal>
+                    );
+                  })}
+                </div>
+              </>
+            ) : (
+              <div className="lib-empty">
+                <Icon type="book" className="" />
+                <h3>Nothing here yet</h3>
+                <p>Try another subject or clear the search.</p>
+                <button type="button" className="secondary-action" onClick={() => { setActiveSubject(null); setQuery(""); window.location.hash = "#teacher/subjects"; }}>Clear filters</button>
+              </div>
+            )}
           </section>
         )}
 
