@@ -341,6 +341,100 @@ function listFromText(value) {
     .filter(Boolean);
 }
 
+function defaultLessonSequence() {
+  return [
+    { id: "intro", phase: "Introduction", timing: "", teacher: "", students: "", assessment: "" },
+    { id: "body", phase: "Body", timing: "", teacher: "", students: "", assessment: "" },
+    { id: "conclusion", phase: "Conclusion", timing: "", teacher: "", students: "", assessment: "" },
+  ];
+}
+
+// Builds a printable, standalone HTML lesson plan (modelled on the NSW
+// professional-experience template) and opens it in a new tab. Teachers can
+// print it or save it as a PDF/HTML file from there.
+function openLessonPlanHtml(plan) {
+  const esc = (v) => String(v == null ? "" : v).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  const multi = (v) => esc(v).replace(/\n/g, "<br>");
+  const outcomes = (Array.isArray(plan.outcomes) ? plan.outcomes : []).filter(Boolean);
+  const resources = (Array.isArray(plan.resources) ? plan.resources : []).filter((r) => r && r.label);
+  const seq = (Array.isArray(plan.sequence) ? plan.sequence : []).filter((row) => row.teacher || row.students || row.assessment || row.timing);
+  const box = (label, value) => `<section class="box"><h2>${esc(label)}</h2><div class="body">${value ? multi(value) : '<span class="empty">—</span>'}</div></section>`;
+  const outcomesHtml = outcomes.length ? `<ul>${outcomes.map((o) => `<li>${esc(o)}</li>`).join("")}</ul>` : '<span class="empty">—</span>';
+  const resourcesHtml = resources.length
+    ? `<ul>${resources.map((r) => (r.url ? `<li><a href="${esc(r.url)}">${esc(r.label)}</a></li>` : `<li>${esc(r.label)}</li>`)).join("")}</ul>`
+    : '<span class="empty">—</span>';
+  const seqRows = seq.length ? seq.map((row) => `
+        <tr>
+          <th scope="row">${esc(row.phase || "")}${row.timing ? `<span class="timing">${esc(row.timing)}</span>` : ""}</th>
+          <td>${multi(row.teacher)}</td>
+          <td>${multi(row.students)}</td>
+          <td>${multi(row.assessment)}</td>
+        </tr>`).join("")
+    : `<tr><td colspan="4" class="empty" style="text-align:center;padding:22px;">Add teaching &amp; learning steps in the Lesson Plan tab.</td></tr>`;
+
+  const html = `<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>${esc(plan.title || "Lesson Plan")} — Lesson Plan</title>
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; padding: 32px; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; color: #16231d; background: #f3f6f2; }
+  .wrap { max-width: 900px; margin: 0 auto; background: #fff; border: 1px solid #d9e2d6; border-radius: 12px; overflow: hidden; box-shadow: 0 12px 30px rgba(12,33,22,0.08); }
+  header { padding: 26px 30px; background: linear-gradient(120deg, #0b4c32, #093b28); color: #fff; }
+  header .eyebrow { text-transform: uppercase; letter-spacing: 0.12em; font-size: 11px; font-weight: 800; color: #a9f0cd; }
+  header h1 { margin: 6px 0 0; font-size: 26px; }
+  .meta { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; background: #d9e2d6; border-bottom: 1px solid #d9e2d6; }
+  .meta div { background: #fff; padding: 12px 16px; }
+  .meta .k { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: #6b7a72; font-weight: 800; }
+  .meta .v { margin-top: 3px; font-size: 15px; font-weight: 700; color: #16231d; }
+  .box { padding: 18px 30px; border-bottom: 1px solid #eef2ec; }
+  .box h2 { margin: 0 0 8px; font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; color: #0b4c32; }
+  .box .body { font-size: 14px; line-height: 1.6; white-space: normal; }
+  .box ul { margin: 0; padding-left: 20px; }
+  .box li { font-size: 14px; line-height: 1.6; }
+  .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: #eef2ec; }
+  .cols .box { border-bottom: 0; }
+  .empty { color: #b3bdb6; }
+  h2.section { margin: 0; padding: 12px 30px; background: #0b4c32; color: #fff; font-size: 13px; letter-spacing: 0.06em; text-transform: uppercase; }
+  table { width: 100%; border-collapse: collapse; }
+  th, td { border: 1px solid #d9e2d6; padding: 12px 14px; vertical-align: top; text-align: left; font-size: 13px; line-height: 1.55; }
+  thead th { background: #eef4ec; font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: #0b4c32; }
+  tbody th { width: 130px; background: #f6faf4; font-weight: 800; }
+  tbody th .timing { display: block; margin-top: 4px; font-weight: 500; color: #6b7a72; font-size: 12px; }
+  .print-hint { max-width: 900px; margin: 14px auto 0; text-align: center; color: #6b7a72; font-size: 13px; }
+  @media print { body { padding: 0; background: #fff; } .wrap { border: 0; box-shadow: none; } .print-hint { display: none; } }
+</style></head>
+<body>
+  <div class="wrap">
+    <header><span class="eyebrow">Wildly by Taronga · Lesson Plan</span><h1>${esc(plan.title || "Untitled lesson")}</h1></header>
+    <div class="meta">
+      <div><div class="k">Curriculum area</div><div class="v">${esc(plan.curriculumArea) || "—"}</div></div>
+      <div><div class="k">Year / Stage</div><div class="v">${esc(plan.year) || "—"}</div></div>
+      <div><div class="k">Lesson duration</div><div class="v">${esc(plan.duration) || "—"}</div></div>
+    </div>
+    <section class="box"><h2>Syllabus outcomes</h2><div class="body">${outcomesHtml}</div></section>
+    ${box("Learning intentions", plan.learningIntention)}
+    ${box("Success criteria", plan.successCriteria)}
+    ${box("Differentiation", plan.differentiation)}
+    <div class="cols">
+      ${box("Focus for literacy", plan.literacy)}
+      ${box("Focus for numeracy", plan.numeracy)}
+    </div>
+    <section class="box"><h2>Resources</h2><div class="body">${resourcesHtml}</div></section>
+    <h2 class="section">Teaching &amp; learning sequence</h2>
+    <table>
+      <thead><tr><th>Phase / timing</th><th>What the teacher does &amp; says</th><th>What students do &amp; say</th><th>Assessment &amp; feedback</th></tr></thead>
+      <tbody>${seqRows}</tbody>
+    </table>
+  </div>
+  <p class="print-hint">Use your browser to print this page or save it as a PDF (⌘/Ctrl + P).</p>
+</body></html>`;
+
+  const blob = new Blob([html], { type: "text/html" });
+  const url = URL.createObjectURL(blob);
+  window.open(url, "_blank");
+  setTimeout(() => URL.revokeObjectURL(url), 60000);
+}
+
 // Class check-in quiz — teacher-led, projected, no student devices. The class
 // answers physically (heads/tails, corners, hands up). Response modes carry the
 // default on-screen instruction, which staff can override per quiz.
@@ -386,9 +480,15 @@ function createContentDraft(type = "Lesson") {
     uploadedImageDataUrl: "",
     progress: 0,
     status: "Draft",
-    durationMinutes: type === "Lesson" ? 45 : 0,
+    durationMinutes: type === "Learning Path" ? 0 : 45,
     durationWeeks: type === "Learning Path" ? 6 : 0,
     outcomeCodes: "",
+    learningIntention: "",
+    successCriteria: "",
+    lpDifferentiation: "",
+    lpLiteracy: "",
+    lpNumeracy: "",
+    lpSequence: defaultLessonSequence(),
     activityPrompts: "",
     canvaEmbedUrl: "",
     teacherGuideUrl: "",
@@ -2800,6 +2900,12 @@ function StaffConsole({ onLock, firebaseUser }) {
             instructions: item.quizInstructions,
             questions: item.quizQuestions,
           }),
+          lessonPlan: {
+            differentiation: item.lpDifferentiation?.trim() || "",
+            literacy: item.lpLiteracy?.trim() || "",
+            numeracy: item.lpNumeracy?.trim() || "",
+            sequence: Array.isArray(item.lpSequence) ? item.lpSequence : [],
+          },
         },
         lessonIds: Array.isArray(item.lessonIds) ? item.lessonIds : [],
         resourceIds: Array.isArray(item.resourceIds) ? item.resourceIds : [],
@@ -2823,6 +2929,10 @@ function StaffConsole({ onLock, firebaseUser }) {
       delete contentPayload.quizResponseMode;
       delete contentPayload.quizInstructions;
       delete contentPayload.quizQuestions;
+      delete contentPayload.lpDifferentiation;
+      delete contentPayload.lpLiteracy;
+      delete contentPayload.lpNumeracy;
+      delete contentPayload.lpSequence;
       delete contentPayload.customImageUrl;
       delete contentPayload.uploadedImageDataUrl;
 
@@ -3808,9 +3918,10 @@ function ContentPanel({ contentItems, status, saveState, seedContentItems, addCo
   const [formTab, setFormTab] = useState("details");
   const [editorOpen, setEditorOpen] = useState(false);
   const learningPaths = contentItems.filter((item) => item.type === "Learning Path");
-  const lessonOptions = contentItems.filter((item) => item.type === "Lesson");
-  const resourceOptions = contentItems.filter((item) => item.type === "Resource");
-  const currentItems = activeType === "Learning Path" ? learningPaths : activeType === "Lesson" ? lessonOptions : resourceOptions;
+  // "Lesson" now covers everything that isn't a learning path — legacy items
+  // saved as "Resource" are shown and edited as lessons too.
+  const lessonOptions = contentItems.filter((item) => item.type !== "Learning Path");
+  const currentItems = activeType === "Learning Path" ? learningPaths : lessonOptions;
   const selectedItem = currentItems.find((item) => item.id === selectedId) || null;
   const selectedImage = draft.uploadedImageDataUrl || draft.customImageUrl || draft.image || assets[draft.imageKey] || assets.heroKoala;
   const selectedStockImage = stockImages.find((image) => (image.key && image.key === draft.imageKey) || (!draft.imageKey && !draft.uploadedImageDataUrl && !draft.customImageUrl && image.src === draft.image));
@@ -3825,11 +3936,11 @@ function ContentPanel({ contentItems, status, saveState, seedContentItems, addCo
     },
     Lesson: {
       title: "Lessons",
-      description: "Individual lessons that can sit inside a learning path or be used on their own.",
+      description: "A lesson with its presentation, worksheet, check-in quiz and a printable lesson plan — standalone or inside a learning path.",
       button: "New lesson",
       icon: "book",
-      intro: "Create a single lesson, then connect it to a path or keep it standalone.",
-      review: ["Teacher lesson cards", "Linked learning paths", "Attached resources"],
+      intro: "Create a lesson, add its files and quiz, then build a printable lesson plan.",
+      review: ["Teacher lesson cards", "Linked learning paths", "Printable lesson plans"],
     },
     Resource: {
       title: "Resources",
@@ -3883,6 +3994,12 @@ function ContentPanel({ contentItems, status, saveState, seedContentItems, addCo
       quizResponseMode: item.materials?.quiz?.responseMode || "heads-tails",
       quizInstructions: item.materials?.quiz?.instructions ?? quizModeInstructions(item.materials?.quiz?.responseMode || "heads-tails"),
       quizQuestions: normalizeQuiz(item.materials?.quiz).questions,
+      learningIntention: item.learningIntention || "",
+      successCriteria: item.successCriteria || "",
+      lpDifferentiation: item.materials?.lessonPlan?.differentiation || "",
+      lpLiteracy: item.materials?.lessonPlan?.literacy || "",
+      lpNumeracy: item.materials?.lessonPlan?.numeracy || "",
+      lpSequence: (Array.isArray(item.materials?.lessonPlan?.sequence) && item.materials.lessonPlan.sequence.length) ? item.materials.lessonPlan.sequence : defaultLessonSequence(),
       activityBlocks: buildLessonActivityBlocks(item),
       lessonIds: item.lessonIds || [],
       resourceIds: item.resourceIds || [],
@@ -4020,6 +4137,34 @@ function ContentPanel({ contentItems, status, saveState, seedContentItems, addCo
     updateQuizQuestion(id, { options, answerIndex });
   }
 
+  function updateSequenceRow(id, patch) {
+    updateDraft({ lpSequence: (draft.lpSequence || []).map((row) => (row.id === id ? { ...row, ...patch } : row)) });
+  }
+  function addSequenceRow() {
+    updateDraft({ lpSequence: [...(draft.lpSequence || []), { id: `seq-${Date.now().toString(36)}`, phase: "New phase", timing: "", teacher: "", students: "", assessment: "" }] });
+  }
+  function buildLessonPlanData(d) {
+    const resources = [];
+    if (d.canvaEmbedUrl) resources.push({ label: "Presentation (Canva)", url: d.canvaEmbedUrl });
+    if (d.studentWorksheetUrl) resources.push({ label: "Student worksheet", url: d.studentWorksheetUrl });
+    if (d.resourceUrl) resources.push({ label: "Resource file", url: d.resourceUrl });
+    listFromText(typeof d.resourceLinks === "string" ? d.resourceLinks : "").forEach((url, i) => resources.push({ label: `Resource link ${i + 1}`, url }));
+    return {
+      title: d.title,
+      curriculumArea: d.subject,
+      year: d.stage,
+      duration: d.durationMinutes ? `${d.durationMinutes} minutes` : "",
+      outcomes: Array.isArray(d.outcomeCodes) ? d.outcomeCodes : listFromText(d.outcomeCodes || ""),
+      learningIntention: d.learningIntention,
+      successCriteria: d.successCriteria,
+      differentiation: d.lpDifferentiation,
+      literacy: d.lpLiteracy,
+      numeracy: d.lpNumeracy,
+      resources,
+      sequence: d.lpSequence || [],
+    };
+  }
+
   async function submitContent(event) {
     event.preventDefault();
     await addContentItem(draft);
@@ -4107,7 +4252,10 @@ function ContentPanel({ contentItems, status, saveState, seedContentItems, addCo
   const contentFormTabs = [
     { id: "details", label: "Details" },
     { id: "files", label: "Files & Image" },
-    ...(draft.type !== "Learning Path" ? [{ id: "engagement", label: draft.type === "Resource" ? "Check-in Quiz" : "Engagement" }] : []),
+    ...(draft.type !== "Learning Path" ? [
+      { id: "engagement", label: "Check-in Quiz" },
+      { id: "lessonplan", label: "Lesson Plan" },
+    ] : []),
     { id: "structure", label: "Structure" },
   ];
 
@@ -4116,17 +4264,17 @@ function ContentPanel({ contentItems, status, saveState, seedContentItems, addCo
       <div className="sc-panel-header">
         <div>
           <h2>Content Studio</h2>
-          <p>Create and manage learning paths, lessons and resources for teachers.</p>
+          <p>Create and manage learning paths and lessons for teachers.</p>
         </div>
       </div>
       <ContentFirestoreStatus status={status} saveState={saveState} />
 
       <div className="sc-type-tabs">
-        {["Learning Path", "Lesson", "Resource"].map((type) => (
+        {["Learning Path", "Lesson"].map((type) => (
           <button key={type} type="button" className={`sc-type-tab${activeType === type ? " active" : ""}`} onClick={() => { setActiveType(type); setSelectedId(""); }}>
             <Icon type={typeCopy[type].icon} className="" />
             {type}
-            <span className="sc-type-count">{contentItems.filter((i) => i.type === type).length}</span>
+            <span className="sc-type-count">{type === "Learning Path" ? learningPaths.length : lessonOptions.length}</span>
           </button>
         ))}
       </div>
@@ -4196,10 +4344,14 @@ function ContentPanel({ contentItems, status, saveState, seedContentItems, addCo
                   <div className="sc-field"><label>Stage</label><input type="text" value={draft.stage} onChange={(e) => updateDraft({ stage: e.target.value })} /></div>
                 </div>
                 {draft.type === "Learning Path" && <div className="sc-field"><label>Duration (weeks)</label><input type="number" min="0" value={draft.durationWeeks} style={{maxWidth:140}} onChange={(e) => updateDraft({ durationWeeks: e.target.value })} /></div>}
-                {draft.type === "Lesson" && <div className="sc-field"><label>Duration (minutes)</label><input type="number" min="0" value={draft.durationMinutes} style={{maxWidth:140}} onChange={(e) => updateDraft({ durationMinutes: e.target.value })} /></div>}
+                {draft.type !== "Learning Path" && <div className="sc-field"><label>Duration (minutes)</label><input type="number" min="0" value={draft.durationMinutes} style={{maxWidth:140}} onChange={(e) => updateDraft({ durationMinutes: e.target.value })} /></div>}
                 <div className="sc-field"><label>Summary</label><input type="text" required value={draft.summary} onChange={(e) => updateDraft({ summary: e.target.value })} placeholder="One-line teacher-facing description" /></div>
                 <div className="sc-field"><label>Description</label><textarea value={draft.description} rows={4} onChange={(e) => updateDraft({ description: e.target.value })} /></div>
-                <div className="sc-field"><label>Outcomes</label><textarea placeholder="One outcome per line" value={draft.outcomeCodes} rows={3} onChange={(e) => updateDraft({ outcomeCodes: e.target.value })} /></div>
+                <div className="sc-field"><label>Syllabus outcomes</label><textarea placeholder="One outcome per line" value={draft.outcomeCodes} rows={3} onChange={(e) => updateDraft({ outcomeCodes: e.target.value })} /></div>
+                {draft.type !== "Learning Path" && <>
+                  <div className="sc-field"><label>Learning intention</label><textarea placeholder="By the end of this lesson students will…" value={draft.learningIntention} rows={2} onChange={(e) => updateDraft({ learningIntention: e.target.value })} /></div>
+                  <div className="sc-field"><label>Success criteria</label><textarea placeholder="One per line — I can…" value={draft.successCriteria} rows={3} onChange={(e) => updateDraft({ successCriteria: e.target.value })} /></div>
+                </>}
               </div>
             )}
 
@@ -4224,21 +4376,15 @@ function ContentPanel({ contentItems, status, saveState, seedContentItems, addCo
                   <div className="sc-field"><label>Unit plan</label><input type="url" value={draft.unitPlanUrl} onChange={(e) => updateDraft({ unitPlanUrl: e.target.value })} placeholder="Scope, sequence or program link" />{pdfUploadControl("unitPlanUrl")}</div>
                   <div className="sc-field"><label>Teacher notes</label><textarea placeholder="One note per line" value={draft.activityPrompts} rows={3} onChange={(e) => updateDraft({ activityPrompts: e.target.value })} /></div>
                 </>}
-                {draft.type === "Lesson" && <>
-                  <div className="sc-field"><label>Lesson plan</label><input type="url" value={draft.lessonPlanUrl} onChange={(e) => updateDraft({ lessonPlanUrl: e.target.value })} placeholder="PDF, Drive or Canva link" />{pdfUploadControl("lessonPlanUrl")}</div>
-                  <div className="sc-field"><label>Teacher guide</label><input type="url" value={draft.teacherGuideUrl} onChange={(e) => updateDraft({ teacherGuideUrl: e.target.value })} placeholder="Optional support material" />{pdfUploadControl("teacherGuideUrl")}</div>
-                  <div className="sc-field"><label>Student worksheet</label><input type="url" value={draft.studentWorksheetUrl} onChange={(e) => updateDraft({ studentWorksheetUrl: e.target.value })} placeholder="Worksheet link or upload a PDF" />{pdfUploadControl("studentWorksheetUrl")}</div>
-                </>}
-                {draft.type === "Resource" && <>
+                {draft.type !== "Learning Path" && <>
                   <div className="sc-field"><label>Presentation (Canva embed link)</label><input type="url" value={draft.canvaEmbedUrl} onChange={(e) => updateDraft({ canvaEmbedUrl: e.target.value })} placeholder="Canva share / embed link for the deck" /></div>
                   <div className="sc-field"><label>Student worksheet (downloadable)</label><input type="url" value={draft.studentWorksheetUrl} onChange={(e) => updateDraft({ studentWorksheetUrl: e.target.value })} placeholder="Worksheet link or upload a PDF" />{pdfUploadControl("studentWorksheetUrl")}</div>
                 </>}
-                {draft.type !== "Resource" && <div className="sc-field"><label>Download links</label><textarea placeholder="One per line: Label | URL" value={draft.downloadLinks} rows={3} onChange={(e) => updateDraft({ downloadLinks: e.target.value })} /></div>}
                 {uploadError ? <p className="auth-error">{uploadError}</p> : null}
               </div>
             )}
 
-            {formTab === "engagement" && draft.type === "Resource" && (
+            {formTab === "engagement" && draft.type !== "Learning Path" && (
               <div className="sc-fields">
                 <div className="sc-quiz-intro">
                   <h3>Class check-in quiz</h3>
@@ -4289,38 +4435,44 @@ function ContentPanel({ contentItems, status, saveState, seedContentItems, addCo
               </div>
             )}
 
-            {formTab === "engagement" && draft.type === "Lesson" && (
+            {formTab === "lessonplan" && draft.type !== "Learning Path" && (
               <div className="sc-fields">
-                <div className="sc-engagement-actions">
-                  {["slide", "quiz", "poll", "extended-response"].map((t) => (
-                    <button key={t} type="button" className="secondary-button slim-button" onClick={() => addActivityBlock(t)}>+ {t.replace("-", " ")}</button>
-                  ))}
+                <div className="sc-quiz-intro">
+                  <h3>Lesson plan builder</h3>
+                  <p>Fill in the extra sections below. Title, curriculum area, year, outcomes, learning intention, success criteria and resources are pulled from the other tabs. Generate a printable plan when you're ready.</p>
                 </div>
-                {(draft.activityBlocks || []).length ? draft.activityBlocks.map((block, index) => (
-                  <div className="sc-block-card" key={block.id}>
-                    <div className="sc-block-header">
-                      <div className="sc-field" style={{margin:0}}>
-                        <label>Type</label>
-                        <select value={block.type} onChange={(e) => updateActivityBlock(block.id, { type: e.target.value, options: e.target.value === "slide" || e.target.value === "extended-response" ? [] : (block.options?.length ? block.options : ["Option 1", "Option 2"]) })}>
-                          <option value="slide">Slide</option><option value="quiz">Quiz</option><option value="poll">Poll</option><option value="extended-response">Extended response</option>
-                        </select>
-                      </div>
-                      <button type="button" className="delete-button slim-button" onClick={() => removeActivityBlock(block.id)}>Remove</button>
+                <div className="sc-lp-pulled">
+                  <span>Pulled from other tabs:</span>
+                  <ul>
+                    <li><strong>Title</strong> {draft.title || "—"}</li>
+                    <li><strong>Curriculum area</strong> {draft.subject}</li>
+                    <li><strong>Year / Stage</strong> {draft.stage || "—"}</li>
+                    <li><strong>Duration</strong> {draft.durationMinutes ? `${draft.durationMinutes} min` : "—"}</li>
+                  </ul>
+                </div>
+                <div className="sc-field"><label>Differentiation</label><textarea rows={3} value={draft.lpDifferentiation} onChange={(e) => updateDraft({ lpDifferentiation: e.target.value })} placeholder="Adjustments for support and extension" /></div>
+                <div className="sc-field-row">
+                  <div className="sc-field"><label>Focus for literacy</label><textarea rows={3} value={draft.lpLiteracy} onChange={(e) => updateDraft({ lpLiteracy: e.target.value })} placeholder="Literacy focus" /></div>
+                  <div className="sc-field"><label>Focus for numeracy</label><textarea rows={3} value={draft.lpNumeracy} onChange={(e) => updateDraft({ lpNumeracy: e.target.value })} placeholder="Numeracy focus" /></div>
+                </div>
+
+                <label className="sc-quiz-opt-label">Teaching &amp; learning sequence</label>
+                {(draft.lpSequence || []).map((row) => (
+                  <div className="sc-lp-phase" key={row.id}>
+                    <div className="sc-lp-phase-head">
+                      <input type="text" className="sc-lp-phase-name" value={row.phase} onChange={(e) => updateSequenceRow(row.id, { phase: e.target.value })} />
+                      <input type="text" className="sc-lp-phase-timing" value={row.timing} onChange={(e) => updateSequenceRow(row.id, { timing: e.target.value })} placeholder="Timing e.g. 10 min" />
                     </div>
-                    <div className="sc-block-fields">
-                      <div className="sc-field"><label>Step title</label><input type="text" value={block.title} onChange={(e) => updateActivityBlock(block.id, { title: e.target.value })} placeholder={`Step ${index + 1}`} /></div>
-                      <div className="sc-field"><label>Prompt</label><textarea value={block.prompt} rows={2} onChange={(e) => updateActivityBlock(block.id, { prompt: e.target.value })} placeholder="What do students see or respond to?" /></div>
-                      <div className="sc-field"><label>Teacher notes</label><textarea value={block.notes || ""} rows={2} onChange={(e) => updateActivityBlock(block.id, { notes: e.target.value })} placeholder="Optional note or transition." /></div>
-                      {(block.type === "quiz" || block.type === "poll") && <div className="sc-field"><label>Options</label><textarea value={(block.options || []).join("\n")} rows={3} onChange={(e) => updateActivityBlock(block.id, { options: listFromText(e.target.value) })} placeholder="One option per line" /></div>}
-                      {block.type === "quiz" && <div className="sc-field"><label>Correct answer</label><input type="text" value={block.answer || ""} onChange={(e) => updateActivityBlock(block.id, { answer: e.target.value })} placeholder="Match one option exactly" /></div>}
-                    </div>
+                    <div className="sc-field"><label>What the teacher does &amp; says</label><textarea rows={2} value={row.teacher} onChange={(e) => updateSequenceRow(row.id, { teacher: e.target.value })} /></div>
+                    <div className="sc-field"><label>What students do &amp; say</label><textarea rows={2} value={row.students} onChange={(e) => updateSequenceRow(row.id, { students: e.target.value })} /></div>
+                    <div className="sc-field"><label>Assessment &amp; feedback</label><textarea rows={2} value={row.assessment} onChange={(e) => updateSequenceRow(row.id, { assessment: e.target.value })} /></div>
                   </div>
-                )) : (
-                  <div className="sc-empty-engagement">
-                    <Icon type="plus" className="" />
-                    <p>Add slides, quizzes and polls to make this lesson interactive for students.</p>
-                  </div>
-                )}
+                ))}
+                <button type="button" className="sc-quiz-add-opt" onClick={addSequenceRow}>+ Add phase</button>
+
+                <div className="sc-lp-generate">
+                  <button type="button" className="primary-action" onClick={() => openLessonPlanHtml(buildLessonPlanData(draft))}>Generate lesson plan (HTML)</button>
+                </div>
               </div>
             )}
 
@@ -4339,21 +4491,9 @@ function ContentPanel({ contentItems, status, saveState, seedContentItems, addCo
                     </div>
                   </div>
                 )}
-                {draft.type === "Lesson" && <>
+                {draft.type !== "Learning Path" && (
                   <div className="sc-field"><label>Parent learning path</label><select value={draft.learningPathId} onChange={(e) => updateDraft({ learningPathId: e.target.value })}><option value="">Standalone lesson</option>{learningPaths.map((p) => <option value={p.id} key={p.id || p.title}>{p.title}</option>)}</select></div>
-                  <div className="sc-field">
-                    <label>Resources in this lesson</label>
-                    <div className="sc-checkbox-list">
-                      {resourceOptions.length ? resourceOptions.map((resource) => (
-                        <label key={resource.id || resource.title} className="sc-checkbox-item">
-                          <input type="checkbox" checked={draft.resourceIds.includes(resource.id)} onChange={() => toggleListItem("resourceIds", resource.id)} />
-                          <div><strong>{resource.title}</strong><span>{resource.subject} · {resource.stage}</span></div>
-                        </label>
-                      )) : <p className="mini-empty">Create resources first, then attach them here.</p>}
-                    </div>
-                  </div>
-                </>}
-                {draft.type === "Resource" && <div className="sc-field"><label>Parent lesson</label><select value={draft.lessonId} onChange={(e) => updateDraft({ lessonId: e.target.value })}><option value="">Standalone resource</option>{lessonOptions.map((l) => <option value={l.id} key={l.id || l.title}>{l.title}</option>)}</select></div>}
+                )}
               </div>
             )}
           </div>
