@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { initializeApp, deleteApp } from "firebase/app";
 import { createUserWithEmailAndPassword, getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut } from "firebase/auth";
-import { addDoc, arrayUnion, collection, collectionGroup, deleteDoc, doc, getCountFromServer, getDoc, getFirestore, increment, onSnapshot, orderBy, query, serverTimestamp, setDoc, updateDoc, where } from "firebase/firestore";
+import { addDoc, arrayUnion, collection, collectionGroup, deleteDoc, doc, getCountFromServer, getDoc, getDocs, getFirestore, increment, onSnapshot, orderBy, query, serverTimestamp, setDoc, updateDoc, where } from "firebase/firestore";
 import { ref as storageRef, uploadBytes, getDownloadURL } from "firebase/storage";
 import { auth, db, storage } from "./firebase";
 import "../landing.css";
@@ -951,11 +951,79 @@ function useTeacherWorkspace(user, profile) {
     }));
   }
 
+  function deleteClass(classId) {
+    setWorkspace((current) => ({
+      ...current,
+      classes: (current.classes || []).filter((classroom) => classroom.id !== classId),
+      assignments: (current.assignments || []).filter((assignment) => assignment.classId !== classId),
+    }));
+  }
+
+  function toggleAssignment(classId, contentId) {
+    setWorkspace((current) => {
+      const assignments = current.assignments || [];
+      const exists = assignments.some((a) => a.classId === classId && a.contentId === contentId);
+      return {
+        ...current,
+        assignments: exists
+          ? assignments.filter((a) => !(a.classId === classId && a.contentId === contentId))
+          : [...assignments, { id: `as-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 5)}`, classId, contentId, assignedAt: Date.now() }],
+      };
+    });
+  }
+
   return {
     workspace,
     toggleSavedItem,
     createClass,
+    deleteClass,
+    toggleAssignment,
   };
+}
+
+// Read-only view of the teacher's Taronga Tracka classes and student totals.
+// Purely reads (getDocs) from the shared Firebase project — it never writes to
+// or modifies any Tracka data.
+function useTrackaClasses(email) {
+  const [state, setState] = useState({ status: "loading", classes: [] });
+
+  useEffect(() => {
+    const normalized = (email || "").toLowerCase();
+    if (!normalized || normalized === "demo@zoo") {
+      setState({ status: "none", classes: [] });
+      return undefined;
+    }
+    let cancelled = false;
+    (async () => {
+      try {
+        const snap = await getDocs(collection(db, "teachers", normalized, "classes"));
+        const base = snap.docs
+          .map((docSnap) => ({ id: docSnap.id, ...docSnap.data() }))
+          .filter((classroom) => !classroom.archived);
+        const withStats = await Promise.all(base.map(async (classroom) => {
+          const code = classroom.classCode || classroom.id;
+          try {
+            const studentsSnap = await getDocs(collection(db, "classes", code, "students"));
+            let totalPoints = 0;
+            studentsSnap.forEach((studentDoc) => { totalPoints += Number(studentDoc.data().totalPoints) || 0; });
+            return { ...classroom, studentCount: studentsSnap.size, totalPoints };
+          } catch {
+            return { ...classroom, studentCount: null, totalPoints: null };
+          }
+        }));
+        if (!cancelled) {
+          withStats.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
+          setState({ status: "ready", classes: withStats });
+        }
+      } catch (error) {
+        console.error("Unable to load Taronga Tracka classes", error);
+        if (!cancelled) setState({ status: "error", classes: [] });
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [email]);
+
+  return state;
 }
 
 function useSessionUser() {
@@ -1350,7 +1418,7 @@ function TeacherHeroRotator({ banners, fallbackImage }) {
   );
 }
 
-function TeacherDashboard({ config, contentItems = defaultContentItems.map(resolveContentItem), professionalLearningItems = defaultProfessionalLearningItems, tarongaTvVideos = defaultTarongaTvVideos.map(resolveTarongaTvVideo), page = "dashboard", subject = "", contentId = "", tvVideoId = "", profile = null, onSignOut = null, preview = false, workspace = createDefaultTeacherWorkspace(), onToggleSaved = () => {}, onCreateClass = () => {}, upcomingEvents = [] }) {
+function TeacherDashboard({ config, contentItems = defaultContentItems.map(resolveContentItem), professionalLearningItems = defaultProfessionalLearningItems, tarongaTvVideos = defaultTarongaTvVideos.map(resolveTarongaTvVideo), page = "dashboard", subject = "", contentId = "", tvVideoId = "", profile = null, teacherEmail = "", onSignOut = null, preview = false, workspace = createDefaultTeacherWorkspace(), onToggleSaved = () => {}, onCreateClass = () => {}, onDeleteClass = () => {}, onToggleAssignment = () => {}, upcomingEvents = [] }) {
   const [activeSubject, setActiveSubject] = useState(subjectFromSlug(subject));
   const [activeTvCategory, setActiveTvCategory] = useState("All");
   const [query, setQuery] = useState("");
@@ -1403,6 +1471,8 @@ function TeacherDashboard({ config, contentItems = defaultContentItems.map(resol
   }), [activeSubject, publishedItems, query]);
   const subjectScopedItems = publishedItems.filter((item) => !activeSubject || item.subject === activeSubject);
   const subjectStageCount = new Set(subjectScopedItems.map((item) => item.stage).filter(Boolean)).size;
+  const trackaClasses = useTrackaClasses(teacherEmail);
+  const [assignClassId, setAssignClassId] = useState(null);
   const activeSubjectCopy = subjects.find(([label]) => label === activeSubject)?.[2] || "";
   const contentDetail = publishedItems.find((item) => item.id === contentId) || null;
   const contentActivityBlocks = contentDetail ? buildLessonActivityBlocks(contentDetail) : [];
@@ -1451,6 +1521,7 @@ function TeacherDashboard({ config, contentItems = defaultContentItems.map(resol
   const contentDownloads = contentDetail ? buildContentDownloads(contentDetail) : [];
   const tarongaTvDownloads = tarongaTvDetail?.downloadLinks || [];
   const allResourceItems = [...lessons, ...resources];
+  const assignableItems = [...learningPaths, ...allResourceItems];
   const librarySubjectCount = new Set(allResourceItems.map((item) => item.subject).filter(Boolean)).size;
   const libraryQuizCount = allResourceItems.filter((item) => item.materials?.quiz?.questions?.length).length;
   const libraryQuery = query.trim().toLowerCase();
@@ -1832,7 +1903,7 @@ function TeacherDashboard({ config, contentItems = defaultContentItems.map(resol
           </>
         )}
 
-        {pageMeta && page !== "dashboard" && page !== "content" && page !== "resources" && page !== "subjects" && (
+        {pageMeta && page !== "dashboard" && page !== "content" && page !== "resources" && page !== "subjects" && page !== "classes" && (
           <section className="workspace-page">
             <div className="workspace-page-header">
               <div>
@@ -2250,54 +2321,128 @@ function TeacherDashboard({ config, contentItems = defaultContentItems.map(resol
         )}
 
         {page === "classes" && (
-          <>
-            <section className="teacher-panel">
-              <div className="teacher-panel-header">
-                <div>
-                  <h2 id="create-class">Class setup and planning</h2>
-                  <p>Create classes, review assigned content and keep due work visible by teaching group.</p>
+          <section className="mc-page">
+            <div className="lib-hero mc-hero">
+              <div className="lib-hero-inner">
+                <span className="lib-hero-eyebrow">My Classes</span>
+                <h1>Your classes</h1>
+                <p>Create teaching groups, assign lessons and units, and see your connected Taronga Tracka classes at a glance.</p>
+                <div className="lib-hero-stats">
+                  <div><strong>{classes.length}</strong><span>{classes.length === 1 ? "class" : "classes"}</span></div>
+                  <div><strong>{assignments.length}</strong><span>assignments</span></div>
+                  <div><strong>{trackaClasses.classes.length}</strong><span>Tracka classes</span></div>
                 </div>
               </div>
-              <form className="class-create-form" onSubmit={submitNewClass}>
-                <label>Class name<input type="text" value={classDraft.title} onChange={(event) => setClassDraft((current) => ({ ...current, title: event.target.value }))} placeholder="Year 5 Red" /></label>
-                <label>Stage<select value={classDraft.stage} onChange={(event) => setClassDraft((current) => ({ ...current, stage: event.target.value }))}>{["Early Years", "Early Stage 1", "Stage 1", "Stage 2", "Stage 3", "Stage 4", "Stage 5", "Stage 6"].map((stage) => <option key={stage} value={stage}>{stage}</option>)}</select></label>
-                <button type="submit" className="primary-action">Create class</button>
-              </form>
-              <div className="class-section-grid">
-                {teacherClasses.map((classroom) => (
-                  <article className="class-room-card" key={classroom.id}>
-                    <div className="class-room-header">
-                      <div>
-                        <h3>{classroom.title}</h3>
-                        <p>{classroom.stage} · {classroom.note}</p>
+              <div className="lib-hero-art" aria-hidden="true"><img src={assets.heroKoala} alt="" /></div>
+            </div>
+
+            <div className="mc-section-head">
+              <div><h2>Your classes</h2><p>Wildly teaching groups you can assign lessons and units to.</p></div>
+            </div>
+            <form className="mc-create" onSubmit={submitNewClass}>
+              <input type="text" value={classDraft.title} onChange={(event) => setClassDraft((current) => ({ ...current, title: event.target.value }))} placeholder="Class name — e.g. Year 5 Red" />
+              <select value={classDraft.stage} onChange={(event) => setClassDraft((current) => ({ ...current, stage: event.target.value }))}>{["Early Years", "Early Stage 1", "Stage 1", "Stage 2", "Stage 3", "Stage 4", "Stage 5", "Stage 6"].map((stage) => <option key={stage} value={stage}>{stage}</option>)}</select>
+              <button type="submit" className="primary-action">+ Create class</button>
+            </form>
+
+            {teacherClasses.length ? (
+              <div className="mc-grid">
+                {teacherClasses.map((classroom) => {
+                  const assigned = assignmentsByClass[classroom.id] || [];
+                  return (
+                    <article className="mc-card" key={classroom.id}>
+                      <div className="mc-card-head">
+                        <div><h3>{classroom.title}</h3><span className="mc-card-stage">{classroom.stage}</span></div>
+                        <button type="button" className="mc-card-del" onClick={() => { if (window.confirm(`Delete “${classroom.title}”? This won't affect any Tracka data.`)) onDeleteClass(classroom.id); }} aria-label={`Delete ${classroom.title}`}>✕</button>
                       </div>
-                      <span className="pill">{classroom.assignmentCount} assignments</span>
-                    </div>
-                    <div className="class-room-body">
-                      <div>
-                        <h4>Students</h4>
-                        <ul className="compact-list">
-                          {classStudents.filter((student) => student.classId === classroom.id).map((student) => <li key={student.id}>{student.name} · {student.status}</li>)}
-                        </ul>
-                      </div>
-                      <div>
-                        <h4>Assigned content</h4>
-                        {assignmentsByClass[classroom.id]?.length ? (
-                          <ul className="compact-list">
-                            {assignmentsByClass[classroom.id].map((assignment) => (
-                              <li key={assignment.id}>
-                                <a href={teacherContentRoute(assignment.contentId)}>{contentById[assignment.contentId]?.title || "Content item"}</a> · due {formatDisplayDate(assignment.dueDate)}
-                              </li>
-                            ))}
+                      <div className="mc-assigned">
+                        <div className="mc-assigned-head"><span>Assigned lessons &amp; units</span><span className="mc-count">{assigned.length}</span></div>
+                        {assigned.length ? (
+                          <ul className="mc-assigned-list">
+                            {assigned.map((assignment) => {
+                              const item = contentById[assignment.contentId];
+                              if (!item) return null;
+                              return (
+                                <li key={assignment.id}>
+                                  <a href={teacherContentRoute(assignment.contentId)}>{item.title}</a>
+                                  <span className="mc-chip-type">{item.type === "Learning Path" ? "Unit" : "Lesson"}</span>
+                                  <button type="button" className="mc-remove" onClick={() => onToggleAssignment(classroom.id, assignment.contentId)} aria-label="Remove">✕</button>
+                                </li>
+                              );
+                            })}
                           </ul>
-                        ) : <p className="mini-empty">No assignments yet.</p>}
+                        ) : <p className="mc-empty-line">No lessons assigned yet.</p>}
                       </div>
+                      <button type="button" className="mc-assign-btn" onClick={() => setAssignClassId(classroom.id)}><Icon type="plus" className="" />Assign lessons &amp; units</button>
+                    </article>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="lib-empty"><Icon type="users" className="" /><h3>No classes yet</h3><p>Create your first class above to start assigning lessons.</p></div>
+            )}
+
+            <div className="mc-section-head mc-tracka-head">
+              <div><h2>Taronga Tracka classes</h2><p>Live analytics from your Tracka classes, shown here for reference.</p></div>
+              <span className="mc-readonly">Read-only</span>
+            </div>
+            {trackaClasses.status === "loading" && <p className="mc-empty-line">Loading your Tracka classes…</p>}
+            {trackaClasses.status === "none" && (
+              <div className="mc-tracka-connect">
+                <img src={assets.trackaLogo} alt="Taronga Tracka" />
+                <div>
+                  <strong>Connect your Taronga Tracka classes</strong>
+                  <p>Sign in with a teacher account that has Taronga Tracka classes and their analytics will appear here automatically. Wildly only reads this data — it never changes it.</p>
+                </div>
+              </div>
+            )}
+            {trackaClasses.status === "error" && <p className="mc-empty-line">Couldn't load your Tracka classes right now — please try again later.</p>}
+            {trackaClasses.status === "ready" && (trackaClasses.classes.length ? (
+              <div className="mc-grid">
+                {trackaClasses.classes.map((tc) => (
+                  <article className="mc-card mc-tracka-card" key={tc.id}>
+                    <div className="mc-card-head">
+                      <div><h3>{tc.className || tc.classCode}</h3><span className="mc-card-stage">{[tc.stage, tc.subject, tc.sessionType].filter(Boolean).join(" · ") || "Class"}</span></div>
+                      <span className="mc-tracka-badge">Tracka</span>
+                    </div>
+                    <div className="mc-tracka-stats">
+                      <div><strong>{tc.studentCount ?? "—"}</strong><span>students</span></div>
+                      <div><strong>{tc.totalPoints != null ? tc.totalPoints.toLocaleString() : "—"}</strong><span>points</span></div>
+                      <div><strong className="mc-code">{tc.classCode}</strong><span>class code</span></div>
                     </div>
                   </article>
                 ))}
               </div>
-            </section>
-          </>
+            ) : (
+              <p className="mc-empty-line">No active Taronga Tracka classes found for this account.</p>
+            ))}
+
+            {assignClassId && (
+              <div className="cc-modal-backdrop" role="dialog" aria-modal="true" onClick={() => setAssignClassId(null)}>
+                <div className="cc-modal sc-detail mc-assign-modal" onClick={(event) => event.stopPropagation()}>
+                  <div className="sc-detail-header">
+                    <div><span className="content-type">Assign to class</span><h3>{teacherClasses.find((c) => c.id === assignClassId)?.title || "Class"}</h3></div>
+                    <div className="sc-detail-actions"><button type="button" className="secondary-button" onClick={() => setAssignClassId(null)}>Done</button></div>
+                  </div>
+                  <div className="sc-form-body">
+                    {assignableItems.length ? (
+                      <div className="mc-assign-list">
+                        {assignableItems.map((item) => {
+                          const isOn = (assignmentsByClass[assignClassId] || []).some((a) => a.contentId === item.id);
+                          return (
+                            <button type="button" key={item.id} className={`mc-assign-row${isOn ? " is-on" : ""}`} onClick={() => onToggleAssignment(assignClassId, item.id)}>
+                              <span className="mc-assign-check">{isOn ? "✓" : ""}</span>
+                              <span className="mc-assign-info"><strong>{item.title}</strong><span>{item.type === "Learning Path" ? "Unit" : "Lesson"} · {item.subject}{item.stage ? ` · ${item.stage}` : ""}</span></span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    ) : <p className="mc-empty-line">Publish some lessons in the staff console first, then assign them here.</p>}
+                  </div>
+                </div>
+              </div>
+            )}
+          </section>
         )}
 
         {page === "students" && (
@@ -2796,7 +2941,7 @@ function TeacherPage({ page = "dashboard", subject = "", contentId = "", tvVideo
   const { items: tarongaTvVideos } = useTarongaTvVideos();
   const { events: upcomingEvents } = useUpcomingEvents();
   const { status: sessionStatus, user, profile } = useSessionUser();
-  const { workspace, toggleSavedItem, createClass } = useTeacherWorkspace(user, profile);
+  const { workspace, toggleSavedItem, createClass, deleteClass, toggleAssignment } = useTeacherWorkspace(user, profile);
 
   const signingOutRef = useRef(false);
 
@@ -2834,7 +2979,7 @@ function TeacherPage({ page = "dashboard", subject = "", contentId = "", tvVideo
   return (
     <>
       {staffPreviewActive() && <StaffPreviewBar />}
-      <TeacherDashboard config={config} contentItems={contentItems} professionalLearningItems={professionalLearningItems} tarongaTvVideos={tarongaTvVideos} page={page} subject={subject} contentId={contentId} tvVideoId={tvVideoId} profile={profile} onSignOut={handleSignOut} preview={preview} workspace={workspace} onToggleSaved={toggleSavedItem} onCreateClass={createClass} upcomingEvents={upcomingEvents} />
+      <TeacherDashboard config={config} contentItems={contentItems} professionalLearningItems={professionalLearningItems} tarongaTvVideos={tarongaTvVideos} page={page} subject={subject} contentId={contentId} tvVideoId={tvVideoId} profile={profile} teacherEmail={user?.email || profile?.email || ""} onSignOut={handleSignOut} preview={preview} workspace={workspace} onToggleSaved={toggleSavedItem} onCreateClass={createClass} onDeleteClass={deleteClass} onToggleAssignment={toggleAssignment} upcomingEvents={upcomingEvents} />
     </>
   );
 }
