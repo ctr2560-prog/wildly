@@ -658,6 +658,21 @@ function subjectAccent(label) {
   return SUBJECT_ACCENT[label] || "#0b4c32";
 }
 
+const SUBJECT_IMAGE = {
+  Science: assetPath("assets/subject-science.webp"),
+  English: assetPath("assets/subject-english.webp"),
+  "Literacy & Numeracy": assetPath("assets/subject-litnum.webp"),
+  Mathematics: assetPath("assets/subject-mathematics.webp"),
+  HSIE: assetPath("assets/subject-hsie.webp"),
+  PDHPE: assetPath("assets/subject-pdhpe.webp"),
+  CAPA: assetPath("assets/subject-capa.jpg"),
+  "Technology & STEM": assetPath("assets/subject-stem.webp"),
+  "Early Years": assetPath("assets/subject-early-years.webp"),
+};
+function subjectImage(label) {
+  return SUBJECT_IMAGE[label] || "";
+}
+
 function subjectIconType(label) {
   return {
     Science: "leaf",
@@ -1878,9 +1893,15 @@ function TeacherDashboard({ config, contentItems = defaultContentItems.map(resol
                   <div><strong>{subjectStageCount}</strong><span>{subjectStageCount === 1 ? "stage" : "stages"}</span></div>
                 </div>
               </div>
-              <div className="lib-hero-art subject-hero-art" aria-hidden="true">
-                <Icon type={activeSubject ? subjectIconType(activeSubject) : "leaf"} className="subject-hero-icon" />
-              </div>
+              {activeSubject && subjectImage(activeSubject) ? (
+                <div className="lib-hero-art" aria-hidden="true">
+                  <img src={subjectImage(activeSubject)} alt="" />
+                </div>
+              ) : (
+                <div className="lib-hero-art subject-hero-art" aria-hidden="true">
+                  <Icon type={activeSubject ? subjectIconType(activeSubject) : "leaf"} className="subject-hero-icon" />
+                </div>
+              )}
             </div>
 
             <div className="lib-toolbar">
