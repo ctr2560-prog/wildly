@@ -1026,6 +1026,35 @@ function useTrackaClasses(email) {
   return state;
 }
 
+// Read-only fetch of one Tracka class's students (for the class detail view).
+function useTrackaClassStudents(code) {
+  const [state, setState] = useState({ status: "idle", students: [] });
+  useEffect(() => {
+    if (!code) { setState({ status: "idle", students: [] }); return undefined; }
+    let cancelled = false;
+    setState({ status: "loading", students: [] });
+    (async () => {
+      try {
+        const snap = await getDocs(collection(db, "classes", code, "students"));
+        const students = snap.docs.map((docSnap) => {
+          const data = docSnap.data();
+          return {
+            id: docSnap.id,
+            name: data.studentName || data.alias || data.name || docSnap.id,
+            points: Number(data.totalPoints) || 0,
+            badges: Array.isArray(data.badges) ? data.badges.length : 0,
+          };
+        }).sort((a, b) => b.points - a.points);
+        if (!cancelled) setState({ status: "ready", students });
+      } catch (error) {
+        if (!cancelled) setState({ status: "error", students: [] });
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [code]);
+  return state;
+}
+
 function useSessionUser() {
   const [state, setState] = useState({ status: "loading", user: null, profile: null });
 
@@ -1473,6 +1502,10 @@ function TeacherDashboard({ config, contentItems = defaultContentItems.map(resol
   const subjectStageCount = new Set(subjectScopedItems.map((item) => item.stage).filter(Boolean)).size;
   const trackaClasses = useTrackaClasses(teacherEmail);
   const [assignClassId, setAssignClassId] = useState(null);
+  const [detailClass, setDetailClass] = useState(null); // { kind: "wildly", id } | { kind: "tracka", ...class }
+  const [createOpen, setCreateOpen] = useState(false);
+  const detailTrackaCode = detailClass?.kind === "tracka" ? (detailClass.classCode || detailClass.id) : "";
+  const trackaStudents = useTrackaClassStudents(detailTrackaCode);
   const activeSubjectCopy = subjects.find(([label]) => label === activeSubject)?.[2] || "";
   const contentDetail = publishedItems.find((item) => item.id === contentId) || null;
   const contentActivityBlocks = contentDetail ? buildLessonActivityBlocks(contentDetail) : [];
@@ -2320,13 +2353,102 @@ function TeacherDashboard({ config, contentItems = defaultContentItems.map(resol
           </section>
         )}
 
-        {page === "classes" && (
+        {page === "classes" && detailClass?.kind === "wildly" && (() => {
+          const cls = teacherClasses.find((c) => c.id === detailClass.id);
+          if (!cls) { setDetailClass(null); return null; }
+          const assigned = (assignmentsByClass[cls.id] || []).map((a) => ({ assignment: a, item: contentById[a.contentId] })).filter((x) => x.item);
+          const subjectsCovered = new Set(assigned.map((x) => x.item.subject).filter(Boolean)).size;
+          const quizCount = assigned.filter((x) => x.item.materials?.quiz?.questions?.length).length;
+          const totalMinutes = assigned.reduce((sum, x) => sum + (Number(x.item.durationMinutes) || 0), 0);
+          return (
+            <section className="mc-page mc-detail">
+              <button type="button" className="mc-back" onClick={() => setDetailClass(null)}>← All classes</button>
+              <div className="mc-detail-head">
+                <div>
+                  <span className="lib-hero-eyebrow mc-detail-eyebrow">Your class</span>
+                  <h1>{cls.title}</h1>
+                  <p>{cls.stage}</p>
+                </div>
+                <button type="button" className="mc-detail-del" onClick={() => { if (window.confirm(`Delete “${cls.title}”? This won't affect any Tracka data.`)) { onDeleteClass(cls.id); setDetailClass(null); } }}>Delete class</button>
+              </div>
+              <div className="mc-stat-row">
+                <div className="mc-stat"><strong>{assigned.length}</strong><span>lessons &amp; units</span></div>
+                <div className="mc-stat"><strong>{subjectsCovered}</strong><span>subjects</span></div>
+                <div className="mc-stat"><strong>{quizCount}</strong><span>check-in quizzes</span></div>
+                <div className="mc-stat"><strong>{totalMinutes}</strong><span>est. minutes</span></div>
+              </div>
+              <div className="mc-section-head">
+                <div><h2>Assigned lessons &amp; units</h2></div>
+                <button type="button" className="primary-action" onClick={() => setAssignClassId(cls.id)}>+ Assign</button>
+              </div>
+              {assigned.length ? (
+                <div className="mc-detail-list">
+                  {assigned.map(({ assignment, item }) => (
+                    <article className="mc-detail-item" key={assignment.id} style={{ "--accent": subjectAccent(item.subject) }}>
+                      <a className="mc-detail-item-media" href={teacherContentRoute(item.id)}><img src={item.image} alt="" loading="lazy" /></a>
+                      <div className="mc-detail-item-body">
+                        <span className="mc-detail-item-type">{item.type === "Learning Path" ? "Unit" : "Lesson"} · {item.subject}{item.stage ? ` · ${item.stage}` : ""}</span>
+                        <h3><a href={teacherContentRoute(item.id)}>{item.title}</a></h3>
+                      </div>
+                      <div className="mc-detail-item-actions">
+                        <a className="secondary-action" href={teacherContentRoute(item.id)}>Open</a>
+                        <button type="button" className="mc-remove" onClick={() => onToggleAssignment(cls.id, item.id)} aria-label="Remove">✕</button>
+                      </div>
+                    </article>
+                  ))}
+                </div>
+              ) : (
+                <div className="lib-empty"><Icon type="book" className="" /><h3>No lessons assigned</h3><p>Assign lessons and units to build this class's plan.</p><button type="button" className="primary-action" onClick={() => setAssignClassId(cls.id)}>+ Assign lessons</button></div>
+              )}
+            </section>
+          );
+        })()}
+
+        {page === "classes" && detailClass?.kind === "tracka" && (() => {
+          const tc = detailClass;
+          const avg = tc.studentCount ? Math.round((tc.totalPoints || 0) / tc.studentCount) : 0;
+          return (
+            <section className="mc-page mc-detail">
+              <button type="button" className="mc-back" onClick={() => setDetailClass(null)}>← All classes</button>
+              <div className="mc-detail-head">
+                <div>
+                  <span className="lib-hero-eyebrow mc-detail-eyebrow">Taronga Tracka · read-only</span>
+                  <h1>{tc.className || tc.classCode}</h1>
+                  <p>{[tc.stage, tc.subject, tc.sessionType].filter(Boolean).join(" · ") || "Class"} · Code {tc.classCode}</p>
+                </div>
+                <span className="mc-tracka-badge">Tracka</span>
+              </div>
+              <div className="mc-stat-row">
+                <div className="mc-stat"><strong>{tc.studentCount ?? "—"}</strong><span>students</span></div>
+                <div className="mc-stat"><strong>{tc.totalPoints != null ? tc.totalPoints.toLocaleString() : "—"}</strong><span>total points</span></div>
+                <div className="mc-stat"><strong>{avg.toLocaleString()}</strong><span>avg points</span></div>
+              </div>
+              <div className="mc-section-head"><div><h2>Students</h2><p>Sorted by points — live from Taronga Tracka.</p></div></div>
+              {trackaStudents.status === "loading" && <p className="mc-empty-line">Loading students…</p>}
+              {trackaStudents.status === "error" && <p className="mc-empty-line">Couldn't load students right now.</p>}
+              {trackaStudents.status === "ready" && (trackaStudents.students.length ? (
+                <ol className="mc-leaderboard">
+                  {trackaStudents.students.map((student, index) => (
+                    <li key={student.id}>
+                      <span className="mc-rank">{index + 1}</span>
+                      <span className="mc-student-name">{student.name}</span>
+                      {student.badges ? <span className="mc-student-badges">{student.badges} badge{student.badges !== 1 ? "s" : ""}</span> : null}
+                      <span className="mc-student-points">{student.points.toLocaleString()} pts</span>
+                    </li>
+                  ))}
+                </ol>
+              ) : <p className="mc-empty-line">No students have joined this class yet.</p>)}
+            </section>
+          );
+        })()}
+
+        {page === "classes" && !detailClass && (
           <section className="mc-page">
             <div className="lib-hero mc-hero">
               <div className="lib-hero-inner">
                 <span className="lib-hero-eyebrow">My Classes</span>
                 <h1>Your classes</h1>
-                <p>Create teaching groups, assign lessons and units, and see your connected Taronga Tracka classes at a glance.</p>
+                <p>Create teaching groups, assign lessons and units, and see your connected Taronga Tracka classes. Click any class to view its details.</p>
                 <div className="lib-hero-stats">
                   <div><strong>{classes.length}</strong><span>{classes.length === 1 ? "class" : "classes"}</span></div>
                   <div><strong>{assignments.length}</strong><span>assignments</span></div>
@@ -2338,52 +2460,25 @@ function TeacherDashboard({ config, contentItems = defaultContentItems.map(resol
 
             <div className="mc-section-head">
               <div><h2>Your classes</h2><p>Wildly teaching groups you can assign lessons and units to.</p></div>
+              <button type="button" className="primary-action" onClick={() => setCreateOpen(true)}>+ New class</button>
             </div>
-            <form className="mc-create" onSubmit={submitNewClass}>
-              <input type="text" value={classDraft.title} onChange={(event) => setClassDraft((current) => ({ ...current, title: event.target.value }))} placeholder="Class name — e.g. Year 5 Red" />
-              <select value={classDraft.stage} onChange={(event) => setClassDraft((current) => ({ ...current, stage: event.target.value }))}>{["Early Years", "Early Stage 1", "Stage 1", "Stage 2", "Stage 3", "Stage 4", "Stage 5", "Stage 6"].map((stage) => <option key={stage} value={stage}>{stage}</option>)}</select>
-              <button type="submit" className="primary-action">+ Create class</button>
-            </form>
-
-            {teacherClasses.length ? (
-              <div className="mc-grid">
-                {teacherClasses.map((classroom) => {
-                  const assigned = assignmentsByClass[classroom.id] || [];
-                  return (
-                    <article className="mc-card" key={classroom.id}>
-                      <div className="mc-card-head">
-                        <div><h3>{classroom.title}</h3><span className="mc-card-stage">{classroom.stage}</span></div>
-                        <button type="button" className="mc-card-del" onClick={() => { if (window.confirm(`Delete “${classroom.title}”? This won't affect any Tracka data.`)) onDeleteClass(classroom.id); }} aria-label={`Delete ${classroom.title}`}>✕</button>
-                      </div>
-                      <div className="mc-assigned">
-                        <div className="mc-assigned-head"><span>Assigned lessons &amp; units</span><span className="mc-count">{assigned.length}</span></div>
-                        {assigned.length ? (
-                          <ul className="mc-assigned-list">
-                            {assigned.map((assignment) => {
-                              const item = contentById[assignment.contentId];
-                              if (!item) return null;
-                              return (
-                                <li key={assignment.id}>
-                                  <a href={teacherContentRoute(assignment.contentId)}>{item.title}</a>
-                                  <span className="mc-chip-type">{item.type === "Learning Path" ? "Unit" : "Lesson"}</span>
-                                  <button type="button" className="mc-remove" onClick={() => onToggleAssignment(classroom.id, assignment.contentId)} aria-label="Remove">✕</button>
-                                </li>
-                              );
-                            })}
-                          </ul>
-                        ) : <p className="mc-empty-line">No lessons assigned yet.</p>}
-                      </div>
-                      <button type="button" className="mc-assign-btn" onClick={() => setAssignClassId(classroom.id)}><Icon type="plus" className="" />Assign lessons &amp; units</button>
-                    </article>
-                  );
-                })}
-              </div>
-            ) : (
-              <div className="lib-empty"><Icon type="users" className="" /><h3>No classes yet</h3><p>Create your first class above to start assigning lessons.</p></div>
-            )}
+            <div className="mc-tiles">
+              {teacherClasses.map((classroom) => {
+                const count = (assignmentsByClass[classroom.id] || []).length;
+                return (
+                  <button type="button" className="mc-tile" key={classroom.id} onClick={() => setDetailClass({ kind: "wildly", id: classroom.id })}>
+                    <div className="mc-tile-top"><h3>{classroom.title}</h3><span className="mc-tile-stage">{classroom.stage}</span></div>
+                    <div className="mc-tile-foot"><span>{count} lesson{count !== 1 ? "s" : ""} assigned</span><span className="mc-tile-arrow">→</span></div>
+                  </button>
+                );
+              })}
+              <button type="button" className="mc-tile mc-tile-new" onClick={() => setCreateOpen(true)}>
+                <Icon type="plus" className="" /><span>New class</span>
+              </button>
+            </div>
 
             <div className="mc-section-head mc-tracka-head">
-              <div><h2>Taronga Tracka classes</h2><p>Live analytics from your Tracka classes, shown here for reference.</p></div>
+              <div><h2>Taronga Tracka classes</h2><p>Live analytics from your Tracka classes — click to view students.</p></div>
               <span className="mc-readonly">Read-only</span>
             </div>
             {trackaClasses.status === "loading" && <p className="mc-empty-line">Loading your Tracka classes…</p>}
@@ -2398,25 +2493,39 @@ function TeacherDashboard({ config, contentItems = defaultContentItems.map(resol
             )}
             {trackaClasses.status === "error" && <p className="mc-empty-line">Couldn't load your Tracka classes right now — please try again later.</p>}
             {trackaClasses.status === "ready" && (trackaClasses.classes.length ? (
-              <div className="mc-grid">
+              <div className="mc-tiles">
                 {trackaClasses.classes.map((tc) => (
-                  <article className="mc-card mc-tracka-card" key={tc.id}>
-                    <div className="mc-card-head">
-                      <div><h3>{tc.className || tc.classCode}</h3><span className="mc-card-stage">{[tc.stage, tc.subject, tc.sessionType].filter(Boolean).join(" · ") || "Class"}</span></div>
-                      <span className="mc-tracka-badge">Tracka</span>
-                    </div>
-                    <div className="mc-tracka-stats">
-                      <div><strong>{tc.studentCount ?? "—"}</strong><span>students</span></div>
-                      <div><strong>{tc.totalPoints != null ? tc.totalPoints.toLocaleString() : "—"}</strong><span>points</span></div>
-                      <div><strong className="mc-code">{tc.classCode}</strong><span>class code</span></div>
-                    </div>
-                  </article>
+                  <button type="button" className="mc-tile mc-tile-tracka" key={tc.id} onClick={() => setDetailClass({ kind: "tracka", ...tc })}>
+                    <div className="mc-tile-top"><h3>{tc.className || tc.classCode}</h3><span className="mc-tile-badge">Tracka</span></div>
+                    <div className="mc-tile-meta">{[tc.stage, tc.subject, tc.sessionType].filter(Boolean).join(" · ") || "Class"}</div>
+                    <div className="mc-tile-foot"><span>{tc.studentCount ?? "—"} students · {tc.totalPoints != null ? tc.totalPoints.toLocaleString() : "—"} pts</span><span className="mc-tile-arrow">→</span></div>
+                  </button>
                 ))}
               </div>
             ) : (
               <p className="mc-empty-line">No active Taronga Tracka classes found for this account.</p>
             ))}
 
+            {createOpen && (
+              <div className="cc-modal-backdrop" role="dialog" aria-modal="true" onClick={() => setCreateOpen(false)}>
+                <div className="cc-modal sc-detail mc-create-modal" onClick={(event) => event.stopPropagation()}>
+                  <div className="sc-detail-header">
+                    <div><span className="content-type">New class</span><h3>Create a class</h3></div>
+                    <div className="sc-detail-actions"><button type="button" className="secondary-button" onClick={() => setCreateOpen(false)}>Cancel</button></div>
+                  </div>
+                  <form className="sc-form-body mc-create-form" onSubmit={(event) => { const had = classDraft.title.trim(); submitNewClass(event); if (had) setCreateOpen(false); }}>
+                    <div className="sc-field"><label>Class name</label><input type="text" autoFocus value={classDraft.title} onChange={(event) => setClassDraft((current) => ({ ...current, title: event.target.value }))} placeholder="e.g. Year 5 Red" /></div>
+                    <div className="sc-field"><label>Stage</label><select value={classDraft.stage} onChange={(event) => setClassDraft((current) => ({ ...current, stage: event.target.value }))}>{["Early Years", "Early Stage 1", "Stage 1", "Stage 2", "Stage 3", "Stage 4", "Stage 5", "Stage 6"].map((stage) => <option key={stage} value={stage}>{stage}</option>)}</select></div>
+                    <button type="submit" className="primary-action">Create class</button>
+                  </form>
+                </div>
+              </div>
+            )}
+          </section>
+        )}
+
+        {page === "classes" && (
+          <>
             {assignClassId && (
               <div className="cc-modal-backdrop" role="dialog" aria-modal="true" onClick={() => setAssignClassId(null)}>
                 <div className="cc-modal sc-detail mc-assign-modal" onClick={(event) => event.stopPropagation()}>
@@ -2442,7 +2551,7 @@ function TeacherDashboard({ config, contentItems = defaultContentItems.map(resol
                 </div>
               </div>
             )}
-          </section>
+          </>
         )}
 
         {page === "students" && (
