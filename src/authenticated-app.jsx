@@ -658,10 +658,23 @@ function subjectAccent(label) {
   return SUBJECT_ACCENT[label] || "#0b4c32";
 }
 
-// Shared Sydney-from-Taronga banner image used across every subject hero.
+// Sydney-from-Taronga image, used on the "All subjects" hero.
 const SUBJECT_BANNER_IMAGE = assetPath("assets/subject-sydney.webp");
-function subjectImage() {
-  return SUBJECT_BANNER_IMAGE;
+const SUBJECT_IMAGE = {
+  Science: assetPath("assets/subject-science.webp"),
+  English: assetPath("assets/subject-english.webp"),
+  "Literacy & Numeracy": assetPath("assets/subject-litnum.webp"),
+  Mathematics: assetPath("assets/subject-mathematics.webp"),
+  HSIE: assetPath("assets/subject-hsie.webp"),
+  PDHPE: assetPath("assets/subject-pdhpe.webp"),
+  CAPA: assetPath("assets/subject-capa.jpg"),
+  "Technology & STEM": assetPath("assets/subject-stem.webp"),
+  "Early Years": assetPath("assets/subject-early-years.webp"),
+};
+// A specific subject shows its own photo; the "All subjects" hero (no active
+// subject) falls back to the Sydney-from-Taronga image.
+function subjectImage(label) {
+  return SUBJECT_IMAGE[label] || SUBJECT_BANNER_IMAGE;
 }
 
 function subjectIconType(label) {
@@ -1885,7 +1898,7 @@ function TeacherDashboard({ config, contentItems = defaultContentItems.map(resol
                 </div>
               </div>
               <div className="lib-hero-art" aria-hidden="true">
-                <img src={subjectImage()} alt="" />
+                <img src={subjectImage(activeSubject)} alt="" />
               </div>
             </div>
 
