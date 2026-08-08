@@ -2543,19 +2543,31 @@ function TeacherDashboard({ config, contentItems = defaultContentItems.map(resol
             <div className="mc-tiles">
               {unifiedClasses.map((cls) => {
                 const count = assignedCountFor(cls.assignId);
+                const isTracka = cls.kind === "tracka";
+                const stageText = cls.stage ? (/^(stage|year|early)/i.test(String(cls.stage)) ? cls.stage : `Stage ${cls.stage}`) : "";
+                const subjectText = cls.subject ? cls.subject.charAt(0).toUpperCase() + cls.subject.slice(1) : "";
+                const meta = [stageText, subjectText].filter(Boolean).join(" · ") || "Class";
+                const footText = `${count ? `${count} lesson${count !== 1 ? "s" : ""}` : "No lessons yet"}${isTracka ? ` · ${cls.studentCount ?? 0} students` : ""}`;
                 return (
-                  <button type="button" className={`mc-tile${cls.kind === "tracka" ? " mc-tile-tracka" : ""}`} key={cls.key} onClick={() => setDetailClass(cls)}>
-                    <div className="mc-tile-top">
-                      <h3>{cls.title}</h3>
-                      {cls.kind === "tracka" ? <span className="mc-tile-badge">Tracka</span> : null}
+                  <button type="button" className={`mc-tile${isTracka ? " mc-tile-tracka" : ""}`} key={cls.key} onClick={() => setDetailClass(cls)}>
+                    <div className="mc-tile-head">
+                      <span className="mc-tile-avatar">{(cls.title || "?").trim().charAt(0).toUpperCase()}</span>
+                      <div className="mc-tile-titles">
+                        <h3>{cls.title}</h3>
+                        <span className="mc-tile-meta">{meta}</span>
+                      </div>
+                      {isTracka ? <span className="mc-tile-badge">Tracka</span> : null}
                     </div>
-                    <div className="mc-tile-meta">{[cls.stage, cls.subject, cls.kind === "tracka" ? `${cls.studentCount ?? 0} students` : null].filter(Boolean).join(" · ") || "Class"}</div>
-                    <div className="mc-tile-foot"><span>{count} lesson{count !== 1 ? "s" : ""} assigned</span><span className="mc-tile-arrow">→</span></div>
+                    <div className="mc-tile-foot">
+                      <span>{footText}</span>
+                      <span className="mc-tile-arrow" aria-hidden="true">→</span>
+                    </div>
                   </button>
                 );
               })}
               <button type="button" className="mc-tile mc-tile-new" onClick={() => setCreateOpen(true)}>
-                <Icon type="plus" className="" /><span>New class</span>
+                <span className="mc-tile-new-plus"><Icon type="plus" className="" /></span>
+                <span>New class</span>
               </button>
             </div>
 
