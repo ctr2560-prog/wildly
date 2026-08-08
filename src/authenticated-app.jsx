@@ -3149,24 +3149,44 @@ function TeacherPage({ page = "dashboard", subject = "", contentId = "", tvVideo
     }
   }, [preview, sessionStatus, user, profile]);
 
-  // On entering the teacher side, hold a branded loader while the hero/banner
-  // images preload — so the dashboard appears fully formed, not half-loaded.
+  // On entering the teacher side, hold a branded loader until the session and
+  // dashboard config are ready AND the real hero/banner images have preloaded —
+  // so the dashboard (and its banner) appears fully formed, not half-loaded.
   const [booting, setBooting] = useState(!previewProp);
+  const bootStartRef = useRef(Date.now());
+  const bootedRef = useRef(false);
   useEffect(() => {
-    if (previewProp) return undefined;
-    const urls = [assets.heroKoala, assets.giraffe, assets.teacherPl, assetPath("assets/subject-sydney.webp")];
-    let done = false;
-    const finish = () => { if (!done) { done = true; setBooting(false); } };
-    const started = Date.now();
+    if (previewProp) return;
+    // Absolute safety cap so the loader can never hang.
+    const cap = window.setTimeout(() => { bootedRef.current = true; setBooting(false); }, 8000);
+    return () => window.clearTimeout(cap);
+  }, [previewProp]);
+  useEffect(() => {
+    if (previewProp || bootedRef.current) return;
+    // Wait until we actually know what the dashboard will show.
+    if (sessionStatus === "loading" || status === "loading") return;
+    bootedRef.current = true;
+    const activeBanners = (config.banners || []).filter((banner) => banner.active);
+    const heroImages = activeBanners.length
+      ? activeBanners.map((banner) => bannerImage(banner) || config.heroImageUrl)
+      : [config.heroImageUrl];
+    const urls = [
+      ...heroImages,
+      assets.giraffe,
+      assets.teacherPl,
+      tarongaTvVideos[0]?.thumbnail,
+      assetPath("assets/subject-sydney.webp"),
+    ].filter(Boolean);
     Promise.all(urls.map((src) => new Promise((resolve) => {
       const img = new Image();
       img.onload = resolve;
       img.onerror = resolve;
       img.src = src;
-    }))).then(() => window.setTimeout(finish, Math.max(0, 1800 - (Date.now() - started))));
-    const hardStop = window.setTimeout(finish, 6000);
-    return () => window.clearTimeout(hardStop);
-  }, [previewProp]);
+    }))).then(() => {
+      const elapsed = Date.now() - bootStartRef.current;
+      window.setTimeout(() => setBooting(false), Math.max(0, 1400 - elapsed));
+    });
+  }, [previewProp, sessionStatus, status, config, tarongaTvVideos]);
 
   if (!preview && (sessionStatus === "loading" || booting)) {
     return <LoadingScreen label="Getting your classroom ready…" />;
