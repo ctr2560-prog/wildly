@@ -1600,8 +1600,6 @@ function TeacherDashboard({ config, contentItems = defaultContentItems.map(resol
   const navItems = [
     ["", "Dashboard", "grid"],
     ["classes", "My Classes", "users"],
-    ["students", "Students", "cap"],
-    ["reports", "Reports", "report"],
     ["saved", "Saved", "bookmark"],
     ["calendar", "Calendar", "calendar"],
   ];
