@@ -1583,6 +1583,12 @@ function TeacherDashboard({ config, contentItems = defaultContentItems.map(resol
   });
   const classes = workspace.classes || defaultTeacherClasses;
   const assignments = workspace.assignments || [];
+  // Every class — Tracka-connected and Wildly-only — lives in one unified list.
+  const unifiedClasses = [
+    ...trackaClasses.classes.map((tc) => ({ key: `t-${tc.classCode || tc.id}`, kind: "tracka", assignId: tc.classCode || tc.id, title: tc.className || tc.classCode, stage: tc.stage, subject: tc.subject, sessionType: tc.sessionType, classCode: tc.classCode || tc.id, studentCount: tc.studentCount, totalPoints: tc.totalPoints })),
+    ...classes.map((c) => ({ key: `w-${c.id}`, kind: "wildly", assignId: c.id, id: c.id, title: c.title, stage: c.stage })),
+  ];
+  const assignedCountFor = (assignId) => assignments.filter((a) => a.classId === assignId).length;
   const savedItemIds = workspace.savedItemIds || [];
   const classStudents = defaultTeacherStudents.filter((student) => classes.some((classroom) => classroom.id === student.classId));
   const assignmentsByClass = Object.fromEntries(classes.map((classroom) => [classroom.id, assignments.filter((assignment) => assignment.classId === classroom.id)]));
@@ -2371,10 +2377,11 @@ function TeacherDashboard({ config, contentItems = defaultContentItems.map(resol
           </section>
         )}
 
-        {page === "classes" && detailClass?.kind === "wildly" && (() => {
-          const cls = teacherClasses.find((c) => c.id === detailClass.id);
-          if (!cls) { setDetailClass(null); return null; }
-          const assigned = (assignmentsByClass[cls.id] || []).map((a) => ({ assignment: a, item: contentById[a.contentId] })).filter((x) => x.item);
+        {page === "classes" && detailClass && (() => {
+          const cls = detailClass;
+          const isTracka = cls.kind === "tracka";
+          const assignId = cls.assignId;
+          const assigned = assignments.filter((a) => a.classId === assignId).map((a) => ({ assignment: a, item: contentById[a.contentId] })).filter((x) => x.item);
           const subjectsCovered = new Set(assigned.map((x) => x.item.subject).filter(Boolean)).size;
           const quizzed = assigned.filter((x) => x.item.materials?.quiz?.questions?.length);
           const quizCount = quizzed.length;
@@ -2382,26 +2389,58 @@ function TeacherDashboard({ config, contentItems = defaultContentItems.map(resol
           const quizQuestions = quizzed.reduce((all, x) => all.concat(x.item.materials.quiz.questions), []);
           const tfCount = quizQuestions.filter((q) => q.type === "true-false").length;
           const mcCount = quizQuestions.length - tfCount;
+          const roster = isTracka ? trackaStudents.students : [];
+          const quizQTotal = roster.reduce((sum, s) => sum + (s.quizTotal || 0), 0);
+          const quizCorrectTotal = roster.reduce((sum, s) => sum + (s.quizCorrect || 0), 0);
+          const classQuizPct = quizQTotal ? Math.round((quizCorrectTotal / quizQTotal) * 100) : null;
+          const writingSumTotal = roster.reduce((sum, s) => sum + (s.writingSum || 0), 0);
+          const writingCountTotal = roster.reduce((sum, s) => sum + (s.writingCount || 0), 0);
+          const classLiteracy = writingCountTotal ? (writingSumTotal / writingCountTotal) : null;
+          const avgPts = cls.studentCount ? Math.round((cls.totalPoints || 0) / cls.studentCount) : 0;
           return (
             <section className="mc-page mc-detail">
               <button type="button" className="mc-back" onClick={() => setDetailClass(null)}>← All classes</button>
               <div className="mc-detail-head">
                 <div>
-                  <span className="lib-hero-eyebrow mc-detail-eyebrow">Your class</span>
+                  <span className="lib-hero-eyebrow mc-detail-eyebrow">{isTracka ? "Taronga Tracka class" : "Your class"}</span>
                   <h1>{cls.title}</h1>
-                  <p>{cls.stage}</p>
+                  <p>{[cls.stage, cls.subject, cls.sessionType].filter(Boolean).join(" · ") || "Class"}{isTracka ? ` · Code ${cls.classCode}` : ""}</p>
                 </div>
-                <button type="button" className="mc-detail-del" onClick={() => { if (window.confirm(`Delete “${cls.title}”? This won't affect any Tracka data.`)) { onDeleteClass(cls.id); setDetailClass(null); } }}>Delete class</button>
+                {isTracka ? <span className="mc-tracka-badge">Tracka</span> : <button type="button" className="mc-detail-del" onClick={() => { if (window.confirm(`Delete “${cls.title}”?`)) { onDeleteClass(cls.id); setDetailClass(null); } }}>Delete class</button>}
               </div>
+
+              {isTracka ? (
+                <>
+                  <div className="mc-section-head"><div><h2>Taronga Tracka analytics</h2><p>Live student data from Taronga Tracka.</p></div><span className="mc-readonly">Read-only</span></div>
+                  <div className="mc-stat-row">
+                    <div className="mc-stat"><strong>{cls.studentCount ?? "—"}</strong><span>students</span></div>
+                    <div className="mc-stat"><strong>{avgPts.toLocaleString()}</strong><span>avg points</span></div>
+                    <div className="mc-stat"><strong>{classQuizPct != null ? `${classQuizPct}%` : "—"}</strong><span>avg quiz score</span></div>
+                    <div className="mc-stat"><strong>{classLiteracy != null ? `${classLiteracy.toFixed(1)}/5` : "—"}</strong><span>avg literacy</span></div>
+                  </div>
+                </>
+              ) : (
+                <div className="mc-connect">
+                  <img src={assets.trackaLogo} alt="Taronga Tracka" />
+                  <div>
+                    <strong>Want the best out of this class?</strong>
+                    <p>Connect it to Taronga Tracka to unlock live student analytics — quiz scores, literacy and points — right here alongside your Wildly plan.</p>
+                  </div>
+                  <a className="secondary-action" href={appLinks.tracka} target="_blank" rel="noreferrer">See Taronga Tracka</a>
+                </div>
+              )}
+
+              <div className="mc-section-head"><div><h2>Wildly lesson plan</h2><p>Content you've assigned in Wildly.</p></div></div>
               <div className="mc-stat-row">
                 <div className="mc-stat"><strong>{assigned.length}</strong><span>lessons &amp; units</span></div>
                 <div className="mc-stat"><strong>{subjectsCovered}</strong><span>subjects</span></div>
                 <div className="mc-stat"><strong>{quizCount}</strong><span>check-in quizzes</span></div>
                 <div className="mc-stat"><strong>{totalMinutes}</strong><span>est. minutes</span></div>
               </div>
+
               <div className="mc-section-head">
                 <div><h2>Assigned lessons &amp; units</h2></div>
-                <button type="button" className="primary-action" onClick={() => setAssignClassId(cls.id)}>+ Assign</button>
+                <button type="button" className="primary-action" onClick={() => setAssignClassId(assignId)}>+ Assign</button>
               </div>
               {assigned.length ? (
                 <div className="mc-detail-list">
@@ -2414,14 +2453,22 @@ function TeacherDashboard({ config, contentItems = defaultContentItems.map(resol
                       </div>
                       <div className="mc-detail-item-actions">
                         <a className="secondary-action" href={teacherContentRoute(item.id)}>Open</a>
-                        <button type="button" className="mc-remove" onClick={() => onToggleAssignment(cls.id, item.id)} aria-label="Remove">✕</button>
+                        <button type="button" className="mc-remove" onClick={() => onToggleAssignment(assignId, item.id)} aria-label="Remove">✕</button>
                       </div>
                     </article>
                   ))}
                 </div>
               ) : (
-                <div className="lib-empty"><Icon type="book" className="" /><h3>No lessons assigned</h3><p>Assign lessons and units to build this class's plan.</p><button type="button" className="primary-action" onClick={() => setAssignClassId(cls.id)}>+ Assign lessons</button></div>
+                <div className="lib-empty"><Icon type="book" className="" /><h3>No lessons assigned</h3><p>Assign lessons and units to build this class's plan.</p><button type="button" className="primary-action" onClick={() => setAssignClassId(assignId)}>+ Assign lessons</button></div>
               )}
+
+              <div className="mc-reco">
+                <div>
+                  <strong>Taronga Tracka recommendations</strong>
+                  <p>{isTracka ? "Smart lesson suggestions based on this class's Tracka results are coming soon." : "Connect Taronga Tracka to get lesson recommendations tailored to your students."}</p>
+                </div>
+                <span className="mc-soon">Coming soon</span>
+              </div>
 
               {quizCount ? (
                 <>
@@ -2446,60 +2493,34 @@ function TeacherDashboard({ config, contentItems = defaultContentItems.map(resol
                   </div>
                 </>
               ) : null}
-            </section>
-          );
-        })()}
 
-        {page === "classes" && detailClass?.kind === "tracka" && (() => {
-          const tc = detailClass;
-          const avg = tc.studentCount ? Math.round((tc.totalPoints || 0) / tc.studentCount) : 0;
-          const roster = trackaStudents.students;
-          const quizQTotal = roster.reduce((sum, s) => sum + (s.quizTotal || 0), 0);
-          const quizCorrectTotal = roster.reduce((sum, s) => sum + (s.quizCorrect || 0), 0);
-          const classQuizPct = quizQTotal ? Math.round((quizCorrectTotal / quizQTotal) * 100) : null;
-          const writingSumTotal = roster.reduce((sum, s) => sum + (s.writingSum || 0), 0);
-          const writingCountTotal = roster.reduce((sum, s) => sum + (s.writingCount || 0), 0);
-          const classLiteracy = writingCountTotal ? (writingSumTotal / writingCountTotal) : null;
-          return (
-            <section className="mc-page mc-detail">
-              <button type="button" className="mc-back" onClick={() => setDetailClass(null)}>← All classes</button>
-              <div className="mc-detail-head">
-                <div>
-                  <span className="lib-hero-eyebrow mc-detail-eyebrow">Taronga Tracka · read-only</span>
-                  <h1>{tc.className || tc.classCode}</h1>
-                  <p>{[tc.stage, tc.subject, tc.sessionType].filter(Boolean).join(" · ") || "Class"} · Code {tc.classCode}</p>
-                </div>
-                <span className="mc-tracka-badge">Tracka</span>
-              </div>
-              <div className="mc-stat-row">
-                <div className="mc-stat"><strong>{tc.studentCount ?? "—"}</strong><span>students</span></div>
-                <div className="mc-stat"><strong>{avg.toLocaleString()}</strong><span>avg points</span></div>
-                <div className="mc-stat"><strong>{classQuizPct != null ? `${classQuizPct}%` : "—"}</strong><span>avg quiz score</span></div>
-                <div className="mc-stat"><strong>{classLiteracy != null ? `${classLiteracy.toFixed(1)}/5` : "—"}</strong><span>avg literacy</span></div>
-              </div>
-              <div className="mc-section-head"><div><h2>Students</h2><p>Live from Taronga Tracka — quiz score is first-attempt correct; literacy is the writing score out of 5.</p></div></div>
-              {trackaStudents.status === "loading" && <p className="mc-empty-line">Loading students…</p>}
-              {trackaStudents.status === "error" && <p className="mc-empty-line">Couldn't load students right now.</p>}
-              {trackaStudents.status === "ready" && (roster.length ? (
-                <ol className="mc-leaderboard mc-leaderboard-wide">
-                  <li className="mc-lb-head">
-                    <span className="mc-rank"></span>
-                    <span className="mc-student-name">Student</span>
-                    <span className="mc-lb-metric">Quiz</span>
-                    <span className="mc-lb-metric">Literacy</span>
-                    <span className="mc-student-points">Points</span>
-                  </li>
-                  {roster.map((student, index) => (
-                    <li key={student.id}>
-                      <span className="mc-rank">{index + 1}</span>
-                      <span className="mc-student-name">{student.name}</span>
-                      <span className="mc-lb-metric">{student.quizPct != null ? `${student.quizPct}%` : "—"}</span>
-                      <span className="mc-lb-metric">{student.literacy != null ? `${student.literacy.toFixed(1)}/5` : "—"}</span>
-                      <span className="mc-student-points">{student.points.toLocaleString()} pts</span>
-                    </li>
-                  ))}
-                </ol>
-              ) : <p className="mc-empty-line">No students have joined this class yet.</p>)}
+              {isTracka ? (
+                <>
+                  <div className="mc-section-head"><div><h2>Students</h2><p>Quiz score is first-attempt correct; literacy is the writing score out of 5.</p></div></div>
+                  {trackaStudents.status === "loading" && <p className="mc-empty-line">Loading students…</p>}
+                  {trackaStudents.status === "error" && <p className="mc-empty-line">Couldn't load students right now.</p>}
+                  {trackaStudents.status === "ready" && (roster.length ? (
+                    <ol className="mc-leaderboard mc-leaderboard-wide">
+                      <li className="mc-lb-head">
+                        <span className="mc-rank"></span>
+                        <span className="mc-student-name">Student</span>
+                        <span className="mc-lb-metric">Quiz</span>
+                        <span className="mc-lb-metric">Literacy</span>
+                        <span className="mc-student-points">Points</span>
+                      </li>
+                      {roster.map((student, index) => (
+                        <li key={student.id}>
+                          <span className="mc-rank">{index + 1}</span>
+                          <span className="mc-student-name">{student.name}</span>
+                          <span className="mc-lb-metric">{student.quizPct != null ? `${student.quizPct}%` : "—"}</span>
+                          <span className="mc-lb-metric">{student.literacy != null ? `${student.literacy.toFixed(1)}/5` : "—"}</span>
+                          <span className="mc-student-points">{student.points.toLocaleString()} pts</span>
+                        </li>
+                      ))}
+                    </ol>
+                  ) : <p className="mc-empty-line">No students have joined this class yet.</p>)}
+                </>
+              ) : null}
             </section>
           );
         })()}
@@ -2510,26 +2531,31 @@ function TeacherDashboard({ config, contentItems = defaultContentItems.map(resol
               <div className="lib-hero-inner">
                 <span className="lib-hero-eyebrow">My Classes</span>
                 <h1>Your classes</h1>
-                <p>Create teaching groups, assign lessons and units, and see your connected Taronga Tracka classes. Click any class to view its details.</p>
+                <p>All your teaching groups in one place — Taronga Tracka classes and your own Wildly classes. Click any class for its analytics and lesson plan.</p>
                 <div className="lib-hero-stats">
-                  <div><strong>{classes.length}</strong><span>{classes.length === 1 ? "class" : "classes"}</span></div>
+                  <div><strong>{unifiedClasses.length}</strong><span>{unifiedClasses.length === 1 ? "class" : "classes"}</span></div>
                   <div><strong>{assignments.length}</strong><span>assignments</span></div>
-                  <div><strong>{trackaClasses.classes.length}</strong><span>Tracka classes</span></div>
+                  <div><strong>{trackaClasses.classes.length}</strong><span>Tracka-connected</span></div>
                 </div>
               </div>
               <div className="lib-hero-art" aria-hidden="true"><img src={assets.heroKoala} alt="" /></div>
             </div>
 
             <div className="mc-section-head">
-              <div><h2>Your classes</h2><p>Wildly teaching groups you can assign lessons and units to.</p></div>
+              <div><h2>Your classes</h2><p>Taronga Tracka classes appear automatically. Create your own anytime.</p></div>
               <button type="button" className="primary-action" onClick={() => setCreateOpen(true)}>+ New class</button>
             </div>
+            {trackaClasses.status === "loading" && <p className="mc-empty-line">Loading your Tracka classes…</p>}
             <div className="mc-tiles">
-              {teacherClasses.map((classroom) => {
-                const count = (assignmentsByClass[classroom.id] || []).length;
+              {unifiedClasses.map((cls) => {
+                const count = assignedCountFor(cls.assignId);
                 return (
-                  <button type="button" className="mc-tile" key={classroom.id} onClick={() => setDetailClass({ kind: "wildly", id: classroom.id })}>
-                    <div className="mc-tile-top"><h3>{classroom.title}</h3><span className="mc-tile-stage">{classroom.stage}</span></div>
+                  <button type="button" className={`mc-tile${cls.kind === "tracka" ? " mc-tile-tracka" : ""}`} key={cls.key} onClick={() => setDetailClass(cls)}>
+                    <div className="mc-tile-top">
+                      <h3>{cls.title}</h3>
+                      {cls.kind === "tracka" ? <span className="mc-tile-badge">Tracka</span> : null}
+                    </div>
+                    <div className="mc-tile-meta">{[cls.stage, cls.subject, cls.kind === "tracka" ? `${cls.studentCount ?? 0} students` : null].filter(Boolean).join(" · ") || "Class"}</div>
                     <div className="mc-tile-foot"><span>{count} lesson{count !== 1 ? "s" : ""} assigned</span><span className="mc-tile-arrow">→</span></div>
                   </button>
                 );
@@ -2538,35 +2564,6 @@ function TeacherDashboard({ config, contentItems = defaultContentItems.map(resol
                 <Icon type="plus" className="" /><span>New class</span>
               </button>
             </div>
-
-            <div className="mc-section-head mc-tracka-head">
-              <div><h2>Taronga Tracka classes</h2><p>Live analytics from your Tracka classes — click to view students.</p></div>
-              <span className="mc-readonly">Read-only</span>
-            </div>
-            {trackaClasses.status === "loading" && <p className="mc-empty-line">Loading your Tracka classes…</p>}
-            {trackaClasses.status === "none" && (
-              <div className="mc-tracka-connect">
-                <img src={assets.trackaLogo} alt="Taronga Tracka" />
-                <div>
-                  <strong>Connect your Taronga Tracka classes</strong>
-                  <p>Sign in with a teacher account that has Taronga Tracka classes and their analytics will appear here automatically. Wildly only reads this data — it never changes it.</p>
-                </div>
-              </div>
-            )}
-            {trackaClasses.status === "error" && <p className="mc-empty-line">Couldn't load your Tracka classes right now — please try again later.</p>}
-            {trackaClasses.status === "ready" && (trackaClasses.classes.length ? (
-              <div className="mc-tiles">
-                {trackaClasses.classes.map((tc) => (
-                  <button type="button" className="mc-tile mc-tile-tracka" key={tc.id} onClick={() => setDetailClass({ kind: "tracka", ...tc })}>
-                    <div className="mc-tile-top"><h3>{tc.className || tc.classCode}</h3><span className="mc-tile-badge">Tracka</span></div>
-                    <div className="mc-tile-meta">{[tc.stage, tc.subject, tc.sessionType].filter(Boolean).join(" · ") || "Class"}</div>
-                    <div className="mc-tile-foot"><span>{tc.studentCount ?? "—"} students · {tc.totalPoints != null ? tc.totalPoints.toLocaleString() : "—"} pts</span><span className="mc-tile-arrow">→</span></div>
-                  </button>
-                ))}
-              </div>
-            ) : (
-              <p className="mc-empty-line">No active Taronga Tracka classes found for this account.</p>
-            ))}
 
             {createOpen && (
               <div className="cc-modal-backdrop" role="dialog" aria-modal="true" onClick={() => setCreateOpen(false)}>
@@ -2592,7 +2589,7 @@ function TeacherDashboard({ config, contentItems = defaultContentItems.map(resol
               <div className="cc-modal-backdrop" role="dialog" aria-modal="true" onClick={() => setAssignClassId(null)}>
                 <div className="cc-modal sc-detail mc-assign-modal" onClick={(event) => event.stopPropagation()}>
                   <div className="sc-detail-header">
-                    <div><span className="content-type">Assign to class</span><h3>{teacherClasses.find((c) => c.id === assignClassId)?.title || "Class"}</h3></div>
+                    <div><span className="content-type">Assign to class</span><h3>{unifiedClasses.find((c) => c.assignId === assignClassId)?.title || "Class"}</h3></div>
                     <div className="sc-detail-actions"><button type="button" className="secondary-button" onClick={() => setAssignClassId(null)}>Done</button></div>
                   </div>
                   <div className="sc-form-body">

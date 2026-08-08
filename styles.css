@@ -3560,3 +3560,45 @@ h2 {
   .mc-leaderboard-wide li { grid-template-columns: 24px 1fr 56px 60px; }
   .mc-leaderboard-wide .mc-student-points { display: none; }
 }
+
+/* My Classes — connect nudge + recommendations placeholder */
+.mc-connect {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  margin-top: 20px;
+  padding: 20px 22px;
+  border: 1px dashed var(--green-700);
+  border-radius: 16px;
+  background: linear-gradient(120deg, #f1f8ee, #eaf3e6);
+}
+.mc-connect img { width: 56px; height: 56px; object-fit: contain; flex: 0 0 auto; }
+.mc-connect > div { flex: 1; min-width: 0; }
+.mc-connect strong { display: block; color: var(--green-950); font-size: 16px; }
+.mc-connect p { margin: 4px 0 0; color: #47554d; font-size: 13.5px; line-height: 1.5; max-width: 62ch; }
+.mc-connect .secondary-action { flex: 0 0 auto; }
+
+.mc-reco {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 22px;
+  padding: 16px 20px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: #fbfdfb;
+}
+.mc-reco strong { display: block; color: var(--green-950); font-size: 15px; }
+.mc-reco p { margin: 3px 0 0; color: var(--muted); font-size: 13px; line-height: 1.5; max-width: 62ch; }
+.mc-soon {
+  flex: 0 0 auto;
+  padding: 5px 12px;
+  border-radius: 99px;
+  background: #eef4ec;
+  color: var(--green-800);
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
