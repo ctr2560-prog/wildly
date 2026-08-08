@@ -2669,31 +2669,13 @@ h2 {
   transform: none;
 }
 
-@keyframes cardRise {
-  from { opacity: 0; transform: translateY(18px) scale(0.98); }
-  to { opacity: 1; transform: none; }
-}
-
-.subject-grid .subject-card { opacity: 0; }
-.subject-grid.in .subject-card {
-  opacity: 1;
-  animation: cardRise 0.55s cubic-bezier(0.22, 0.61, 0.36, 1) backwards;
-  animation-delay: calc(var(--i, 0) * 55ms);
-}
-
+/* Dashboard subject cards & columns render instantly (no entrance animation) */
 .subject-card .subject-icon {
   transition: transform 0.2s ease;
 }
 
 .subject-card:hover .subject-icon {
   transform: scale(1.08) rotate(-2deg);
-}
-
-.dashboard-columns .dashboard-col { opacity: 0; }
-.dashboard-columns.in .dashboard-col {
-  opacity: 1;
-  animation: cardRise 0.55s cubic-bezier(0.22, 0.61, 0.36, 1) backwards;
-  animation-delay: calc(var(--i, 0) * 90ms);
 }
 
 .dash-item-card {

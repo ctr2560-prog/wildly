@@ -1471,8 +1471,6 @@ function TeacherDashboard({ config, contentItems = defaultContentItems.map(resol
   const [query, setQuery] = useState("");
   const [notice, setNotice] = useState("");
   const [classDraft, setClassDraft] = useState({ title: "", stage: "Stage 2" });
-  const [subjectGridRef, subjectGridIn] = useInView();
-  const [columnsRef, columnsIn] = useInView();
   const routeSubject = subjectFromSlug(subject);
 
   useEffect(() => {
@@ -1834,11 +1832,9 @@ function TeacherDashboard({ config, contentItems = defaultContentItems.map(resol
         {page === "dashboard" && (
           <>
             {activeBanners.length ? (
-              <Reveal className="reveal-block">
-                <TeacherHeroRotator banners={activeBanners} fallbackImage={config.heroImageUrl} />
-              </Reveal>
+              <TeacherHeroRotator banners={activeBanners} fallbackImage={config.heroImageUrl} />
             ) : (
-              <Reveal as="section" className="hero">
+              <section className="hero">
                 <div className="hero-copy">
                   <h1>{config.heroTitle}</h1>
                   <p className="hero-subtitle">{config.heroSubtitle}</p>
@@ -1849,10 +1845,10 @@ function TeacherDashboard({ config, contentItems = defaultContentItems.map(resol
                   </div>
                 </div>
                 <img className="hero-animal" src={config.heroImageUrl} alt="Koala with joey at Taronga" />
-              </Reveal>
+              </section>
             )}
 
-            <Reveal className="feature-cards">
+            <div className="feature-cards">
               <a className="feature-card feature-tv" href={teacherRoute("taronga-tv")}>
                 <div className="feature-media">
                   {tarongaTvVideos[0]?.thumbnail ? <img src={tarongaTvVideos[0].thumbnail} alt="" /> : null}
@@ -1877,7 +1873,7 @@ function TeacherDashboard({ config, contentItems = defaultContentItems.map(resol
                   <span className="feature-cta">Explore →</span>
                 </div>
               </a>
-            </Reveal>
+            </div>
 
             <section className="library-head">
               <div>
@@ -1891,9 +1887,9 @@ function TeacherDashboard({ config, contentItems = defaultContentItems.map(resol
               <button type="button" className="text-link" onClick={resetFilters}>View All Subjects</button>
             </section>
 
-            <section ref={subjectGridRef} className={`subject-grid ${subjectGridIn ? "in" : ""}`} aria-label="Subject cards">
-              {subjects.map(([label, cls, copy], index) => (
-                <a className={`subject-card ${cls} ${activeSubject === label ? "selected" : ""}`} style={{ "--i": index }} key={label} href={teacherRoute(`subjects/${subjectSlug(label)}`)}>
+            <section className="subject-grid" aria-label="Subject cards">
+              {subjects.map(([label, cls, copy]) => (
+                <a className={`subject-card ${cls} ${activeSubject === label ? "selected" : ""}`} key={label} href={teacherRoute(`subjects/${subjectSlug(label)}`)}>
                   <Icon type={subjectIconType(label)} className="subject-icon" />
                   <h3>{label}</h3>
                   <p>{copy}</p>
@@ -1902,7 +1898,7 @@ function TeacherDashboard({ config, contentItems = defaultContentItems.map(resol
               ))}
             </section>
 
-            <div ref={columnsRef} className={`dashboard-columns ${columnsIn ? "in" : ""}`}>
+            <div className="dashboard-columns">
               <section className="dashboard-col" style={{ "--i": 0 }}>
                 <h2 className="col-heading">Continue Learning</h2>
                 {recentItems.length === 0 ? (
