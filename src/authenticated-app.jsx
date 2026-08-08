@@ -3099,6 +3099,36 @@ function StaffPreviewBar() {
   );
 }
 
+// Full-screen brand loader with the Wildly logo and a platypus swimming through
+// a little pond. Shown while the teacher side boots so hero/banner images can
+// preload before the dashboard appears.
+function LoadingScreen({ label = "Loading…" }) {
+  return (
+    <div className="wl-load">
+      <div className="wl-load-inner">
+        <img className="wl-load-logo" src={assets.wildlyLogo} alt="Wildly by Taronga" />
+        <div className="wl-load-pond">
+          <svg className="wl-load-platypus" viewBox="0 0 130 72" aria-hidden="true">
+            <path d="M30 40 Q6 30 8 40 Q6 50 30 43 Z" fill="#6a4732" />
+            <ellipse cx="66" cy="40" rx="38" ry="20" fill="#7c5640" />
+            <ellipse cx="70" cy="47" rx="30" ry="11" fill="#8f6650" />
+            <path d="M96 34 Q126 29 126 41 Q126 53 96 47 Z" fill="#3d281b" />
+            <circle cx="90" cy="32" r="3.4" fill="#1b120c" />
+            <circle cx="91.2" cy="31" r="1.1" fill="#fff" opacity="0.85" />
+            <path d="M60 57 l9 11 l8 -9 Z" fill="#5b3e2b" />
+          </svg>
+          <span className="wl-ripple wl-ripple-1" />
+          <span className="wl-ripple wl-ripple-2" />
+          <span className="wl-bubble wl-bubble-1" />
+          <span className="wl-bubble wl-bubble-2" />
+          <span className="wl-bubble wl-bubble-3" />
+        </div>
+        <p className="wl-load-label">{label}</p>
+      </div>
+    </div>
+  );
+}
+
 function TeacherPage({ page = "dashboard", subject = "", contentId = "", tvVideoId = "", preview: previewProp = false }) {
   const preview = previewProp || staffPreviewActive();
   const { config, status } = useDashboardConfig();
@@ -3130,8 +3160,27 @@ function TeacherPage({ page = "dashboard", subject = "", contentId = "", tvVideo
     }
   }, [preview, sessionStatus, user, profile]);
 
-  if (!preview && sessionStatus === "loading") {
-    return <main className="auth-page"><section className="auth-card"><p>Loading your account...</p></section></main>;
+  // On entering the teacher side, hold a branded loader while the hero/banner
+  // images preload — so the dashboard appears fully formed, not half-loaded.
+  const [booting, setBooting] = useState(!previewProp);
+  useEffect(() => {
+    if (previewProp) return undefined;
+    const urls = [assets.heroKoala, assets.giraffe, assets.teacherPl, assetPath("assets/subject-sydney.webp")];
+    let done = false;
+    const finish = () => { if (!done) { done = true; setBooting(false); } };
+    const started = Date.now();
+    Promise.all(urls.map((src) => new Promise((resolve) => {
+      const img = new Image();
+      img.onload = resolve;
+      img.onerror = resolve;
+      img.src = src;
+    }))).then(() => window.setTimeout(finish, Math.max(0, 1800 - (Date.now() - started))));
+    const hardStop = window.setTimeout(finish, 6000);
+    return () => window.clearTimeout(hardStop);
+  }, [previewProp]);
+
+  if (!preview && (sessionStatus === "loading" || booting)) {
+    return <LoadingScreen label="Getting your classroom ready…" />;
   }
 
   if (!preview && sessionStatus === "ready" && !user) {
