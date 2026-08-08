@@ -3603,7 +3603,7 @@ h2 {
   text-transform: uppercase;
 }
 
-/* ── Branded loading screen with swimming platypus ────────────────────────── */
+/* ── Branded loading screen — animated logo ──────────────────────── */
 .wl-load {
   position: fixed;
   inset: 0;
@@ -3621,93 +3621,58 @@ h2 {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 22px;
+  gap: 26px;
 }
 
-.wl-load-logo {
-  width: 210px;
-  max-width: 62vw;
-  height: auto;
-  animation: wlBob 3.4s ease-in-out infinite;
-}
-@keyframes wlBob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
-
-.wl-load-pond {
+.wl-logo-wrap {
   position: relative;
-  width: 240px;
-  height: 118px;
-  overflow: hidden;
-  border-radius: 20px;
-  background: linear-gradient(180deg, #bfe3d0 0%, #7cc6a3 55%, #4fae86 100%);
-  box-shadow: inset 0 6px 16px rgba(255, 255, 255, 0.35), 0 14px 30px rgba(12, 33, 22, 0.12);
+  width: 230px;
+  max-width: 66vw;
+  animation: wlLogo 3.2s ease-in-out infinite;
 }
-/* rippling water surface */
-.wl-load-pond::before {
-  content: "";
-  position: absolute;
-  left: -20%;
-  top: 14px;
-  width: 140%;
-  height: 14px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.35);
-  filter: blur(2px);
-  animation: wlSurface 3.2s ease-in-out infinite;
-}
-@keyframes wlSurface { 0%, 100% { transform: translateX(-6px); } 50% { transform: translateX(6px); } }
-
-.wl-load-platypus {
-  position: absolute;
-  left: 50%;
-  top: 30px;
-  width: 118px;
+.wl-load-logo {
+  display: block;
+  width: 100%;
   height: auto;
-  margin-left: -59px;
-  filter: drop-shadow(0 6px 6px rgba(12, 33, 22, 0.18));
-  animation: wlSwim 3.4s ease-in-out infinite;
 }
-@keyframes wlSwim {
-  0% { transform: translate(-34px, 2px) rotate(-5deg); }
-  50% { transform: translate(34px, -5px) rotate(5deg); }
-  100% { transform: translate(-34px, 2px) rotate(-5deg); }
+/* gloss sweep clipped to the logo's shape */
+.wl-logo-shine {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(105deg, transparent 38%, rgba(255, 255, 255, 0.85) 50%, transparent 62%);
+  background-size: 250% 100%;
+  background-repeat: no-repeat;
+  -webkit-mask-size: contain;
+  mask-size: contain;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  mask-position: center;
+  animation: wlShine 2.6s ease-in-out infinite;
+}
+@keyframes wlLogo {
+  0%, 100% { transform: translateY(0) scale(1); }
+  50% { transform: translateY(-6px) scale(1.03); }
+}
+@keyframes wlShine {
+  0% { background-position: 180% 0; }
+  55%, 100% { background-position: -80% 0; }
 }
 
-.wl-ripple {
-  position: absolute;
-  bottom: 20px;
-  left: 50%;
-  width: 70px;
-  height: 12px;
-  margin-left: -35px;
+.wl-dots { display: flex; gap: 9px; }
+.wl-dots span {
+  width: 9px;
+  height: 9px;
   border-radius: 50%;
-  border: 2px solid rgba(255, 255, 255, 0.55);
-  opacity: 0;
-  animation: wlRipple 3.4s ease-out infinite;
+  background: var(--green-800);
+  opacity: 0.35;
+  animation: wlDot 1.1s ease-in-out infinite;
 }
-.wl-ripple-2 { animation-delay: 1.7s; }
-@keyframes wlRipple {
-  0% { transform: scale(0.5); opacity: 0.55; }
-  70% { opacity: 0.15; }
-  100% { transform: scale(1.5); opacity: 0; }
-}
-
-.wl-bubble {
-  position: absolute;
-  bottom: 24px;
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.7);
-  opacity: 0;
-  animation: wlBubble 2.8s ease-in infinite;
-}
-.wl-bubble-1 { left: 42%; animation-delay: 0.2s; }
-.wl-bubble-2 { left: 55%; width: 6px; height: 6px; animation-delay: 1.1s; }
-.wl-bubble-3 { left: 64%; width: 5px; height: 5px; animation-delay: 1.9s; }
-@keyframes wlBubble {
-  0% { transform: translateY(0) scale(0.6); opacity: 0; }
-  20% { opacity: 0.8; }
-  100% { transform: translateY(-70px) scale(1); opacity: 0; }
+.wl-dots span:nth-child(2) { animation-delay: 0.16s; }
+.wl-dots span:nth-child(3) { animation-delay: 0.32s; }
+@keyframes wlDot {
+  0%, 100% { opacity: 0.3; transform: translateY(0); }
+  40% { opacity: 1; transform: translateY(-5px); }
 }
 
 .wl-load-label {
@@ -3719,6 +3684,6 @@ h2 {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .wl-load-logo, .wl-load-platypus, .wl-load-pond::before, .wl-ripple, .wl-bubble { animation: none; }
-  .wl-load-platypus { transform: none; }
+  .wl-logo-wrap, .wl-logo-shine, .wl-dots span { animation: none; }
+  .wl-logo-shine { display: none; }
 }

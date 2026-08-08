@@ -3103,26 +3103,15 @@ function StaffPreviewBar() {
 // a little pond. Shown while the teacher side boots so hero/banner images can
 // preload before the dashboard appears.
 function LoadingScreen({ label = "Loading…" }) {
+  const logoMask = { WebkitMaskImage: `url("${assets.wildlyLogo}")`, maskImage: `url("${assets.wildlyLogo}")` };
   return (
     <div className="wl-load">
       <div className="wl-load-inner">
-        <img className="wl-load-logo" src={assets.wildlyLogo} alt="Wildly by Taronga" />
-        <div className="wl-load-pond">
-          <svg className="wl-load-platypus" viewBox="0 0 130 72" aria-hidden="true">
-            <path d="M30 40 Q6 30 8 40 Q6 50 30 43 Z" fill="#6a4732" />
-            <ellipse cx="66" cy="40" rx="38" ry="20" fill="#7c5640" />
-            <ellipse cx="70" cy="47" rx="30" ry="11" fill="#8f6650" />
-            <path d="M96 34 Q126 29 126 41 Q126 53 96 47 Z" fill="#3d281b" />
-            <circle cx="90" cy="32" r="3.4" fill="#1b120c" />
-            <circle cx="91.2" cy="31" r="1.1" fill="#fff" opacity="0.85" />
-            <path d="M60 57 l9 11 l8 -9 Z" fill="#5b3e2b" />
-          </svg>
-          <span className="wl-ripple wl-ripple-1" />
-          <span className="wl-ripple wl-ripple-2" />
-          <span className="wl-bubble wl-bubble-1" />
-          <span className="wl-bubble wl-bubble-2" />
-          <span className="wl-bubble wl-bubble-3" />
+        <div className="wl-logo-wrap">
+          <img className="wl-load-logo" src={assets.wildlyLogo} alt="Wildly by Taronga" />
+          <span className="wl-logo-shine" style={logoMask} aria-hidden="true" />
         </div>
+        <div className="wl-dots" aria-hidden="true"><span /><span /><span /></div>
         <p className="wl-load-label">{label}</p>
       </div>
     </div>
