@@ -1954,7 +1954,7 @@ function TeacherDashboard({ config, contentItems = defaultContentItems.map(resol
           </>
         )}
 
-        {pageMeta && page !== "dashboard" && page !== "content" && page !== "resources" && page !== "subjects" && page !== "classes" && (
+        {pageMeta && page !== "dashboard" && page !== "content" && page !== "resources" && page !== "subjects" && page !== "classes" && page !== "saved" && (
           <section className="workspace-page">
             <div className="workspace-page-header">
               <div>
@@ -2704,29 +2704,55 @@ function TeacherDashboard({ config, contentItems = defaultContentItems.map(resol
         )}
 
         {page === "saved" && (
-          <section className="teacher-panel">
-            <div className="teacher-library-grid">
-              {savedItems.length ? savedItems.map((item) => (
-                <article className="teacher-library-card" key={item.id}>
-                  <img src={item.image} alt="" />
-                  <div>
-                    <span className="pill">{item.type}</span>
-                    <h3>{item.title}</h3>
-                    <p>{item.summary || item.description}</p>
-                    <small>{item.subject} · {item.stage}</small>
-                    <div className="teacher-card-actions">
-                      <a className="primary-action" href={teacherContentRoute(item.id)}>Open</a>
-                      <button type="button" className="secondary-action" onClick={() => onToggleSaved(item.id)}>Remove</button>
-                    </div>
-                  </div>
-                </article>
-              )) : (
-                <article className="placeholder-card">
-                  <h3>No saved items yet</h3>
-                  <p>Use the Save button on lessons, resources and learning paths to build a short list for planning.</p>
-                </article>
-              )}
+          <section className="lib-page">
+            <div className="lib-hero mc-hero">
+              <div className="lib-hero-inner">
+                <span className="lib-hero-eyebrow">Saved</span>
+                <h1>Saved for later</h1>
+                <p>Your shortlist of lessons, resources and units — everything you've bookmarked while planning, in one place.</p>
+                <div className="lib-hero-stats">
+                  <div><strong>{savedItems.length}</strong><span>{savedItems.length === 1 ? "saved item" : "saved items"}</span></div>
+                  <div><strong>{new Set(savedItems.map((i) => i.subject).filter(Boolean)).size}</strong><span>subjects</span></div>
+                </div>
+              </div>
+              <div className="lib-hero-art" aria-hidden="true"><img src={assets.giraffe} alt="" /></div>
             </div>
+
+            {savedItems.length ? (
+              <div className="lib-grid">
+                {savedItems.map((item) => (
+                  <article className="lib-card" key={item.id} style={{ "--accent": subjectAccent(item.subject) }}>
+                    <a className="lib-card-media" href={teacherContentRoute(item.id)}>
+                      <img src={item.image} alt="" loading="lazy" />
+                      <span className="lib-card-type">{item.type}</span>
+                    </a>
+                    <div className="lib-card-body">
+                      <div className="lib-card-subject"><span className="lib-card-dot" />{item.subject}</div>
+                      <h3><a href={teacherContentRoute(item.id)}>{item.title}</a></h3>
+                      <p>{item.summary || item.description}</p>
+                      <div className="lib-card-meta">
+                        {item.stage ? <span>{item.stage}</span> : null}
+                        {item.durationMinutes ? <span>{item.durationMinutes} min</span> : null}
+                        {item.materials?.quiz?.questions?.length ? <span>Check-in quiz</span> : null}
+                      </div>
+                      <div className="lib-card-actions">
+                        <a className="primary-action" href={teacherContentRoute(item.id)}>Open</a>
+                        <button type="button" className="lib-save is-saved" onClick={() => onToggleSaved(item.id)} aria-label="Remove from saved">
+                          <Icon type="bookmark" className="" />Saved
+                        </button>
+                      </div>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            ) : (
+              <div className="lib-empty">
+                <Icon type="bookmark" className="" />
+                <h3>No saved items yet</h3>
+                <p>Tap <strong>Save</strong> on any lesson, resource or unit in the Library to build a shortlist for planning.</p>
+                <a className="primary-action" href={teacherRoute("resources")}>Browse the library</a>
+              </div>
+            )}
           </section>
         )}
 
