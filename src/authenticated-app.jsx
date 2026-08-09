@@ -1760,9 +1760,6 @@ function TeacherDashboard({ config, contentItems = defaultContentItems.map(resol
       action: <a className="secondary-action" href={appLinks.excursions}>Excursion details</a>,
     },
   }[page];
-  const displayName = profile?.name || "Mr. Thompson";
-  const displayRole = profile?.role || "Teacher";
-  const profileInitials = createInitials(displayName);
 
   return (
     <div className="app-shell">
@@ -1814,16 +1811,11 @@ function TeacherDashboard({ config, contentItems = defaultContentItems.map(resol
         <header className="topbar">
           <button className="menu-button" type="button" aria-label="Open navigation"></button>
           <div className="top-actions">
-            {!preview && onSignOut ? <button type="button" className="top-text-action" onClick={onSignOut}>Sign out</button> : null}
             <button type="button" className="top-icon-button" aria-label="Notifications" onClick={() => setNotice(notificationItems.length ? notificationItems.map((item) => `${item.title} - ${item.date}${item.time ? `, ${item.time}` : ""}`).join("\n") : "No new professional learning notifications yet.")}>
               <Icon type="bell" className="" />
             </button>
             <a className="icon-button help" aria-label="Help" href={appLinks.support}></a>
-            <button type="button" className="profile-button" onClick={() => { window.location.hash = "#about-you"; }}>
-              <span>{profileInitials}</span>
-              <strong>{displayName}</strong>
-              <small>{displayRole}</small>
-            </button>
+            {!preview && onSignOut ? <button type="button" className="top-text-action" onClick={onSignOut}>Sign out</button> : null}
           </div>
         </header>
 
