@@ -124,32 +124,39 @@ textarea {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  gap: 8px;
   min-height: 46px;
-  border-radius: 6px;
+  border-radius: 12px;
   font-size: 15px;
-  font-weight: 900;
+  font-weight: 700;
+  letter-spacing: 0.005em;
   white-space: nowrap;
+  cursor: pointer;
+  transition: transform 0.16s ease, box-shadow 0.16s ease, background 0.16s ease, border-color 0.16s ease;
 }
 
 .login-link,
 .secondary-action {
-  padding: 0 18px;
+  padding: 0 20px;
   border: 1px solid var(--line);
   background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 1px 2px rgba(16, 40, 24, 0.05);
 }
 
 .start-link,
 .primary-action {
-  padding: 0 20px;
+  padding: 0 22px;
   color: #fff;
-  background: linear-gradient(180deg, var(--green-900), var(--green-800));
+  background: linear-gradient(180deg, var(--green-800), var(--green-900));
+  box-shadow: 0 1px 2px rgba(11, 76, 50, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.12);
 }
 
 .join-action {
-  padding: 0 20px;
+  padding: 0 22px;
   border: 1px solid #d4912f;
   color: #fff;
   background: linear-gradient(180deg, #e2a53f, #bf7821);
+  box-shadow: 0 1px 2px rgba(150, 96, 20, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.18);
 }
 
 main {
@@ -1883,14 +1890,39 @@ svg {
 }
 
 .login-link:hover,
-.start-link:hover,
-.primary-action:hover,
 .secondary-action:hover,
 .subject-strip a:hover,
 .marketing-stat-card:hover,
 .marketing-card:hover {
   transform: translateY(-2px);
   box-shadow: var(--surface-shadow-strong);
+}
+
+.login-link:hover,
+.secondary-action:hover {
+  border-color: var(--green-700, #256a45);
+}
+
+.start-link:hover,
+.primary-action:hover {
+  background: linear-gradient(180deg, var(--green-700, #256a45), var(--green-800));
+  box-shadow: 0 14px 30px -12px rgba(11, 76, 50, 0.5);
+  transform: translateY(-2px);
+}
+
+.join-action:hover {
+  background: linear-gradient(180deg, #eab04c, #c9832a);
+  box-shadow: 0 14px 30px -12px rgba(150, 96, 20, 0.5);
+  transform: translateY(-2px);
+}
+
+.login-link:active,
+.start-link:active,
+.primary-action:active,
+.secondary-action:active,
+.join-action:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 6px rgba(11, 76, 50, 0.25);
 }
 
 .mini-dashboard img {
