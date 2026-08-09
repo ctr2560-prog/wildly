@@ -2174,84 +2174,88 @@ function TeacherDashboard({ config, contentItems = defaultContentItems.map(resol
           </section>
         )}
 
-        {page === "taronga-tv" && tarongaTvDetail && (
-          <section className="teacher-panel teacher-detail-page tv-detail-page">
-            <div className="teacher-panel-header">
-              <div>
-                <span className="content-type">Taronga TV</span>
-                <h2>{tarongaTvDetail.title}</h2>
-                <p>{tarongaTvDetail.description || tarongaTvDetail.summary}</p>
+        {page === "taronga-tv" && tarongaTvDetail && (() => {
+          const tv = tarongaTvDetail;
+          const accent = subjectAccent(tv.subject);
+          const linkedLesson = tv.lessonIds?.[0] ? contentById[tv.lessonIds[0]] : null;
+          const linkedPath = tv.learningPathIds?.[0] ? contentById[tv.learningPathIds[0]] : null;
+          return (
+            <section className="cd-page tv-detail-page" style={{ "--accent": accent }}>
+              <a className="mc-back" href={teacherTvRoute()}>← Taronga TV</a>
+
+              <div className="tv-detail-head">
+                <span className="cd-type">Taronga TV · {tv.subject}</span>
+                <h1>{tv.title}</h1>
+                <p>{tv.description || tv.summary}</p>
+                <div className="cd-meta">
+                  {tv.stage ? <span>{tv.stage}</span> : null}
+                  {tv.duration ? <span>{tv.duration}</span> : null}
+                  {tv.categories?.map((category) => <span key={category}>{category}</span>)}
+                </div>
               </div>
-              <a className="secondary-action" href={teacherTvRoute()}>Back to Taronga TV</a>
-            </div>
 
-            <div className="tv-detail-layout">
-              <article className="tv-player-card">
-                <div className="tv-embed-shell">
-                  {tarongaTvDetail.embedUrl ? (
-                    <iframe
-                      src={tarongaTvDetail.embedUrl}
-                      title={tarongaTvDetail.title}
-                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                      allowFullScreen
-                    ></iframe>
-                  ) : (
-                    <div className="tv-embed-placeholder">
-                      <Icon type="play" className="" />
-                      <p>Add an embed URL in the staff console to display the video here.</p>
-                    </div>
-                  )}
+              <div className="cd-player">
+                {tv.embedUrl ? (
+                  <iframe
+                    src={tv.embedUrl}
+                    title={tv.title}
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                  ></iframe>
+                ) : (
+                  <div className="tv-embed-placeholder">
+                    <Icon type="play" className="" />
+                    <p>Add an embed URL in the staff console to display the video here.</p>
+                  </div>
+                )}
+              </div>
+
+              {tv.discussionPoints?.length ? (
+                <div className="cd-section">
+                  <h2>Pause &amp; discuss</h2>
+                  <div className="cd-steps">
+                    {tv.discussionPoints.map((point, index) => (
+                      <div className="cd-step" key={`${point.time}-${index}`}>
+                        <span className="cd-step-num">{index + 1}</span>
+                        <div className="cd-step-body"><h3>{point.time || "Pause point"}</h3><p>{point.prompt}</p></div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-                <div className="tv-detail-actions">
-                  {tarongaTvDetail.lessonIds?.[0] ? <a className="secondary-action" href={teacherContentRoute(tarongaTvDetail.lessonIds[0])}>Open linked lesson</a> : null}
-                  {tarongaTvDetail.learningPathIds?.[0] ? <a className="secondary-action" href={teacherContentRoute(tarongaTvDetail.learningPathIds[0])}>Open learning path</a> : null}
+              ) : null}
+
+              {linkedLesson || linkedPath ? (
+                <div className="cd-section">
+                  <h2>Keep the learning going</h2>
+                  <div className="cd-steps">
+                    {linkedLesson ? (
+                      <div className="cd-step">
+                        <span className="cd-step-icon"><Icon type="book" className="" /></span>
+                        <div className="cd-step-body"><h3>{linkedLesson.title}</h3><p>Linked lesson — the natural follow-up after watching.</p></div>
+                        <div className="cd-step-action"><a className="primary-action" href={teacherContentRoute(tv.lessonIds[0])}>Open</a></div>
+                      </div>
+                    ) : null}
+                    {linkedPath ? (
+                      <div className="cd-step">
+                        <span className="cd-step-icon"><Icon type="path" className="" /></span>
+                        <div className="cd-step-body"><h3>{linkedPath.title}</h3><p>Part of this unit of work.</p></div>
+                        <div className="cd-step-action"><a className="primary-action" href={teacherContentRoute(tv.learningPathIds[0])}>Open unit</a></div>
+                      </div>
+                    ) : null}
+                  </div>
                 </div>
-              </article>
+              ) : null}
 
-              <aside className="tv-side-panel">
-                <div className="tv-info-card">
-                  <h3>Video details</h3>
-                  <div className="detail-meta">
-                    <small>{tarongaTvDetail.subject}</small>
-                    <small>{tarongaTvDetail.stage}</small>
-                    {tarongaTvDetail.duration ? <small>{tarongaTvDetail.duration}</small> : null}
-                    {tarongaTvDetail.categories?.map((category) => <small key={category}>{category}</small>)}
-                  </div>
-                  {tarongaTvDetail.summary ? <p>{tarongaTvDetail.summary}</p> : null}
+              {tv.outcomeCodes?.length ? <div className="cd-section"><h2>Syllabus outcomes</h2><ul className="cd-outcomes">{tv.outcomeCodes.map((o) => <li key={o}>{o}</li>)}</ul></div> : null}
+              {tarongaTvDownloads.length ? (
+                <div className="cd-section">
+                  <h2>Teacher files</h2>
+                  <div className="cd-files">{tarongaTvDownloads.map((d) => <a key={`${d.label}-${d.url}`} className="cd-file" href={d.url} target="_blank" rel="noreferrer"><Icon type="report" className="" />{d.label}</a>)}</div>
                 </div>
-
-                {tarongaTvDetail.outcomeCodes?.length ? (
-                  <div className="tv-info-card">
-                    <h3>Linked outcomes</h3>
-                    <ul className="tv-list">
-                      {tarongaTvDetail.outcomeCodes.map((outcome) => <li key={outcome}>{outcome}</li>)}
-                    </ul>
-                  </div>
-                ) : null}
-
-                {tarongaTvDownloads.length ? (
-                  <div className="tv-info-card">
-                    <LinkSection links={tarongaTvDownloads} />
-                  </div>
-                ) : null}
-
-                {tarongaTvDetail.discussionPoints?.length ? (
-                  <div className="tv-info-card">
-                    <h3>Discussion points</h3>
-                    <ul className="tv-discussion-list">
-                      {tarongaTvDetail.discussionPoints.map((point, index) => (
-                        <li key={`${point.time}-${index}`}>
-                          <strong>{point.time || "Pause point"}</strong>
-                          <p>{point.prompt}</p>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                ) : null}
-              </aside>
-            </div>
-          </section>
-        )}
+              ) : null}
+            </section>
+          );
+        })()}
 
         {page === "professional-learning" && (
           <section className="lib-page">
@@ -2806,45 +2810,88 @@ function TeacherDashboard({ config, contentItems = defaultContentItems.map(resol
           </section>
         )}
 
-        {page === "content" && contentDetail && (
-          <section className="teacher-panel teacher-detail-page">
-            <div className="teacher-panel-header">
-              <div>
-                <span className="content-type">{contentDetail.type}</span>
-                <h2>{contentDetail.title}</h2>
-                <p>{contentDetail.summary || contentDetail.description}</p>
-              </div>
-              <a className="secondary-action" href={teacherRoute(contentDetail.type === "Learning Path" ? "paths" : "resources")}>Back</a>
-            </div>
-            <div className="detail-modal page-modal">
-              <img src={contentDetail.image} alt="" />
-              <div className="detail-copy">
-                <div className="detail-meta">
-                  <small>{contentDetail.subject}</small>
-                  <small>{contentDetail.stage}</small>
-                  {contentDetail.durationWeeks ? <small>{contentDetail.durationWeeks} weeks</small> : null}
-                  {contentDetail.durationMinutes ? <small>{contentDetail.durationMinutes} minutes</small> : null}
+        {page === "content" && contentDetail && (() => {
+          const item = contentDetail;
+          const m = item.materials || {};
+          const isUnit = item.type === "Learning Path";
+          const accent = subjectAccent(item.subject);
+          const saved = savedItemIds.includes(item.id);
+          const quizCount = m.quiz?.questions?.length || 0;
+          const steps = [];
+          if (isUnit) {
+            (item.lessonIds || []).forEach((lid) => {
+              const lesson = contentById[lid];
+              steps.push({
+                icon: "book",
+                title: lesson?.title || "Lesson",
+                desc: lesson ? [lesson.subject, lesson.stage].filter(Boolean).join(" · ") : "Part of this unit",
+                action: <a className="primary-action" href={teacherContentRoute(lid)}>Open</a>,
+              });
+            });
+          } else {
+            if (m.canvaEmbedUrl) steps.push({ icon: "play", title: "Present the lesson", desc: "Open the slide deck and run it with the whole class.", action: <a className="primary-action" href={m.canvaEmbedUrl} target="_blank" rel="noreferrer">Open presentation</a> });
+            if (m.studentWorksheetUrl) steps.push({ icon: "book", title: "Student worksheet", desc: "Hand out or download the worksheet for students.", action: <a className="primary-action" href={m.studentWorksheetUrl} target="_blank" rel="noreferrer">Open worksheet</a> });
+            if (quizCount) steps.push({ icon: "speech", title: "Check-in quiz", desc: `${quizCount} question${quizCount !== 1 ? "s" : ""} — run it together as a quick class check-in.`, action: <a className="primary-action" href={teacherRoute(`quiz/${item.id}`)}>▶ Play quiz</a> });
+            if (m.activityBlocks?.length) steps.push({ icon: "monitor", title: "Present interactive steps", desc: "Run the slide-by-slide activity flow at the front of class.", action: <a className="primary-action" href={teacherRoute(`present/${item.id}`)}>Present</a> });
+          }
+          const extraDownloads = contentDownloads.filter((d) => d.url && d.url !== m.studentWorksheetUrl && d.url !== m.canvaEmbedUrl);
+          return (
+            <section className="cd-page" style={{ "--accent": accent }}>
+              <a className="mc-back" href={teacherRoute(isUnit ? "paths" : "resources")}>← {isUnit ? "All units" : "Library"}</a>
+              <div className="cd-hero">
+                <div className="cd-hero-media"><img src={item.image} alt="" /></div>
+                <div className="cd-hero-body">
+                  <span className="cd-type">{isUnit ? "Unit" : "Lesson"} · {item.subject}</span>
+                  <h1>{item.title}</h1>
+                  <p>{item.summary || item.description}</p>
+                  <div className="cd-meta">
+                    {item.stage ? <span>{item.stage}</span> : null}
+                    {item.durationWeeks ? <span>{item.durationWeeks} weeks</span> : null}
+                    {item.durationMinutes ? <span>{item.durationMinutes} min</span> : null}
+                    {quizCount ? <span>Check-in quiz</span> : null}
+                  </div>
+                  <div className="cd-hero-actions">
+                    <button type="button" className={`lib-save${saved ? " is-saved" : ""}`} onClick={() => onToggleSaved(item.id)}><Icon type="bookmark" className="" />{saved ? "Saved" : "Save"}</button>
+                  </div>
                 </div>
-                <div className="teacher-card-actions">
-                  {contentPrimaryLink(contentDetail) ? (
-                    <button type="button" className="primary-action" onClick={() => openPrimaryContent(contentDetail)}>Open main link</button>
-                  ) : (
-                    <button type="button" className="primary-action" onClick={() => setNotice("Add the main lesson/resource URL in staff content to activate this button.")}>Main link needed</button>
-                  )}
-                  {contentDetail.materials?.quiz?.questions?.length ? <a className="primary-action" href={teacherRoute(`quiz/${contentDetail.id}`)}>▶ Play check-in quiz</a> : null}
-                  {contentActivityBlocks.length ? <a className="secondary-action" href={teacherRoute(`present/${contentDetail.id}`)}>Present</a> : null}
-                  <button type="button" className="secondary-action" onClick={() => onToggleSaved(contentDetail.id)}>{savedItemIds.includes(contentDetail.id) ? "Saved" : "Save"}</button>
-                </div>
-                {contentDetail.description ? <div className="detail-list"><h3>Description</h3><p>{contentDetail.description}</p></div> : null}
-                {contentActivityBlocks.length ? <div className="detail-list"><h3>Interactive lesson flow</h3><ul>{contentActivityBlocks.map((block) => <li key={block.id}>{block.title} · {block.type}</li>)}</ul></div> : null}
-                {contentDetail.outcomeCodes?.length ? <div className="detail-list"><h3>Outcomes</h3><ul>{contentDetail.outcomeCodes.map((outcome) => <li key={outcome}>{outcome}</li>)}</ul></div> : null}
-                <LinkSection links={contentDownloads} />
-                {contentDetail.lessonIds?.length ? <div className="detail-list"><h3>Included lessons</h3><ul>{contentDetail.lessonIds.map((lessonId) => <li key={lessonId}>{lessons.find((lesson) => lesson.id === lessonId)?.title || lessonId}</li>)}</ul></div> : null}
-                {contentDetail.resourceIds?.length ? <div className="detail-list"><h3>Attached resources</h3><ul>{contentDetail.resourceIds.map((resourceId) => <li key={resourceId}>{resources.find((resource) => resource.id === resourceId)?.title || resourceId}</li>)}</ul></div> : null}
               </div>
-            </div>
-          </section>
-        )}
+
+              {item.learningIntention || (item.successCriteria && item.successCriteria.length) ? (
+                <div className="cd-intent">
+                  {item.learningIntention ? <div><span className="cd-intent-label">Learning intention</span><p>{item.learningIntention}</p></div> : null}
+                  {item.successCriteria ? <div><span className="cd-intent-label">Success criteria</span><p>{Array.isArray(item.successCriteria) ? item.successCriteria.join("\n") : item.successCriteria}</p></div> : null}
+                </div>
+              ) : null}
+
+              {steps.length ? (
+                <div className="cd-section">
+                  <h2>{isUnit ? "Lessons in this unit" : "Run this lesson"}</h2>
+                  <div className="cd-steps">
+                    {steps.map((step, index) => (
+                      <div className="cd-step" key={index}>
+                        <span className="cd-step-num">{index + 1}</span>
+                        <span className="cd-step-icon"><Icon type={step.icon} className="" /></span>
+                        <div className="cd-step-body"><h3>{step.title}</h3><p>{step.desc}</p></div>
+                        <div className="cd-step-action">{step.action}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <div className="lib-empty"><Icon type="book" className="" /><h3>No materials added yet</h3><p>Presentation, worksheet and quiz will appear here once they're added in the staff console.</p></div>
+              )}
+
+              {item.description ? <div className="cd-section"><h2>About</h2><p className="cd-about">{item.description}</p></div> : null}
+              {item.outcomeCodes?.length ? <div className="cd-section"><h2>Syllabus outcomes</h2><ul className="cd-outcomes">{item.outcomeCodes.map((o) => <li key={o}>{o}</li>)}</ul></div> : null}
+              {extraDownloads.length ? (
+                <div className="cd-section">
+                  <h2>Teacher files</h2>
+                  <div className="cd-files">{extraDownloads.map((d) => <a key={`${d.label}-${d.url}`} className="cd-file" href={d.url} target="_blank" rel="noreferrer"><Icon type="report" className="" />{d.label}</a>)}</div>
+                </div>
+              ) : null}
+            </section>
+          );
+        })()}
 
       </main>
     </div>
