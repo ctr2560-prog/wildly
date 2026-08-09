@@ -1954,7 +1954,7 @@ function TeacherDashboard({ config, contentItems = defaultContentItems.map(resol
           </>
         )}
 
-        {pageMeta && page !== "dashboard" && page !== "content" && page !== "resources" && page !== "subjects" && page !== "classes" && page !== "saved" && (
+        {pageMeta && page !== "dashboard" && page !== "content" && page !== "resources" && page !== "subjects" && page !== "classes" && page !== "saved" && page !== "taronga-tv" && page !== "professional-learning" && page !== "calendar" && (
           <section className="workspace-page">
             <div className="workspace-page-header">
               <div>
@@ -2109,61 +2109,69 @@ function TeacherDashboard({ config, contentItems = defaultContentItems.map(resol
         )}
 
         {page === "taronga-tv" && !tarongaTvDetail && (
-          <>
-            {featuredTarongaTvVideo ? (
-              <section className="teacher-panel tv-feature-panel">
-                <article className="tv-feature-card">
-                  <img src={featuredTarongaTvVideo.thumbnail} alt="" />
-                  <div className="tv-feature-copy">
-                    <span className="pill">Featured video</span>
-                    <h2>{featuredTarongaTvVideo.title}</h2>
-                    <p>{featuredTarongaTvVideo.description || featuredTarongaTvVideo.summary}</p>
-                    <div className="tv-meta-row">
-                      <small>{featuredTarongaTvVideo.subject}</small>
-                      <small>{featuredTarongaTvVideo.stage}</small>
-                      {featuredTarongaTvVideo.duration ? <small>{featuredTarongaTvVideo.duration}</small> : null}
-                      {featuredTarongaTvVideo.categories?.map((category) => <small key={category}>{category}</small>)}
-                    </div>
-                    <div className="teacher-card-actions">
-                      <a className="primary-action" href={teacherTvRoute(featuredTarongaTvVideo.id)}>Watch and teach</a>
-                      {featuredTarongaTvVideo.lessonIds?.[0] ? <a className="secondary-action" href={teacherContentRoute(featuredTarongaTvVideo.lessonIds[0])}>Open linked lesson</a> : null}
-                    </div>
-                  </div>
-                </article>
-              </section>
-            ) : null}
+          <section className="lib-page">
+            <div className="lib-hero mc-hero">
+              <div className="lib-hero-inner">
+                <span className="lib-hero-eyebrow">Taronga TV</span>
+                <h1>Video learning for the classroom</h1>
+                <p>Curriculum-aligned videos with linked lessons and discussion prompts — ready to play in class.</p>
+                <div className="lib-hero-stats">
+                  <div><strong>{teacherVisibleTarongaTvVideos.length}</strong><span>{teacherVisibleTarongaTvVideos.length === 1 ? "video" : "videos"}</span></div>
+                  <div><strong>{tarongaTvCategories.length}</strong><span>{tarongaTvCategories.length === 1 ? "playlist" : "playlists"}</span></div>
+                </div>
+              </div>
+              <div className="lib-hero-art" aria-hidden="true"><img src={featuredTarongaTvVideo?.thumbnail || assets.heroKoala} alt="" /></div>
+            </div>
 
-            <section className="teacher-panel">
-              <div className="teacher-library-grid tv-library-grid">
-                {filteredTarongaTvVideos.length ? filteredTarongaTvVideos.map((video) => (
-                  <article className="teacher-library-card tv-library-card" key={video.id || video.title}>
-                    <div className="tv-thumb-wrap">
-                      <img src={video.thumbnail} alt="" />
-                      <span className="tv-play-chip"><Icon type="play" className="" /></span>
-                    </div>
-                    <div>
-                      <span className="pill">{video.subject}</span>
-                      <h3>{video.title}</h3>
+            <div className="lib-toolbar">
+              <label className="search-box lib-search">
+                <span></span>
+                <input value={query} onChange={(event) => setQuery(event.target.value)} type="search" placeholder="Search videos…" />
+              </label>
+              <div className="page-chip-row">
+                <button type="button" className={`page-chip ${!activeSubject ? "selected" : ""}`} onClick={() => setActiveSubject(null)}>All subjects</button>
+                {subjects.map(([label]) => (
+                  <button type="button" className={`page-chip ${activeSubject === label ? "selected" : ""}`} key={label} onClick={() => setActiveSubject(label)}>{label}</button>
+                ))}
+              </div>
+              <div className="page-chip-row">
+                <button type="button" className={`page-chip ${activeTvCategory === "All" ? "selected" : ""}`} onClick={() => setActiveTvCategory("All")}>All playlists</button>
+                {tarongaTvCategories.map((category) => (
+                  <button type="button" className={`page-chip ${activeTvCategory === category ? "selected" : ""}`} key={category} onClick={() => setActiveTvCategory(category)}>{category}</button>
+                ))}
+              </div>
+            </div>
+
+            {filteredTarongaTvVideos.length ? (
+              <div className="lib-grid">
+                {filteredTarongaTvVideos.map((video) => (
+                  <article className="lib-card" key={video.id || video.title} style={{ "--accent": subjectAccent(video.subject) }}>
+                    <a className="lib-card-media" href={teacherTvRoute(video.id)}>
+                      <img src={video.thumbnail} alt="" loading="lazy" />
+                      <span className="lib-card-type">{video.subject}</span>
+                      <span className="feature-play"><Icon type="play" className="" /></span>
+                    </a>
+                    <div className="lib-card-body">
+                      <div className="lib-card-subject"><span className="lib-card-dot" />{video.subject}</div>
+                      <h3><a href={teacherTvRoute(video.id)}>{video.title}</a></h3>
                       <p>{video.summary}</p>
-                      <small>{video.stage}</small>
-                      {video.duration ? <small>{video.duration}</small> : null}
-                      {video.outcomeCodes?.length ? <small>{video.outcomeCodes.length} outcomes</small> : null}
-                      {video.categories?.length ? <small>{video.categories.join(" · ")}</small> : null}
-                    <div className="teacher-card-actions">
-                      <a className="primary-action" href={teacherTvRoute(video.id)}>Open video</a>
-                      {video.lessonIds?.[0] ? <a className="secondary-action" href={teacherContentRoute(video.lessonIds[0])}>Linked lesson</a> : null}
+                      <div className="lib-card-meta">
+                        {video.stage ? <span>{video.stage}</span> : null}
+                        {video.duration ? <span>{video.duration}</span> : null}
+                        {video.categories?.length ? <span>{video.categories[0]}</span> : null}
+                      </div>
+                      <div className="lib-card-actions">
+                        <a className="primary-action" href={teacherTvRoute(video.id)}>Watch</a>
+                        {video.lessonIds?.[0] ? <a className="lib-save" href={teacherContentRoute(video.lessonIds[0])}>Lesson</a> : null}
                       </div>
                     </div>
                   </article>
-                )) : (
-                  <article className="placeholder-card">
-                    <h3>No Taronga TV videos match this filter yet</h3>
-                    <p>Try another subject, clear the search, or publish videos from the staff console.</p>
-                  </article>
-                )}
+                ))}
               </div>
-            </section>
-          </>
+            ) : (
+              <div className="lib-empty"><Icon type="monitor" className="" /><h3>No videos match your filters</h3><p>Try another subject or playlist, or clear the search.</p></div>
+            )}
+          </section>
         )}
 
         {page === "taronga-tv" && tarongaTvDetail && (
@@ -2246,46 +2254,47 @@ function TeacherDashboard({ config, contentItems = defaultContentItems.map(resol
         )}
 
         {page === "professional-learning" && (
-          <>
-            <section className="teacher-summary-grid page-summary-grid">
-              {publishedProfessionalLearningItems.length ? publishedProfessionalLearningItems.map((item) => (
-                <article key={item.id} className="summary-card">
-                  <h3>{item.title}</h3>
-                  <p>{item.summary}</p>
-                  <small>{item.date}{item.time ? ` · ${item.time}` : ""}</small>
-                </article>
-              )) : (
-                <article className="summary-card">
-                  <h3>No sessions scheduled</h3>
-                  <p>Professional learning events created by staff will appear here.</p>
-                </article>
-              )}
-            </section>
-            <section className="teacher-panel">
-              <div className="teacher-library-grid">
-                {publishedProfessionalLearningItems.length ? publishedProfessionalLearningItems.map((item) => (
-                  <article key={item.id} className="teacher-library-card">
-                    <img src={assets.gorilla} alt="" />
-                    <div>
-                      <span className="pill">Professional Learning</span>
+          <section className="lib-page">
+            <div className="lib-hero mc-hero">
+              <div className="lib-hero-inner">
+                <span className="lib-hero-eyebrow">Professional Learning</span>
+                <h1>Grow your practice</h1>
+                <p>Webinars, courses and workshops from Taronga — build your confidence teaching with nature.</p>
+                <div className="lib-hero-stats">
+                  <div><strong>{publishedProfessionalLearningItems.length}</strong><span>{publishedProfessionalLearningItems.length === 1 ? "session" : "sessions"}</span></div>
+                </div>
+              </div>
+              <div className="lib-hero-art" aria-hidden="true"><img src={assets.teacherPl} alt="" /></div>
+            </div>
+
+            {publishedProfessionalLearningItems.length ? (
+              <div className="lib-grid">
+                {publishedProfessionalLearningItems.map((item) => (
+                  <article className="lib-card" key={item.id} style={{ "--accent": "#135f3d" }}>
+                    <div className="lib-card-media">
+                      <img src={item.image || (item.imageKey ? assets[item.imageKey] : "") || assets.teacherPl} alt="" loading="lazy" />
+                      <span className="lib-card-type">PL</span>
+                    </div>
+                    <div className="lib-card-body">
+                      <div className="lib-card-subject"><span className="lib-card-dot" />Professional Learning</div>
                       <h3>{item.title}</h3>
-                      <p>{item.description || item.summary}</p>
-                      <small>{item.date}{item.time ? ` - ${item.time}` : ""}</small>
-                      <div className="teacher-card-actions">
-                        {item.registrationUrl ? <a className="primary-action" href={item.registrationUrl} target="_blank" rel="noreferrer">Open registration</a> : <button type="button" className="primary-action" onClick={() => downloadCalendarInvite(item.title, item.date, item.summary || item.description || "")}>Add to calendar</button>}
+                      <p>{item.summary || item.description}</p>
+                      <div className="lib-card-meta">
+                        {item.date ? <span>{item.date}</span> : null}
+                        {item.time ? <span>{item.time}</span> : null}
+                      </div>
+                      <div className="lib-card-actions">
+                        {item.registrationUrl ? <a className="primary-action" href={item.registrationUrl} target="_blank" rel="noreferrer">Register</a> : <button type="button" className="primary-action" onClick={() => downloadCalendarInvite(item.title, item.date, item.summary || item.description || "")}>Add to calendar</button>}
                       </div>
                       <LinkSection links={professionalLearningLinksById[item.id] || []} />
                     </div>
                   </article>
-                )) : (
-                  <article className="placeholder-card">
-                    <h3>No professional learning sessions published yet</h3>
-                    <p>Create upcoming sessions in the staff portal and they will appear here automatically.</p>
-                  </article>
-                )}
+                ))}
               </div>
-            </section>
-          </>
+            ) : (
+              <div className="lib-empty"><Icon type="speech" className="" /><h3>No sessions scheduled</h3><p>Professional learning events published by Taronga will appear here automatically.</p></div>
+            )}
+          </section>
         )}
 
         {page === "resources" && (
@@ -2757,31 +2766,44 @@ function TeacherDashboard({ config, contentItems = defaultContentItems.map(resol
         )}
 
         {page === "calendar" && (
-          <>
-            <section className="teacher-summary-grid page-summary-grid">
-              {calendarEvents.slice(0, 4).map((event) => <article key={event.id} className="summary-card"><h3>{formatDisplayDate(event.date)}</h3><p>{event.title}</p><small>{event.type}</small></article>)}
-            </section>
-            <section className="teacher-panel">
-              <div className="teacher-panel-header">
-                <div>
-                  <h2>Planning calendar</h2>
-                  <p>Assignments, professional learning and excursions are now visible together so teachers can plan from one page.</p>
+          <section className="lib-page">
+            <div className="lib-hero mc-hero">
+              <div className="lib-hero-inner">
+                <span className="lib-hero-eyebrow">Calendar</span>
+                <h1>Your planning calendar</h1>
+                <p>Assignments, professional learning and excursions together — plan your term from one place.</p>
+                <div className="lib-hero-stats">
+                  <div><strong>{calendarEvents.length}</strong><span>{calendarEvents.length === 1 ? "upcoming item" : "upcoming items"}</span></div>
                 </div>
               </div>
-              <div className="calendar-event-list">
-                {calendarEvents.map((event) => (
-                  <a className="calendar-event-card" href={event.href} key={event.id}>
-                    <div>
-                      <span className="pill">{event.type}</span>
-                      <h3>{event.title}</h3>
-                      <p>{event.detail}</p>
-                    </div>
-                    <strong>{formatDisplayDate(event.date)}</strong>
-                  </a>
-                ))}
+              <div className="lib-hero-art" aria-hidden="true"><img src={assets.rhino} alt="" /></div>
+            </div>
+
+            {calendarEvents.length ? (
+              <div className="cal-list">
+                {calendarEvents.map((event) => {
+                  const date = event.date ? new Date(`${event.date}T12:00:00`) : null;
+                  const valid = date && !Number.isNaN(date.getTime());
+                  return (
+                    <a className="cal-row" href={event.href} key={event.id}>
+                      <div className="cal-date">
+                        <span className="cal-day">{valid ? date.getDate() : "—"}</span>
+                        <span className="cal-mon">{valid ? date.toLocaleDateString("en-AU", { month: "short" }) : ""}</span>
+                      </div>
+                      <div className="cal-body">
+                        <span className="cal-type">{event.type}</span>
+                        <h3>{event.title}</h3>
+                        <p>{event.detail}</p>
+                      </div>
+                      <span className="mc-tile-arrow" aria-hidden="true">→</span>
+                    </a>
+                  );
+                })}
               </div>
-            </section>
-          </>
+            ) : (
+              <div className="lib-empty"><Icon type="calendar" className="" /><h3>Nothing scheduled yet</h3><p>Assignments and Taronga events will appear here as they're added.</p></div>
+            )}
+          </section>
         )}
 
         {page === "content" && contentDetail && (
