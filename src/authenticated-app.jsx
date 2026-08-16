@@ -1627,6 +1627,8 @@ function TeacherDashboard({ config, contentItems = defaultContentItems.map(resol
   });
   const subjectCounts = publishedItems.reduce((accumulator, item) => ({ ...accumulator, [item.subject]: (accumulator[item.subject] || 0) + 1 }), {});
   const topSubject = Object.entries(subjectCounts).sort((a, b) => b[1] - a[1])[0]?.[0] || "Science";
+  const now = new Date();
+  const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
   const calendarEvents = [
     ...assignments.map((assignment) => ({
       id: assignment.id,
@@ -1644,8 +1646,7 @@ function TeacherDashboard({ config, contentItems = defaultContentItems.map(resol
       type: "Professional Learning",
       href: teacherRoute("professional-learning"),
     })),
-    { id: "excursion", date: "2026-06-08", title: "Taronga Zoo Visit - Biodiversity in Action", detail: "Sydney excursion", type: "Excursion", href: appLinks.excursions },
-  ].filter((item) => item.date).sort((a, b) => a.date.localeCompare(b.date));
+  ].filter((item) => item.date && item.date >= todayStr).sort((a, b) => a.date.localeCompare(b.date));
 
   function openPrimaryContent(item) {
     const primaryLink = contentPrimaryLink(item);
