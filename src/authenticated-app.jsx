@@ -1579,6 +1579,81 @@ function TeacherDashboard({ config, contentItems = defaultContentItems.map(resol
     if (!libraryQuery) return true;
     return `${item.title} ${item.summary || ""} ${item.description || ""} ${item.subject || ""} ${item.stage || ""} ${item.type || ""}`.toLowerCase().includes(libraryQuery);
   });
+  const featuredLibrary = useMemo(
+    () => [...allResourceItems].sort((a, b) => (b.updatedAt?.seconds || 0) - (a.updatedAt?.seconds || 0)).slice(0, 3),
+    [allResourceItems],
+  );
+
+  // Curated data for the dedicated subject pages (kept distinct from the Library).
+  const STAGE_ORDER = ["Early Stage 1", "Stage 1", "Stage 2", "Stage 3", "Stage 4", "Stage 5", "Stage 6"];
+  const subjectUnits = subjectScopedItems.filter((item) => item.type === "Learning Path");
+  const subjectResources = subjectScopedItems.filter((item) => item.type !== "Learning Path");
+  const subjectTvVideos = activeSubject ? teacherVisibleTarongaTvVideos.filter((video) => video.subject === activeSubject) : [];
+  const subjectStageGroups = (() => {
+    const groups = new Map();
+    subjectResources.forEach((item) => {
+      const key = item.stage || "Other";
+      if (!groups.has(key)) groups.set(key, []);
+      groups.get(key).push(item);
+    });
+    return [...groups.entries()].sort((a, b) => {
+      const ia = STAGE_ORDER.indexOf(a[0]);
+      const ib = STAGE_ORDER.indexOf(b[0]);
+      return (ia === -1 ? 99 : ia) - (ib === -1 ? 99 : ib);
+    });
+  })();
+
+  const renderLibCard = (item, index = 0) => {
+    const saved = savedItemIds.includes(item.id);
+    return (
+      <Reveal as="article" className="lib-card" key={item.id || item.title} delay={Math.min(index, 8) * 45} style={{ "--accent": subjectAccent(item.subject) }}>
+        <a className="lib-card-media" href={teacherContentRoute(item.id)}>
+          <img src={item.image} alt="" loading="lazy" />
+          <span className="lib-card-type">{item.type === "Learning Path" ? "Unit" : item.type}</span>
+        </a>
+        <div className="lib-card-body">
+          <div className="lib-card-subject"><span className="lib-card-dot" />{item.subject}</div>
+          <h3><a href={teacherContentRoute(item.id)}>{item.title}</a></h3>
+          <p>{item.summary || item.description}</p>
+          <div className="lib-card-meta">
+            {item.stage ? <span>{item.stage}</span> : null}
+            {item.durationWeeks ? <span>{item.durationWeeks} wks</span> : null}
+            {item.durationMinutes ? <span>{item.durationMinutes} min</span> : null}
+            {item.materials?.quiz?.questions?.length ? <span>Check-in quiz</span> : null}
+          </div>
+          <div className="lib-card-actions">
+            <a className="primary-action" href={teacherContentRoute(item.id)}>Open</a>
+            <button type="button" className={`lib-save${saved ? " is-saved" : ""}`} onClick={() => onToggleSaved(item.id)} aria-pressed={saved} aria-label={saved ? "Saved" : "Save"}>
+              <Icon type="bookmark" className="" />{saved ? "Saved" : "Save"}
+            </button>
+          </div>
+        </div>
+      </Reveal>
+    );
+  };
+
+  const renderTvCard = (video) => (
+    <article className="lib-card" key={video.id || video.title} style={{ "--accent": subjectAccent(video.subject) }}>
+      <a className="lib-card-media" href={teacherTvRoute(video.id)}>
+        <img src={video.thumbnail} alt="" loading="lazy" />
+        <span className="lib-card-type">Video</span>
+        <span className="feature-play"><Icon type="play" className="" /></span>
+      </a>
+      <div className="lib-card-body">
+        <div className="lib-card-subject"><span className="lib-card-dot" />{video.subject}</div>
+        <h3><a href={teacherTvRoute(video.id)}>{video.title}</a></h3>
+        <p>{video.summary}</p>
+        <div className="lib-card-meta">
+          {video.stage ? <span>{video.stage}</span> : null}
+          {video.duration ? <span>{video.duration}</span> : null}
+        </div>
+        <div className="lib-card-actions">
+          <a className="primary-action" href={teacherTvRoute(video.id)}>Watch</a>
+          {video.lessonIds?.[0] ? <a className="lib-save" href={teacherContentRoute(video.lessonIds[0])}>Lesson</a> : null}
+        </div>
+      </div>
+    </article>
+  );
   const classes = workspace.classes || defaultTeacherClasses;
   const assignments = workspace.assignments || [];
   // Every class — Tracka-connected and Wildly-only — lives in one unified list.
@@ -2003,15 +2078,53 @@ function TeacherDashboard({ config, contentItems = defaultContentItems.map(resol
           </section>
         )}
 
-        {page === "subjects" && (
-          <section className="lib-page">
-            <div className={`lib-hero subject-hero${activeSubject ? "" : " is-all"}`} style={{ "--subject": subjectAccent(activeSubject) }}>
+        {page === "subjects" && !activeSubject && (
+          <section className="lib-page subj-index">
+            <div className="lib-hero subject-hero is-all">
               <div className="lib-hero-inner">
-                <span className="lib-hero-eyebrow">{activeSubject ? "Subject" : "Browse by subject"}</span>
-                <h1>{activeSubject || "All subjects"}</h1>
-                <p>{activeSubject ? (activeSubjectCopy || `Every published ${activeSubject} lesson and resource, ready to teach.`) : "Explore every curriculum area in one place — pick a subject to dive in."}</p>
+                <span className="lib-hero-eyebrow">Browse by subject</span>
+                <h1>Explore by subject</h1>
+                <p>Every curriculum area has its own home — units of work, lessons by stage and Taronga TV, all in one place. Pick a subject to dive in.</p>
+                <div className="lib-hero-stats">
+                  <div><strong>{subjects.length}</strong><span>{subjects.length === 1 ? "subject" : "subjects"}</span></div>
+                  <div><strong>{publishedItems.length}</strong><span>{publishedItems.length === 1 ? "resource" : "resources"}</span></div>
+                </div>
+              </div>
+              <div className="lib-hero-art" aria-hidden="true">
+                <img src={subjectImage(null)} alt="" />
+              </div>
+            </div>
+
+            <div className="subj-tiles">
+              {subjects.map(([label, , copy]) => {
+                const count = publishedItems.filter((item) => item.subject === label).length;
+                return (
+                  <a className="subj-tile" key={label} href={teacherRoute(`subjects/${subjectSlug(label)}`)} style={{ "--accent": subjectAccent(label) }}>
+                    <div className="subj-tile-art" aria-hidden="true"><img src={subjectImage(label)} alt="" loading="lazy" /></div>
+                    <div className="subj-tile-body">
+                      <span className="subj-tile-icon"><Icon type={subjectIconType(label)} className="" /></span>
+                      <h3>{label}</h3>
+                      <p>{copy || `Explore ${label} units, lessons and videos.`}</p>
+                      <span className="subj-tile-count">{count} {count === 1 ? "resource" : "resources"} →</span>
+                    </div>
+                  </a>
+                );
+              })}
+            </div>
+          </section>
+        )}
+
+        {page === "subjects" && activeSubject && (
+          <section className="lib-page subj-page" style={{ "--accent": subjectAccent(activeSubject) }}>
+            <div className="lib-hero subject-hero" style={{ "--subject": subjectAccent(activeSubject) }}>
+              <div className="lib-hero-inner">
+                <a className="subj-back" href={teacherRoute("subjects")}>← All subjects</a>
+                <span className="lib-hero-eyebrow">Subject</span>
+                <h1>{activeSubject}</h1>
+                <p>{activeSubjectCopy || `Every published ${activeSubject} unit, lesson and video — ready to teach.`}</p>
                 <div className="lib-hero-stats">
                   <div><strong>{subjectScopedItems.length}</strong><span>{subjectScopedItems.length === 1 ? "resource" : "resources"}</span></div>
+                  {subjectUnits.length ? <div><strong>{subjectUnits.length}</strong><span>{subjectUnits.length === 1 ? "unit" : "units"}</span></div> : null}
                   <div><strong>{subjectStageCount}</strong><span>{subjectStageCount === 1 ? "stage" : "stages"}</span></div>
                 </div>
               </div>
@@ -2020,58 +2133,41 @@ function TeacherDashboard({ config, contentItems = defaultContentItems.map(resol
               </div>
             </div>
 
-            <div className="lib-toolbar">
-              <label className="search-box lib-search">
-                <span></span>
-                <input value={query} onChange={(event) => setQuery(event.target.value)} type="search" placeholder="Search this subject…" />
-              </label>
-              <div className="page-chip-row">
-                <a className={`page-chip ${!activeSubject ? "selected" : ""}`} href={teacherRoute("subjects")}>All subjects</a>
-                {subjects.map(([label]) => (
-                  <a className={`page-chip ${activeSubject === label ? "selected" : ""}`} key={label} href={teacherRoute(`subjects/${subjectSlug(label)}`)}>{label}</a>
-                ))}
-              </div>
+            <div className="subj-switch">
+              {subjects.map(([label]) => (
+                <a className={`page-chip ${activeSubject === label ? "selected" : ""}`} key={label} href={teacherRoute(`subjects/${subjectSlug(label)}`)}>{label}</a>
+              ))}
             </div>
 
-            {filteredItems.length ? (
+            {subjectScopedItems.length ? (
               <>
-                <p className="lib-count">{filteredItems.length} {filteredItems.length === 1 ? "item" : "items"}{activeSubject ? ` in ${activeSubject}` : ""}{query.trim() ? ` matching “${query.trim()}”` : ""}</p>
-                <div className="lib-grid">
-                  {filteredItems.map((item, index) => {
-                    const saved = savedItemIds.includes(item.id);
-                    return (
-                      <Reveal as="article" className="lib-card" key={item.id || item.title} delay={Math.min(index, 8) * 45} style={{ "--accent": subjectAccent(item.subject) }}>
-                        <a className="lib-card-media" href={teacherContentRoute(item.id)}>
-                          <img src={item.image} alt="" loading="lazy" />
-                          <span className="lib-card-type">{item.type}</span>
-                        </a>
-                        <div className="lib-card-body">
-                          <div className="lib-card-subject"><span className="lib-card-dot" />{item.subject}</div>
-                          <h3><a href={teacherContentRoute(item.id)}>{item.title}</a></h3>
-                          <p>{item.summary || item.description}</p>
-                          <div className="lib-card-meta">
-                            {item.stage ? <span>{item.stage}</span> : null}
-                            {item.durationMinutes ? <span>{item.durationMinutes} min</span> : null}
-                            {item.materials?.quiz?.questions?.length ? <span>Check-in quiz</span> : null}
-                          </div>
-                          <div className="lib-card-actions">
-                            <a className="primary-action" href={teacherContentRoute(item.id)}>Open</a>
-                            <button type="button" className={`lib-save${saved ? " is-saved" : ""}`} onClick={() => onToggleSaved(item.id)} aria-pressed={saved} aria-label={saved ? "Saved" : "Save"}>
-                              <Icon type="bookmark" className="" />{saved ? "Saved" : "Save"}
-                            </button>
-                          </div>
-                        </div>
-                      </Reveal>
-                    );
-                  })}
-                </div>
+                {subjectUnits.length ? (
+                  <div className="subj-section">
+                    <div className="subj-section-head"><h2>Units of work</h2><span className="subj-section-count">{subjectUnits.length}</span></div>
+                    <div className="lib-grid">{subjectUnits.map((item, index) => renderLibCard(item, index))}</div>
+                  </div>
+                ) : null}
+
+                {subjectStageGroups.map(([stage, items]) => (
+                  <div className="subj-section" key={stage}>
+                    <div className="subj-section-head"><h2>{stage === "Other" ? "Lessons & resources" : stage}</h2><span className="subj-section-count">{items.length}</span></div>
+                    <div className="lib-grid">{items.map((item, index) => renderLibCard(item, index))}</div>
+                  </div>
+                ))}
+
+                {subjectTvVideos.length ? (
+                  <div className="subj-section">
+                    <div className="subj-section-head"><h2>Taronga TV</h2><span className="subj-section-count">{subjectTvVideos.length}</span></div>
+                    <div className="lib-grid">{subjectTvVideos.map((video) => renderTvCard(video))}</div>
+                  </div>
+                ) : null}
               </>
             ) : (
               <div className="lib-empty">
                 <Icon type="book" className="" />
-                <h3>Nothing here yet</h3>
-                <p>Try another subject or clear the search.</p>
-                <button type="button" className="secondary-action" onClick={() => { setActiveSubject(null); setQuery(""); window.location.hash = "#teacher/subjects"; }}>Clear filters</button>
+                <h3>No {activeSubject} resources yet</h3>
+                <p>Published {activeSubject} units, lessons and videos will appear here as they're added.</p>
+                <a className="secondary-action" href={teacherRoute("resources")}>Browse the full library</a>
               </div>
             )}
           </section>
@@ -2328,40 +2424,22 @@ function TeacherDashboard({ config, contentItems = defaultContentItems.map(resol
               </div>
             </div>
 
+            {!activeSubject && !libraryQuery && featuredLibrary.length >= 3 ? (
+              <div className="subj-section lib-featured">
+                <div className="subj-section-head"><h2>Featured</h2><span className="subj-section-count">Latest</span></div>
+                <div className="lib-grid">{featuredLibrary.map((item, index) => renderLibCard(item, index))}</div>
+              </div>
+            ) : null}
+
             {allResourceItems.length ? (
               filteredLibrary.length ? (
-                <>
-                  <p className="lib-count">{filteredLibrary.length} {filteredLibrary.length === 1 ? "item" : "items"}{activeSubject ? ` in ${activeSubject}` : ""}{libraryQuery ? ` matching “${query.trim()}”` : ""}</p>
-                  <div className="lib-grid">
-                    {filteredLibrary.map((item, index) => {
-                      const saved = savedItemIds.includes(item.id);
-                      return (
-                        <Reveal as="article" className="lib-card" key={item.id || item.title} delay={Math.min(index, 8) * 45} style={{ "--accent": subjectAccent(item.subject) }}>
-                          <a className="lib-card-media" href={teacherContentRoute(item.id)}>
-                            <img src={item.image} alt="" loading="lazy" />
-                            <span className="lib-card-type">{item.type}</span>
-                          </a>
-                          <div className="lib-card-body">
-                            <div className="lib-card-subject"><span className="lib-card-dot" />{item.subject}</div>
-                            <h3><a href={teacherContentRoute(item.id)}>{item.title}</a></h3>
-                            <p>{item.summary || item.description}</p>
-                            <div className="lib-card-meta">
-                              {item.stage ? <span>{item.stage}</span> : null}
-                              {item.durationMinutes ? <span>{item.durationMinutes} min</span> : null}
-                              {item.materials?.quiz?.questions?.length ? <span>Check-in quiz</span> : null}
-                            </div>
-                            <div className="lib-card-actions">
-                              <a className="primary-action" href={teacherContentRoute(item.id)}>Open</a>
-                              <button type="button" className={`lib-save${saved ? " is-saved" : ""}`} onClick={() => onToggleSaved(item.id)} aria-pressed={saved} aria-label={saved ? "Saved" : "Save"}>
-                                <Icon type="bookmark" className="" />{saved ? "Saved" : "Save"}
-                              </button>
-                            </div>
-                          </div>
-                        </Reveal>
-                      );
-                    })}
+                <div className="subj-section">
+                  <div className="subj-section-head">
+                    <h2>{activeSubject || libraryQuery ? "Results" : "All resources"}</h2>
+                    <span className="subj-section-count">{filteredLibrary.length}{activeSubject ? ` in ${activeSubject}` : ""}{libraryQuery ? ` matching “${query.trim()}”` : ""}</span>
                   </div>
-                </>
+                  <div className="lib-grid">{filteredLibrary.map((item, index) => renderLibCard(item, index))}</div>
+                </div>
               ) : (
                 <div className="lib-empty">
                   <Icon type="book" className="" />
