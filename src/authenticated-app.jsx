@@ -1782,15 +1782,18 @@ function TeacherDashboard({ config, contentItems = defaultContentItems.map(resol
           <a className={`nav-item ${page === "taronga-tv" ? "active" : ""}`} href={teacherRoute("taronga-tv")}><Icon type="monitor" />Taronga TV</a>
           <a className={`nav-item ${page === "professional-learning" ? "active" : ""}`} href={teacherRoute("professional-learning")}><Icon type="speech" />Professional Learning</a>
         </section>
-        <section className="side-section" aria-labelledby="subjects-title">
-          <h2 id="subjects-title">Subject Areas</h2>
+        <details className="side-section side-subjects">
+          <summary className="side-subjects-summary">
+            <span>Subject Areas</span>
+            <Icon type="chevron" className="side-subjects-chevron" />
+          </summary>
           {subjects.map(([label, cls]) => (
             <a className={`subject-link ${cls}`} data-filter={label} key={label} href={teacherRoute(`subjects/${subjectSlug(label)}`)}>
               <Icon type={subjectIconType(label)} className="subject-svg" />
               {label}
             </a>
           ))}
-        </section>
+        </details>
         <section className="side-section" aria-labelledby="explore-title">
           <h2 id="explore-title">Explore</h2>
           <a className="nav-item small" href={appLinks.excursions}><Icon type="pin" />Excursions & Zoo Links</a>

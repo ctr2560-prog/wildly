@@ -228,6 +228,46 @@ textarea {
   text-transform: uppercase;
 }
 
+.side-subjects > summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 0 0 2px;
+  padding: 4px 8px 4px 0;
+  color: #788179;
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  list-style: none;
+  cursor: pointer;
+  user-select: none;
+}
+
+.side-subjects > summary::-webkit-details-marker { display: none; }
+.side-subjects > summary:hover { color: var(--green-900); }
+.side-subjects > summary:focus-visible {
+  outline: 2px solid var(--green-700, #256a45);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+.side-subjects-chevron {
+  width: 15px;
+  height: 15px;
+  flex: 0 0 auto;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  opacity: 0.9;
+  transition: transform 0.2s ease;
+}
+
+.side-subjects[open] .side-subjects-chevron { transform: rotate(180deg); }
+
 .subject-link {
   min-height: 36px;
   font-size: 13px;
