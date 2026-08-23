@@ -1467,6 +1467,7 @@ function TeacherHeroRotator({ banners, fallbackImage }) {
 
 function TeacherDashboard({ config, contentItems = defaultContentItems.map(resolveContentItem), professionalLearningItems = defaultProfessionalLearningItems, tarongaTvVideos = defaultTarongaTvVideos.map(resolveTarongaTvVideo), page = "dashboard", subject = "", contentId = "", tvVideoId = "", profile = null, teacherEmail = "", onSignOut = null, preview = false, workspace = createDefaultTeacherWorkspace(), onToggleSaved = () => {}, onCreateClass = () => {}, onDeleteClass = () => {}, onToggleAssignment = () => {}, upcomingEvents = [] }) {
   const [activeSubject, setActiveSubject] = useState(subjectFromSlug(subject));
+  const [stageFilter, setStageFilter] = useState("");
   const [activeTvCategory, setActiveTvCategory] = useState("All");
   const [query, setQuery] = useState("");
   const [notice, setNotice] = useState("");
@@ -1576,9 +1577,17 @@ function TeacherDashboard({ config, contentItems = defaultContentItems.map(resol
   const libraryQuery = query.trim().toLowerCase();
   const filteredLibrary = allResourceItems.filter((item) => {
     if (activeSubject && item.subject !== activeSubject) return false;
+    if (stageFilter && item.stage !== stageFilter) return false;
     if (!libraryQuery) return true;
     return `${item.title} ${item.summary || ""} ${item.description || ""} ${item.subject || ""} ${item.stage || ""} ${item.type || ""}`.toLowerCase().includes(libraryQuery);
   });
+  const LIBRARY_STAGE_ORDER = ["Early Stage 1", "Stage 1", "Stage 2", "Stage 3", "Stage 4", "Stage 5", "Stage 6"];
+  const libraryStages = [...new Set(allResourceItems.map((item) => item.stage).filter(Boolean))].sort((a, b) => {
+    const ia = LIBRARY_STAGE_ORDER.indexOf(a);
+    const ib = LIBRARY_STAGE_ORDER.indexOf(b);
+    return (ia === -1 ? 99 : ia) - (ib === -1 ? 99 : ib);
+  });
+  const libraryFiltersActive = Boolean(activeSubject || stageFilter || libraryQuery);
   const featuredLibrary = useMemo(
     () => [...allResourceItems].sort((a, b) => (b.updatedAt?.seconds || 0) - (a.updatedAt?.seconds || 0)).slice(0, 3),
     [allResourceItems],
@@ -2080,19 +2089,10 @@ function TeacherDashboard({ config, contentItems = defaultContentItems.map(resol
 
         {page === "subjects" && !activeSubject && (
           <section className="lib-page subj-index">
-            <div className="lib-hero subject-hero is-all">
-              <div className="lib-hero-inner">
-                <span className="lib-hero-eyebrow">Browse by subject</span>
-                <h1>Explore by subject</h1>
-                <p>Every curriculum area has its own home — units of work, lessons by stage and Taronga TV, all in one place. Pick a subject to dive in.</p>
-                <div className="lib-hero-stats">
-                  <div><strong>{subjects.length}</strong><span>{subjects.length === 1 ? "subject" : "subjects"}</span></div>
-                  <div><strong>{publishedItems.length}</strong><span>{publishedItems.length === 1 ? "resource" : "resources"}</span></div>
-                </div>
-              </div>
-              <div className="lib-hero-art" aria-hidden="true">
-                <img src={subjectImage(null)} alt="" />
-              </div>
+            <div className="subj-index-head">
+              <span className="subj-index-eyebrow">Subject areas</span>
+              <h1>Choose a subject</h1>
+              <p>Each subject has its own home — units of work, lessons by stage and Taronga TV, curated for the classroom.</p>
             </div>
 
             <div className="subj-tiles">
@@ -2100,12 +2100,13 @@ function TeacherDashboard({ config, contentItems = defaultContentItems.map(resol
                 const count = publishedItems.filter((item) => item.subject === label).length;
                 return (
                   <a className="subj-tile" key={label} href={teacherRoute(`subjects/${subjectSlug(label)}`)} style={{ "--accent": subjectAccent(label) }}>
-                    <div className="subj-tile-art" aria-hidden="true"><img src={subjectImage(label)} alt="" loading="lazy" /></div>
-                    <div className="subj-tile-body">
-                      <span className="subj-tile-icon"><Icon type={subjectIconType(label)} className="" /></span>
+                    <div className="subj-tile-media">
+                      <img src={subjectImage(label)} alt="" loading="lazy" />
                       <h3>{label}</h3>
+                    </div>
+                    <div className="subj-tile-foot">
                       <p>{copy || `Explore ${label} units, lessons and videos.`}</p>
-                      <span className="subj-tile-count">{count} {count === 1 ? "resource" : "resources"} →</span>
+                      <span className="subj-tile-count">{count} {count === 1 ? "resource" : "resources"}<span aria-hidden="true"> →</span></span>
                     </div>
                   </a>
                 );
@@ -2115,61 +2116,55 @@ function TeacherDashboard({ config, contentItems = defaultContentItems.map(resol
         )}
 
         {page === "subjects" && activeSubject && (
-          <section className="lib-page subj-page" style={{ "--accent": subjectAccent(activeSubject) }}>
-            <div className="lib-hero subject-hero" style={{ "--subject": subjectAccent(activeSubject) }}>
-              <div className="lib-hero-inner">
-                <a className="subj-back" href={teacherRoute("subjects")}>← All subjects</a>
-                <span className="lib-hero-eyebrow">Subject</span>
+          <section className="subj-page" style={{ "--accent": subjectAccent(activeSubject) }}>
+            <header className="subj-hero">
+              <div className="subj-hero-media" aria-hidden="true"><img src={subjectImage(activeSubject)} alt="" /></div>
+              <div className="subj-hero-content">
+                <a className="subj-back" href={teacherRoute("subjects")}><span aria-hidden="true">←</span> All subjects</a>
+                <span className="subj-hero-eyebrow">Subject</span>
                 <h1>{activeSubject}</h1>
                 <p>{activeSubjectCopy || `Every published ${activeSubject} unit, lesson and video — ready to teach.`}</p>
-                <div className="lib-hero-stats">
-                  <div><strong>{subjectScopedItems.length}</strong><span>{subjectScopedItems.length === 1 ? "resource" : "resources"}</span></div>
-                  {subjectUnits.length ? <div><strong>{subjectUnits.length}</strong><span>{subjectUnits.length === 1 ? "unit" : "units"}</span></div> : null}
-                  <div><strong>{subjectStageCount}</strong><span>{subjectStageCount === 1 ? "stage" : "stages"}</span></div>
+                <div className="subj-hero-stats">
+                  <span><strong>{subjectScopedItems.length}</strong> {subjectScopedItems.length === 1 ? "resource" : "resources"}</span>
+                  {subjectUnits.length ? <span><strong>{subjectUnits.length}</strong> {subjectUnits.length === 1 ? "unit" : "units"}</span> : null}
+                  <span><strong>{subjectStageCount}</strong> {subjectStageCount === 1 ? "stage" : "stages"}</span>
                 </div>
               </div>
-              <div className="lib-hero-art" aria-hidden="true">
-                <img src={subjectImage(activeSubject)} alt="" />
-              </div>
+            </header>
+
+            <div className="subj-body">
+              {subjectScopedItems.length ? (
+                <>
+                  {subjectUnits.length ? (
+                    <div className="subj-section">
+                      <div className="subj-section-head"><h2>Units of work</h2><span className="subj-section-count">{subjectUnits.length}</span></div>
+                      <div className="lib-grid">{subjectUnits.map((item, index) => renderLibCard(item, index))}</div>
+                    </div>
+                  ) : null}
+
+                  {subjectStageGroups.map(([stage, items]) => (
+                    <div className="subj-section" key={stage}>
+                      <div className="subj-section-head"><h2>{stage === "Other" ? "Lessons & resources" : stage}</h2><span className="subj-section-count">{items.length} {items.length === 1 ? "lesson" : "lessons"}</span></div>
+                      <div className="lib-grid">{items.map((item, index) => renderLibCard(item, index))}</div>
+                    </div>
+                  ))}
+
+                  {subjectTvVideos.length ? (
+                    <div className="subj-section">
+                      <div className="subj-section-head"><h2>Taronga TV</h2><span className="subj-section-count">{subjectTvVideos.length} {subjectTvVideos.length === 1 ? "video" : "videos"}</span></div>
+                      <div className="lib-grid">{subjectTvVideos.map((video) => renderTvCard(video))}</div>
+                    </div>
+                  ) : null}
+                </>
+              ) : (
+                <div className="lib-empty">
+                  <Icon type="book" className="" />
+                  <h3>No {activeSubject} resources yet</h3>
+                  <p>Published {activeSubject} units, lessons and videos will appear here as they're added.</p>
+                  <a className="secondary-action" href={teacherRoute("resources")}>Browse the full library</a>
+                </div>
+              )}
             </div>
-
-            <div className="subj-switch">
-              {subjects.map(([label]) => (
-                <a className={`page-chip ${activeSubject === label ? "selected" : ""}`} key={label} href={teacherRoute(`subjects/${subjectSlug(label)}`)}>{label}</a>
-              ))}
-            </div>
-
-            {subjectScopedItems.length ? (
-              <>
-                {subjectUnits.length ? (
-                  <div className="subj-section">
-                    <div className="subj-section-head"><h2>Units of work</h2><span className="subj-section-count">{subjectUnits.length}</span></div>
-                    <div className="lib-grid">{subjectUnits.map((item, index) => renderLibCard(item, index))}</div>
-                  </div>
-                ) : null}
-
-                {subjectStageGroups.map(([stage, items]) => (
-                  <div className="subj-section" key={stage}>
-                    <div className="subj-section-head"><h2>{stage === "Other" ? "Lessons & resources" : stage}</h2><span className="subj-section-count">{items.length}</span></div>
-                    <div className="lib-grid">{items.map((item, index) => renderLibCard(item, index))}</div>
-                  </div>
-                ))}
-
-                {subjectTvVideos.length ? (
-                  <div className="subj-section">
-                    <div className="subj-section-head"><h2>Taronga TV</h2><span className="subj-section-count">{subjectTvVideos.length}</span></div>
-                    <div className="lib-grid">{subjectTvVideos.map((video) => renderTvCard(video))}</div>
-                  </div>
-                ) : null}
-              </>
-            ) : (
-              <div className="lib-empty">
-                <Icon type="book" className="" />
-                <h3>No {activeSubject} resources yet</h3>
-                <p>Published {activeSubject} units, lessons and videos will appear here as they're added.</p>
-                <a className="secondary-action" href={teacherRoute("resources")}>Browse the full library</a>
-              </div>
-            )}
           </section>
         )}
 
@@ -2416,15 +2411,25 @@ function TeacherDashboard({ config, contentItems = defaultContentItems.map(resol
                 <span></span>
                 <input value={query} onChange={(event) => setQuery(event.target.value)} type="search" placeholder="Search the library…" />
               </label>
-              <div className="page-chip-row">
-                <button type="button" className={`page-chip ${!activeSubject ? "selected" : ""}`} onClick={() => setActiveSubject(null)}>All subjects</button>
-                {subjects.map(([label]) => (
-                  <button type="button" className={`page-chip ${activeSubject === label ? "selected" : ""}`} key={label} onClick={() => setActiveSubject(label)}>{label}</button>
-                ))}
+              <div className="lib-filters">
+                <label className="lib-select">
+                  <span>Subject</span>
+                  <select value={activeSubject || ""} onChange={(event) => setActiveSubject(event.target.value || null)}>
+                    <option value="">All subjects</option>
+                    {subjects.map(([label]) => <option key={label} value={label}>{label}</option>)}
+                  </select>
+                </label>
+                <label className="lib-select">
+                  <span>Stage</span>
+                  <select value={stageFilter} onChange={(event) => setStageFilter(event.target.value)} disabled={!libraryStages.length}>
+                    <option value="">All stages</option>
+                    {libraryStages.map((stage) => <option key={stage} value={stage}>{stage}</option>)}
+                  </select>
+                </label>
               </div>
             </div>
 
-            {!activeSubject && !libraryQuery && featuredLibrary.length >= 3 ? (
+            {!libraryFiltersActive && featuredLibrary.length >= 3 ? (
               <div className="subj-section lib-featured">
                 <div className="subj-section-head"><h2>Featured</h2><span className="subj-section-count">Latest</span></div>
                 <div className="lib-grid">{featuredLibrary.map((item, index) => renderLibCard(item, index))}</div>
@@ -2435,8 +2440,8 @@ function TeacherDashboard({ config, contentItems = defaultContentItems.map(resol
               filteredLibrary.length ? (
                 <div className="subj-section">
                   <div className="subj-section-head">
-                    <h2>{activeSubject || libraryQuery ? "Results" : "All resources"}</h2>
-                    <span className="subj-section-count">{filteredLibrary.length}{activeSubject ? ` in ${activeSubject}` : ""}{libraryQuery ? ` matching “${query.trim()}”` : ""}</span>
+                    <h2>{libraryFiltersActive ? "Results" : "All resources"}</h2>
+                    <span className="subj-section-count">{filteredLibrary.length}{activeSubject ? ` in ${activeSubject}` : ""}{stageFilter ? ` · ${stageFilter}` : ""}{libraryQuery ? ` matching “${query.trim()}”` : ""}</span>
                   </div>
                   <div className="lib-grid">{filteredLibrary.map((item, index) => renderLibCard(item, index))}</div>
                 </div>
@@ -2444,8 +2449,8 @@ function TeacherDashboard({ config, contentItems = defaultContentItems.map(resol
                 <div className="lib-empty">
                   <Icon type="book" className="" />
                   <h3>Nothing matches your filters</h3>
-                  <p>Try a different subject or clear the search.</p>
-                  <button type="button" className="secondary-action" onClick={() => { setActiveSubject(null); setQuery(""); }}>Clear filters</button>
+                  <p>Try a different subject or stage, or clear the search.</p>
+                  <button type="button" className="secondary-action" onClick={() => { setActiveSubject(null); setStageFilter(""); setQuery(""); }}>Clear filters</button>
                 </div>
               )
             ) : (
