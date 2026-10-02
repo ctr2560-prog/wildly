@@ -1350,7 +1350,17 @@ function AboutYouPage() {
             <label>
               I am
               <select value={form.role} onChange={(event) => setForm((current) => ({ ...current, role: event.target.value }))}>
-                {["Teacher", "School Leader", "Parent", "Student", "Curriculum Leader", "Education Staff"].map((role) => <option key={role} value={role}>{role}</option>)}
+                {/* ⚠️ The Taronga staff roles ("Education Staff", "Curriculum Leader",
+                    "School Leader") are NOT offered here on purpose. role is what
+                    isWildlyStaff() reads in firestore.rules, and users write their own teacher
+                    document — so offering them here let anyone who signed up promote themselves
+                    to Taronga staff and then list every teacher, edit content and delete
+                    accounts. Fixed 2026-10-03.
+                    ⚠️ Removing them from this list is DEFENCE IN DEPTH, not the fix. The rule is
+                    the control; a self-granted staff role is refused server-side regardless of
+                    what this dropdown offers. Do not add them back. Staff roles are granted by
+                    the admin-code-gated setTeacherRole Cloud Function. */}
+                {["Teacher", "Parent", "Student"].map((role) => <option key={role} value={role}>{role}</option>)}
               </select>
             </label>
             <label>
