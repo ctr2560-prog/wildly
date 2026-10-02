@@ -42,7 +42,14 @@ export const app = initializeApp(firebaseConfig);
 //   2. Set VITE_APPCHECK_SITE_KEY here AND in Tracka, both in the GitHub Actions build env.
 //   3. Watch "unverified requests" in the Console until it is near zero for real traffic.
 //   4. ONLY THEN enable Enforcement, per service.
-const appCheckSiteKey = import.meta.env.VITE_APPCHECK_SITE_KEY;
+// ⚠️ A reCAPTCHA site key is PUBLIC by design — it ships in the browser on every site that
+// uses reCAPTCHA, and it only works on the domains registered against it. It is checked in
+// deliberately rather than kept as a build secret: an env-only key silently ships a build
+// with App Check DISABLED the first time someone forgets to set it in CI, and a security
+// control that fails silently is worse than none. The env var still overrides it, so a
+// different key can be used per environment without a code change.
+const APPCHECK_SITE_KEY = "6LckH9stAAAAABNS8suCHEo2TJUGFh2L2m-QzcU0";
+const appCheckSiteKey = import.meta.env.VITE_APPCHECK_SITE_KEY || APPCHECK_SITE_KEY;
 if (appCheckSiteKey) {
   if (import.meta.env.VITE_APPCHECK_DEBUG === "true") {
     self.FIREBASE_APPCHECK_DEBUG_TOKEN = true;
