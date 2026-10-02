@@ -1,5 +1,5 @@
 import { initializeApp } from "firebase/app";
-import { initializeAppCheck, ReCaptchaV3Provider } from "firebase/app-check";
+import { initializeAppCheck, ReCaptchaEnterpriseProvider } from "firebase/app-check";
 import { getAnalytics, isSupported } from "firebase/analytics";
 import { getAuth } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
@@ -38,7 +38,7 @@ export const app = initializeApp(firebaseConfig);
 // domain is missing will fail every request once enforcement is on.
 //
 // Inert until VITE_APPCHECK_SITE_KEY is set, so this is safe to ship today. Rollout order:
-//   1. Console → App Check → register with reCAPTCHA v3, both domains on the key.
+//   1. Console → App Check → register under Fraud Defense, all domains on the key.
 //   2. Set VITE_APPCHECK_SITE_KEY here AND in Tracka, both in the GitHub Actions build env.
 //   3. Watch "unverified requests" in the Console until it is near zero for real traffic.
 //   4. ONLY THEN enable Enforcement, per service.
@@ -49,7 +49,7 @@ if (appCheckSiteKey) {
   }
   try {
     initializeAppCheck(app, {
-      provider: new ReCaptchaV3Provider(appCheckSiteKey),
+      provider: new ReCaptchaEnterpriseProvider(appCheckSiteKey),
       isTokenAutoRefreshEnabled: true,
     });
   } catch (err) {
