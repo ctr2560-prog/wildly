@@ -1,0 +1,424 @@
+/* ============================================================================
+   Wildly by Taronga — design tokens
+   ----------------------------------------------------------------------------
+   Owner: Design Lead. Issue BIO-2 (W1 design foundation).
+   Full rationale, contrast tables and usage rules: BIO-2 `design-system` doc.
+
+   THIS FILE IS THE SINGLE SOURCE OF TRUTH FOR EVERY VISUAL CONSTANT.
+   Rules (enforced in review):
+     - No hardcoded hex, rgb() or hsl() in any other stylesheet.
+     - No ad-hoc px spacing. Use --wly-space-*.
+     - No ad-hoc font-size / line-height. Use the --wly-font-size-* roles.
+     - No ad-hoc box-shadow. Use --wly-elev-*.
+     - Need a value that does not exist here? Propose a token. Do not inline it.
+
+   STATUS: additive and visually inert as of W1. The `--wly-*` tokens are
+   defined and documented but almost nothing consumes them yet; the legacy
+   variables at the bottom of this file are aliased onto tokens whose literal
+   values are byte-identical to what shipped before, so the rendered app is
+   unchanged. Screens migrate onto the tokens from W2 onwards.
+   ========================================================================= */
+
+:root {
+  /* ==========================================================================
+     1. PRIMITIVES — raw ramps. PRIVATE.
+     Do not reference these from component CSS. Use the semantic tokens in
+     section 2. A primitive can be re-pointed; a semantic token is the contract.
+     ====================================================================== */
+
+  /* --- Taronga green ------------------------------------------------------
+     Wildly's existing green ramp, re-ordered into a true luminance ramp and
+     anchored to Taronga's live brand primary. Steps 50/100/700/800/900 are the
+     exact values already shipping; 200–600 and 950 fill the gaps that every
+     screen was previously inventing by hand.                                */
+  --wly-green-25: #f7faf6; /* app canvas */
+  --wly-green-50: #f5faf3;
+  --wly-green-100: #e9f2e7;
+  --wly-green-200: #d7e2d6;
+  --wly-green-300: #a8c2b0;
+  --wly-green-400: #6fa585;
+  --wly-green-500: #2e7d55;
+  --wly-green-600: #1e7448;
+  --wly-green-700: #135f3d;
+  --wly-green-800: #0b4c32;
+  --wly-green-900: #073f2a;
+  --wly-green-950: #02301f;
+
+  /* Taronga Conservation Society's literal brand values, read from the live
+     taronga.org.au stylesheet. Kept exact and unrounded so the parent brand is
+     quotable rather than approximated. Use for co-branded lockups and anywhere
+     the Taronga mark sits next to Wildly's. */
+  --wly-taronga-core: #02543f; /* rgb(2 84 63)   — Taronga button/brand primary */
+  --wly-taronga-core-dark: #023024; /* rgb(2 48 36)   — Taronga primary hover */
+  --wly-taronga-bright: #00893f; /* rgb(0 137 63)  — Taronga conservation green */
+  --wly-taronga-ink: #1b292f; /* Taronga body ink */
+
+  /* --- Warm sand neutrals ------------------------------------------------
+     New. Taronga's own neutral family. This is the warmth Wildly is missing:
+     today every non-white surface is a green-tinted off-white, which reads
+     clinical. Sand gives authoring surfaces and marketing bands a second,
+     warmer register without introducing a second hue.                       */
+  --wly-sand-50: #faf9f6;
+  --wly-sand-100: #f3f3f0; /* Taronga rgb(243 243 240) */
+  --wly-sand-200: #e8e6e1; /* Taronga rgb(232 230 225) */
+  --wly-sand-300: #d6d3cb;
+  --wly-sand-400: #c2bfb8; /* Taronga #c2bfb8 */
+
+  /* --- Ink / neutral ----------------------------------------------------- */
+  --wly-ink-950: #0f1a16;
+  --wly-ink-900: #1b292f; /* = Taronga ink */
+  --wly-ink-800: #20302a; /* shipping --ink */
+  --wly-ink-700: #37443d;
+  --wly-ink-600: #4a564f;
+  --wly-ink-500: #525f57; /* AA on every surface in this system */
+  --wly-ink-400: #7f8c85;
+  --wly-ink-300: #8a948e;
+  --wly-ink-200: #d7e2d6;
+  --wly-ink-100: #e5ebe4; /* shipping --line */
+  --wly-ink-50: #eef3ee; /* shipping --sage-soft */
+  --wly-white: #ffffff;
+
+  /* Legacy muted. Fails AA (4.39:1) on --wly-green-100 and (4.04:1) on
+     --wly-sand-200. Retained ONLY so W1 stays visually inert. Never reference
+     it in new work; use --wly-text-secondary. Removal is tracked in the
+     design-system doc, "Known failing pairs". */
+  --wly-ink-500-legacy: #65726b;
+
+  /* --- Category hues -----------------------------------------------------
+     Subject colour-coding. The `-500` steps are DECORATIVE ONLY (dots, media
+     washes, chart fills) — every one of them fails AA as text on white. The
+     `-700` steps are the text-safe variants. The `-50` steps are tint
+     surfaces. Colour is never the only carrier of meaning: subject is always
+     also named in text and by icon.                                         */
+  --wly-blue-50: #eaf1fb;
+  --wly-blue-500: #3f7bd8;
+  --wly-blue-700: #2f5fa8;
+  --wly-purple-50: #f1ecfa;
+  --wly-purple-500: #7c57c8;
+  --wly-purple-700: #5f3da3;
+  --wly-orange-50: #fcf1e6;
+  --wly-orange-500: #d88339;
+  --wly-orange-700: #99521c;
+  --wly-pink-50: #fdeef3;
+  --wly-pink-500: #d85d84;
+  --wly-pink-700: #a62d53;
+  --wly-teal-50: #e4f3f1;
+  --wly-teal-500: #14988a;
+  --wly-teal-700: #0a6b61;
+  --wly-ochre-50: #fdf0e6;
+  --wly-ochre-500: #c75205; /* Taronga rgb(199 82 5) */
+  --wly-ochre-700: #9a4208; /* Taronga rgb(154 66 8) */
+  --wly-sun-500: #f1bf33; /* Taronga rgb(241 191 51) — decorative only */
+
+  /* --- State ramps ------------------------------------------------------- */
+  --wly-success-50: #e9f2e7;
+  --wly-success-600: #1e7448;
+  --wly-success-800: #0b4c32;
+  --wly-warning-50: #fdf4e3;
+  --wly-warning-600: #9a6508;
+  --wly-warning-800: #7a4f06;
+  --wly-danger-50: #fdecea;
+  --wly-danger-600: #b3261e;
+  --wly-danger-800: #8c1d18;
+  --wly-info-50: #eaf1fb;
+  --wly-info-600: #2f5fa8;
+  --wly-info-800: #1f4480;
+
+  /* Shadow ink. Wildly's existing green-black, kept: a neutral-black shadow is
+     one of the tells that a UI was assembled from defaults. */
+  --wly-shadow-rgb: 12 33 22;
+
+  /* ==========================================================================
+     2. SEMANTIC TOKENS — the public API. Component CSS uses ONLY these.
+     ====================================================================== */
+
+  /* --- Brand ------------------------------------------------------------- */
+  --wly-brand: var(--wly-green-800); /* primary actions, active nav, brand fills */
+  --wly-brand-hover: var(--wly-green-900);
+  --wly-brand-active: var(--wly-green-950);
+  --wly-brand-strong: var(--wly-green-900); /* display headings on light */
+  --wly-brand-muted: var(--wly-green-700);
+  --wly-brand-surface: var(--wly-green-100); /* brand-tinted panel */
+  --wly-brand-surface-subtle: var(--wly-green-50);
+  --wly-brand-border: var(--wly-green-200);
+  --wly-brand-on: var(--wly-white); /* text/icons on a brand fill */
+  --wly-brand-on-muted: var(--wly-green-100); /* secondary text on a brand fill */
+  --wly-brand-on-faint: var(--wly-green-300); /* tertiary text on a brand fill */
+
+  /* --- Surfaces ----------------------------------------------------------
+     Four tiers, cool register (default) plus a warm register for authoring
+     and marketing. Depth is carried by surface tier first, elevation second —
+     not by a border on everything.                                          */
+  --wly-surface-page: var(--wly-green-25); /* app canvas */
+  --wly-surface: var(--wly-white); /* cards, panels, sheets */
+  --wly-surface-raised: var(--wly-white); /* popovers, modals (+ elevation) */
+  --wly-surface-sunken: var(--wly-ink-50); /* wells, inset lists, code */
+  --wly-surface-inverse: var(--wly-green-900); /* dark bands, footers */
+  --wly-surface-warm: var(--wly-sand-100); /* authoring / long-form bands */
+  --wly-surface-warm-strong: var(--wly-sand-200);
+  --wly-surface-hover: var(--wly-green-50);
+  --wly-surface-selected: var(--wly-green-100);
+
+  /* --- Text -------------------------------------------------------------- */
+  --wly-text-primary: var(--wly-ink-800); /* 13.84:1 on surface */
+  --wly-text-heading: var(--wly-ink-900); /* 14.95:1 on surface */
+  --wly-text-secondary: var(--wly-ink-500); /* >=5.02:1 on every surface */
+  /* There is deliberately NO third grey for text. Between --wly-text-secondary
+     and the AA floor there is no step that is both legible and visually
+     distinct, so metadata is differentiated by SIZE and WEIGHT
+     (--wly-font-size-sm / --wly-font-weight-medium), not by a lighter grey.
+     Four greys is how a UI ends up with no hierarchy at all. */
+  --wly-text-disabled: var(--wly-ink-300); /* 3.13:1 — disabled controls only */
+  --wly-icon-decorative: var(--wly-ink-400); /* 3.50:1 — non-meaningful icons/rules */
+  --wly-text-brand: var(--wly-green-800); /* 10.03:1 on surface */
+  --wly-text-link: var(--wly-green-800);
+  --wly-text-link-hover: var(--wly-green-900);
+  --wly-text-on-inverse: var(--wly-white);
+  --wly-text-on-inverse-muted: var(--wly-green-300);
+
+  /* --- Borders -----------------------------------------------------------
+     WCAG 1.4.11 applies to interactive component boundaries, not decorative
+     separators. --wly-border* are decorative (below 3:1 by design, so panels
+     read quiet). Anything a user can click, type into or toggle uses
+     --wly-border-interactive (3.50:1 on surface, 3.33:1 on page).            */
+  --wly-border-subtle: var(--wly-ink-50);
+  --wly-border: var(--wly-ink-100);
+  --wly-border-muted: var(--wly-ink-200);
+  --wly-border-interactive: var(--wly-ink-400);
+  --wly-border-brand: var(--wly-green-800);
+  --wly-border-width: 1px;
+  --wly-border-width-thick: 2px;
+  --wly-border-width-hairline: 1px;
+
+  /* --- State ------------------------------------------------------------- */
+  --wly-success: var(--wly-success-600);
+  --wly-success-surface: var(--wly-success-50);
+  --wly-success-text: var(--wly-success-800); /* 8.75:1 on its surface */
+  --wly-warning: var(--wly-warning-600);
+  --wly-warning-surface: var(--wly-warning-50);
+  --wly-warning-text: var(--wly-warning-800); /* 6.52:1 on its surface */
+  --wly-danger: var(--wly-danger-600);
+  --wly-danger-surface: var(--wly-danger-50);
+  --wly-danger-text: var(--wly-danger-800); /* 7.97:1 on its surface */
+  --wly-info: var(--wly-info-600);
+  --wly-info-surface: var(--wly-info-50);
+  --wly-info-text: var(--wly-info-800); /* 8.41:1 on its surface */
+  --wly-on-state: var(--wly-white); /* text on any filled state colour */
+
+  /* --- Focus ------------------------------------------------------------
+     One focus treatment across the whole product. Never `outline: none`
+     without an equivalent replacement. 4.32:1 minimum against every surface. */
+  --wly-focus-ring-color: var(--wly-green-600);
+  --wly-focus-ring-width: 2px;
+  --wly-focus-ring-offset: 2px;
+  --wly-focus-ring: 0 0 0 var(--wly-focus-ring-offset) var(--wly-surface),
+    0 0 0 calc(var(--wly-focus-ring-offset) + var(--wly-focus-ring-width)) var(--wly-focus-ring-color);
+
+  /* ==========================================================================
+     3. TYPOGRAPHY
+     ONE text typeface: Montserrat — Taronga Conservation Society's own body
+     face, verified in the live taronga.org.au stylesheet, and free under the
+     SIL Open Font Licence. Inter and "Avenir Next" are both retired: Inter was
+     never actually loaded (no @font-face, no link tag) so it silently rendered
+     as system-ui, and Avenir Next only exists on Apple devices, so the public
+     site rendered differently per operating system. "Taronga Headline" is
+     retained for brand display lockups only; it is not a text face.
+     The fallback stack is metric-adjacent and ordered so an unloaded Montserrat
+     degrades to a geometric sans, not to Times.
+     ====================================================================== */
+  --wly-font-sans: "Montserrat", "Helvetica Neue", "Segoe UI", ui-sans-serif, system-ui,
+    -apple-system, BlinkMacSystemFont, Arial, sans-serif;
+  --wly-font-display: "Taronga Headline", var(--wly-font-sans);
+  --wly-font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas,
+    "Liberation Mono", monospace;
+
+  --wly-font-weight-regular: 400;
+  --wly-font-weight-medium: 500;
+  --wly-font-weight-semibold: 600;
+  --wly-font-weight-bold: 700;
+
+  /* Type scale. Ten named roles; use at most four on any one screen.
+     Floor is 13px: the app currently ships 9px, 10px and 11px text in ~25
+     places, which is below a readable minimum for a classroom product and is
+     the first thing that makes a screen look machine-generated. */
+  --wly-font-size-display: clamp(2rem, 1.2rem + 2.6vw, 2.75rem); /* 32 -> 44  marketing hero */
+  --wly-font-size-h1: clamp(1.625rem, 1.3rem + 1.1vw, 2rem); /* 26 -> 32  page title */
+  --wly-font-size-h2: 1.5rem; /* 24  section heading */
+  --wly-font-size-h3: 1.1875rem; /* 19  card title */
+  --wly-font-size-h4: 1.0625rem; /* 17  sub-heading */
+  --wly-font-size-body-lg: 1.0625rem; /* 17  lead paragraph */
+  --wly-font-size-body: 1rem; /* 16  prose */
+  --wly-font-size-ui: 0.9375rem; /* 15  default UI, buttons, nav, inputs */
+  --wly-font-size-sm: 0.8125rem; /* 13  metadata, helper text — FLOOR */
+  --wly-font-size-eyebrow: 0.75rem; /* 12  uppercase eyebrow/badge ONLY */
+
+  --wly-line-height-display: 1.08;
+  --wly-line-height-h1: 1.15;
+  --wly-line-height-h2: 1.2;
+  --wly-line-height-h3: 1.3;
+  --wly-line-height-h4: 1.4;
+  --wly-line-height-body: 1.6; /* long-form reading */
+  --wly-line-height-ui: 1.45; /* controls, dense lists */
+  --wly-line-height-flush: 1; /* single-line numerals, icon labels */
+
+  /* Montserrat is a wide geometric face; display sizes need negative tracking
+     or headlines look loose. Small sizes need none. */
+  --wly-letter-spacing-display: -0.022em;
+  --wly-letter-spacing-tight: -0.014em;
+  --wly-letter-spacing-snug: -0.006em;
+  --wly-letter-spacing-normal: 0;
+  --wly-letter-spacing-eyebrow: 0.08em;
+
+  /* Measure. Prose longer than this is hard to scan (IA / F-pattern). */
+  --wly-measure-prose: 68ch;
+  --wly-measure-narrow: 46ch;
+
+  /* ==========================================================================
+     4. SPACING — one 4px-based scale.
+     The app currently ships 260 distinct `padding` values and 65 distinct
+     `gap` values. Everything collapses onto this.
+     ====================================================================== */
+  --wly-space-0: 0;
+  --wly-space-px: 1px;
+  --wly-space-1: 0.25rem; /* 4  — icon/label gap */
+  --wly-space-2: 0.5rem; /* 8  — inside a chip, tight stack */
+  --wly-space-3: 0.75rem; /* 12 — control padding, list row gap */
+  --wly-space-4: 1rem; /* 16 — default card padding, field gap */
+  --wly-space-5: 1.25rem; /* 20 */
+  --wly-space-6: 1.5rem; /* 24 — comfortable card padding, grid gap */
+  --wly-space-8: 2rem; /* 32 — block separation inside a section */
+  --wly-space-10: 2.5rem; /* 40 */
+  --wly-space-12: 3rem; /* 48 — section separation (app) */
+  --wly-space-16: 4rem; /* 64 — section separation (marketing) */
+  --wly-space-20: 5rem; /* 80 */
+  --wly-space-24: 6rem; /* 96 — hero band padding */
+
+  /* Composed rhythm. Use these rather than picking a step per screen, so
+     density is a deliberate decision per context, not an accident. */
+  --wly-pad-control: var(--wly-space-3); /* buttons, inputs, chips */
+  --wly-pad-card: var(--wly-space-5); /* dashboard / library cards */
+  --wly-pad-panel: var(--wly-space-6); /* modals, side panels, forms */
+  --wly-pad-page-inline: clamp(var(--wly-space-4), 4vw, var(--wly-space-12));
+  --wly-gap-inline: var(--wly-space-2); /* icon + label */
+  --wly-gap-stack: var(--wly-space-3); /* label + field */
+  --wly-gap-grid: var(--wly-space-6); /* card grids */
+  --wly-section-gap: var(--wly-space-12); /* app section rhythm */
+  --wly-section-gap-marketing: var(--wly-space-16);
+
+  /* Fitts's Law / WCAG 2.5.8. No interactive target below this. */
+  --wly-target-min: 44px;
+  --wly-target-compact: 32px; /* dense tables only, with 8px clear spacing */
+
+  /* ==========================================================================
+     5. RADIUS — seven steps, down from 42 distinct values in the repo.
+     ====================================================================== */
+  --wly-radius-xs: 4px; /* chips, swatches, nested corners */
+  --wly-radius-sm: 6px; /* inputs, small buttons */
+  --wly-radius-md: 8px; /* DEFAULT — buttons, cards, panels */
+  --wly-radius-lg: 12px; /* feature cards, media tiles */
+  --wly-radius-xl: 16px; /* modals, hero panels */
+  --wly-radius-2xl: 24px; /* marketing bands, large imagery */
+  --wly-radius-pill: 999px; /* pills, badges, avatars */
+  --wly-radius-circle: 50%;
+
+  /* ==========================================================================
+     6. ELEVATION — five steps, down from 126 distinct box-shadow values.
+     Elevation signals interactivity and layer, never decoration. A resting
+     card gets e1 or e2; only overlays get e4/e5.
+     ====================================================================== */
+  --wly-elev-0: none;
+  --wly-elev-1: 0 1px 2px rgb(var(--wly-shadow-rgb) / 0.06),
+    0 1px 1px rgb(var(--wly-shadow-rgb) / 0.04);
+  --wly-elev-2: 0 2px 8px rgb(var(--wly-shadow-rgb) / 0.06),
+    0 1px 2px rgb(var(--wly-shadow-rgb) / 0.04);
+  --wly-elev-3: 0 8px 24px rgb(var(--wly-shadow-rgb) / 0.08);
+  --wly-elev-4: 0 18px 38px rgba(12, 33, 22, 0.06); /* = shipping --surface-shadow */
+  --wly-elev-5: 0 24px 56px rgba(12, 33, 22, 0.1); /* = shipping --surface-shadow-strong */
+  --wly-elev-inset: inset 0 1px 2px rgb(var(--wly-shadow-rgb) / 0.06);
+
+  --wly-scrim: rgb(var(--wly-shadow-rgb) / 0.48); /* modal backdrop */
+  --wly-backdrop-blur: 14px;
+
+  /* ==========================================================================
+     7. MOTION
+     Doherty threshold: any state change must acknowledge within ~100ms and
+     complete well inside 400ms. Nothing in this product animates for longer
+     than --wly-duration-deliberate.
+     ====================================================================== */
+  --wly-duration-instant: 80ms; /* press/active feedback */
+  --wly-duration-fast: 140ms; /* hover, focus, colour change */
+  --wly-duration-base: 200ms; /* DEFAULT — most transitions */
+  --wly-duration-slow: 320ms; /* panel open/close, layout shift */
+  --wly-duration-deliberate: 480ms; /* entrance reveals only */
+
+  --wly-ease-standard: cubic-bezier(0.2, 0, 0, 1); /* default */
+  --wly-ease-out: cubic-bezier(0.22, 1, 0.36, 1); /* things entering */
+  --wly-ease-in: cubic-bezier(0.4, 0, 1, 1); /* things leaving */
+  --wly-ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+
+  --wly-transition-colors: color var(--wly-duration-fast) var(--wly-ease-standard),
+    background-color var(--wly-duration-fast) var(--wly-ease-standard),
+    border-color var(--wly-duration-fast) var(--wly-ease-standard);
+  --wly-transition-elevation: box-shadow var(--wly-duration-base) var(--wly-ease-standard),
+    transform var(--wly-duration-base) var(--wly-ease-standard);
+
+  /* ==========================================================================
+     8. LAYOUT
+     Breakpoints cannot be custom properties inside @media, so they are
+     documented constants. Use these five and no others:
+       --wly-bp-sm   480px   phone
+       --wly-bp-md   768px   large phone / portrait tablet
+       --wly-bp-lg  1024px   landscape tablet / small laptop
+       --wly-bp-xl  1280px   laptop
+       --wly-bp-2xl 1536px   large desktop
+     The repo currently ships 19 distinct max-width breakpoints.
+     ====================================================================== */
+  --wly-bp-sm: 480px;
+  --wly-bp-md: 768px;
+  --wly-bp-lg: 1024px;
+  --wly-bp-xl: 1280px;
+  --wly-bp-2xl: 1536px;
+
+  --wly-container-page: 1200px; /* app workspace max width */
+  --wly-container-wide: 1440px; /* marketing full-bleed content */
+  --wly-sidebar-width: 268px;
+  --wly-topbar-height: 64px;
+
+  --wly-z-base: 0;
+  --wly-z-sticky: 10;
+  --wly-z-dropdown: 100;
+  --wly-z-overlay: 200;
+  --wly-z-modal: 300;
+  --wly-z-toast: 400;
+
+  /* ==========================================================================
+     9. LEGACY ALIASES — compatibility layer, W1 only.
+     Every variable that `styles.css`, `landing.css` and `staff.css` already
+     reference, re-pointed at a token whose literal value is byte-identical to
+     what shipped before. This is what keeps W1 visually inert while removing
+     the orphaned-variable problem.
+     DO NOT use any of these in new CSS. Each row names its replacement.
+     They are deleted once the screens migrate.
+     ====================================================================== */
+  --green-950: var(--wly-green-900); /* #073f2a -> --wly-brand-strong */
+  --green-900: var(--wly-green-800); /* #0b4c32 -> --wly-brand */
+  --green-800: var(--wly-green-700); /* #135f3d -> --wly-brand-muted */
+  --green-700: var(--wly-green-600); /* #1e7448 -> --wly-success / focus ring */
+  --green-100: var(--wly-green-100); /* -> --wly-brand-surface */
+  --green-50: var(--wly-green-50); /* -> --wly-brand-surface-subtle */
+  --ink: var(--wly-ink-800); /* -> --wly-text-primary */
+  --muted: var(--wly-ink-500-legacy); /* -> --wly-text-secondary (fixes an AA failure) */
+  --line: var(--wly-ink-100); /* -> --wly-border */
+  --panel: var(--wly-white); /* -> --wly-surface */
+  --canvas: var(--wly-green-25); /* #f7faf6 -> --wly-surface-page */
+  --surface-shadow: var(--wly-elev-4);
+  --surface-shadow-strong: var(--wly-elev-5);
+  --blue: var(--wly-blue-500); /* -> --wly-blue-700 for text */
+  --purple: var(--wly-purple-500); /* -> --wly-purple-700 for text */
+  --orange: var(--wly-orange-500); /* -> --wly-orange-700 for text */
+  --pink: var(--wly-pink-500); /* -> --wly-pink-700 for text */
+  --teal: var(--wly-teal-500); /* -> --wly-teal-700 for text */
+  --sage: var(--wly-green-300); /* -> --wly-brand-on-faint */
+  --sage-soft: var(--wly-ink-50); /* -> --wly-surface-sunken */
+  --sage-line: var(--wly-ink-200); /* -> --wly-border-muted */
+}
