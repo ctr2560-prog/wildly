@@ -1,5 +1,6 @@
 import React, { Suspense, lazy, useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
+import "./fonts.css";
 import "./bootstrap.css";
 
 const PublicApp = lazy(() => import("./public-app.jsx"));

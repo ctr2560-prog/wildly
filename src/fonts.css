@@ -1,0 +1,100 @@
+/* ============================================================================
+   Wildly by Taronga — web font loading
+   ----------------------------------------------------------------------------
+   Montserrat is the single type family for the design system. It is Taronga
+   Conservation Society's own body face (taronga.org.au self-hosts it), and it
+   is free under the SIL Open Font License 1.1 — licence text ships alongside
+   the files at public/assets/fonts/MONTSERRAT-OFL.txt, as the OFL requires.
+
+   Self-hosted, not loaded from the Google Fonts CDN. Two reasons, both
+   specific to this product: school networks frequently block or throttle
+   third-party CDNs, and Wildly is used by children, so removing a
+   third-party request removes a privacy question we would otherwise have to
+   answer. Decided by the owner on BIO-2.
+
+   These are the official Google Fonts variable-font subsets, byte-for-byte —
+   variable on the weight axis, 400..700, which covers every weight in the
+   type scale (--wly-font-weight-regular through --wly-font-weight-bold) in a
+   single file per subset. Four files, ~35 KB for the common case: a browser
+   only fetches a subset when a glyph in its unicode-range is actually
+   rendered, so a normal English page pays for the latin/normal file alone.
+
+   IMPORTANT — this file is deliberately inert. Declaring @font-face does not
+   download anything; browsers fetch a face only when a rule actually asks for
+   it. Nothing in the app sets Montserrat yet, so importing this file changes
+   neither the rendered output nor the number of network requests. Turning the
+   font on is one line in src/tokens.css (--wly-font-sans already names
+   Montserrat first) plus a font-family on the app root, and it belongs with
+   the first screen restyle in W2 so the owner can judge it in context.
+
+   When that switch-on lands, also add to index.html:
+     <link rel="preload" as="font" type="font/woff2" crossorigin
+           href="/assets/fonts/montserrat-latin-400-700-normal.woff2">
+   Preloading before the font is used would just waste a request, so it is not
+   here yet.
+
+   Source: https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,400..700;1,400..700
+   Montserrat v31. Do not hand-edit the unicode-range values — they are what
+   keep the subsets from being downloaded unnecessarily.
+   ========================================================================= */
+
+/* Montserrat — upright, latin. The everyday case. */
+@font-face {
+  font-family: "Montserrat";
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url("/assets/fonts/montserrat-latin-400-700-normal.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193,
+    U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+/* Montserrat — upright, latin-extended. Accented names, extra currency and
+   phonetic glyphs. Only fetched if such a character is rendered. */
+@font-face {
+  font-family: "Montserrat";
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url("/assets/fonts/montserrat-latin-ext-400-700-normal.woff2") format("woff2");
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7,
+    U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF,
+    U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
+/* Montserrat — italic, latin. Real italics matter here: Wildly's content is
+   full of scientific binomials (Phascolarctos cinereus), which must be set in
+   italic. Without a true italic the browser synthesises a slant, and a
+   sheared geometric sans looks visibly wrong. */
+@font-face {
+  font-family: "Montserrat";
+  font-style: italic;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url("/assets/fonts/montserrat-latin-400-700-italic.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193,
+    U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+/* Montserrat — italic, latin-extended. */
+@font-face {
+  font-family: "Montserrat";
+  font-style: italic;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url("/assets/fonts/montserrat-latin-ext-400-700-italic.woff2") format("woff2");
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7,
+    U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF,
+    U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
+/* "Taronga Headline" is NOT declared here on purpose. Its @font-face lives in
+   landing.css (~line 7242) and is loaded by both entry points today, because
+   landing.css is imported by public-app.jsx and authenticated-app.jsx alike.
+   Moving it would alter the public site's CSS bundle, which W1 is not allowed
+   to touch. Two things to fix when it is consolidated into this file in W2:
+   it is a 102 KB .ttf (a woff2 would be roughly a third of that) and it has
+   no font-display, so it can block the marketing hero's text from painting
+   for up to three seconds on a slow school connection. */
