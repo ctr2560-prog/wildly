@@ -7268,8 +7268,8 @@ button:focus-visible {
 }
 
 :is(.public-home, .marketing-page, .lp-page, .tracka-page) :is(h1, h2, h3) {
-  font-family: "Taronga Headline", "Avenir Next", Avenir, sans-serif;
-  font-weight: 400 !important;
+  font-family: var(--wly-font-sans, "Montserrat", sans-serif);
+  font-weight: 700;
 }
 
 .site-header {

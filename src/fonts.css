@@ -19,19 +19,9 @@
    only fetches a subset when a glyph in its unicode-range is actually
    rendered, so a normal English page pays for the latin/normal file alone.
 
-   IMPORTANT — this file is deliberately inert. Declaring @font-face does not
-   download anything; browsers fetch a face only when a rule actually asks for
-   it. Nothing in the app sets Montserrat yet, so importing this file changes
-   neither the rendered output nor the number of network requests. Turning the
-   font on is one line in src/tokens.css (--wly-font-sans already names
-   Montserrat first) plus a font-family on the app root, and it belongs with
-   the first screen restyle in W2 so the owner can judge it in context.
-
-   When that switch-on lands, also add to index.html:
-     <link rel="preload" as="font" type="font/woff2" crossorigin
-           href="/assets/fonts/montserrat-latin-400-700-normal.woff2">
-   Preloading before the font is used would just waste a request, so it is not
-   here yet.
+   The public site and teacher workspace use Montserrat through --wly-font-sans.
+   index.html preloads the common latin/upright subset. Other subsets are only
+   downloaded when their glyphs or italic style are needed.
 
    Source: https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,400..700;1,400..700
    Montserrat v31. Do not hand-edit the unicode-range values — they are what

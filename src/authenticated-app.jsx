@@ -7,6 +7,12 @@ import { auth, db, storage } from "./firebase";
 import "../landing.css";
 import "../styles.css";
 import "../staff.css";
+import "./teacher-design.css";
+import TeacherHome from "./teacher-home.jsx";
+// Shared staff controls keep editor labels and focus behaviour consistent.
+import StaffWorkspace, { StaffOverview, StaffDialog, StaffField } from "./staff-workspace.jsx";
+import "./staff-design.css";
+import { subjectImage } from "./subject-identity.js";
 
 const basePath = import.meta.env.BASE_URL;
 const routePath = (path = "") => `${basePath}#${path}`;
@@ -36,6 +42,8 @@ const assets = {
   aboutBottom: assetPath("assets/about-bottom.png"),
   tvScreenshot: assetPath("assets/TV-Screenshot.png"),
   dashboardScreenshot: assetPath("assets/wildly-dashboard-homepage.png"),
+  bushland: assetPath("assets/taronga-bushland-classroom.jpg"),
+  conservationDesign: assetPath("assets/subject-stem.webp"),
 };
 
 const stockImages = [
@@ -151,9 +159,9 @@ const tarongaTvCategories = [
 ];
 
 const defaultContentItems = [
-  { id: "adaptations-australian-animals", title: "Adaptations of Australian Animals", type: "Lesson", subject: "Science", stage: "Stage 2", progress: 65, imageKey: "river", summary: "Stage 2 science lesson with teacher guide and student prompts.", description: "Explore animal adaptations through observation, vocabulary and evidence-based explanation.", status: "Published", order: 1 },
-  { id: "first-nations-cultures-country", title: "First Nations Cultures and Country", type: "Resource", subject: "HSIE", stage: "Stage 3", progress: 40, imageKey: "rhino", summary: "First Nations perspectives for Stage 3 inquiry.", description: "Support respectful inquiry into Country, culture and conservation connections.", status: "Published", order: 2 },
-  { id: "sustainable-futures", title: "Sustainable Futures", type: "Learning Path", subject: "Technology & STEM", stage: "Stage 4", progress: 25, imageKey: "binturong", summary: "8 lessons across Science, HSIE and Technology & STEM.", description: "Build a sequence around conservation design, systems thinking and action planning.", status: "Published", order: 3 },
+  { id: "adaptations-australian-animals", title: "Adaptations of Australian Animals", type: "Lesson", subject: "Science", stage: "Stage 2", progress: 65, imageKey: "heroKoala", summary: "Stage 2 science lesson with teacher guide and student prompts.", description: "Explore animal adaptations through observation, vocabulary and evidence-based explanation.", status: "Published", order: 1 },
+  { id: "first-nations-cultures-country", title: "First Nations Cultures and Country", type: "Resource", subject: "HSIE", stage: "Stage 3", progress: 40, imageKey: "bushland", summary: "First Nations perspectives for Stage 3 inquiry.", description: "Support respectful inquiry into Country, culture and conservation connections.", status: "Published", order: 2 },
+  { id: "sustainable-futures", title: "Sustainable Futures", type: "Learning Path", subject: "Technology & STEM", stage: "Stage 4", progress: 25, imageKey: "conservationDesign", summary: "8 lessons across Science, HSIE and Technology & STEM.", description: "Build a sequence around conservation design, systems thinking and action planning.", status: "Published", order: 3 },
   { id: "persuasive-texts-wildlife-action", title: "Persuasive Texts for Wildlife Action", type: "Lesson", subject: "English", stage: "Stage 3", progress: 15, imageKey: "koala", summary: "Writing task with model texts and scaffolds.", description: "Use wildlife conservation contexts to plan, draft and refine persuasive writing.", status: "Draft", order: 4 },
   { id: "animal-movement-data-patterns", title: "Animal Movement and Data Patterns", type: "Resource", subject: "Mathematics", stage: "Stage 3", progress: 55, imageKey: "giraffe", summary: "Data activity using animal movement and habitat observations.", description: "Interpret data patterns and represent findings using classroom-friendly datasets.", status: "Published", order: 5 },
   { id: "wellbeing-through-nature", title: "Wellbeing Through Nature Connection", type: "Lesson", subject: "PDHPE", stage: "Stage 2", progress: 80, imageKey: "gorilla", summary: "Reflection lesson connecting wellbeing, nature and community.", description: "Guide students through reflective prompts about nature connection and wellbeing.", status: "Review", order: 6 },
@@ -615,6 +623,7 @@ function resizeImageFile(file) {
 
 function Icon({ type, className = "nav-svg" }) {
   const icons = {
+    arrowRight: <><path d="M5 12h14" /><path d="m14 7 5 5-5 5" /></>,
     grid: <><rect x="3" y="4" width="7" height="7" rx="1.5" /><rect x="14" y="4" width="7" height="7" rx="1.5" /><rect x="3" y="15" width="7" height="5" rx="1.5" /><rect x="14" y="15" width="7" height="5" rx="1.5" /></>,
     users: <><circle cx="8" cy="8" r="3" /><circle cx="17" cy="9" r="2.5" /><path d="M3.5 19c.7-3.4 2.3-5 4.5-5s3.8 1.6 4.5 5" /><path d="M13.5 18.8c.5-2.5 1.8-3.8 3.7-3.8 1.6 0 2.8 1 3.3 3.8" /></>,
     cap: <><path d="M3 8.5 12 4l9 4.5-9 4.5L3 8.5Z" /><path d="M7 11v4.5c1.2 1.3 2.9 2 5 2s3.8-.7 5-2V11" /><path d="M20 9v5" /></>,
@@ -660,22 +669,6 @@ function subjectAccent(label) {
 
 // Sydney-from-Taronga image, used on the "All subjects" hero.
 const SUBJECT_BANNER_IMAGE = assetPath("assets/subject-sydney.webp");
-const SUBJECT_IMAGE = {
-  Science: assetPath("assets/subject-science.webp"),
-  English: assetPath("assets/subject-english.webp"),
-  "Literacy & Numeracy": assetPath("assets/subject-litnum.webp"),
-  Mathematics: assetPath("assets/subject-mathematics.webp"),
-  HSIE: assetPath("assets/subject-hsie.webp"),
-  PDHPE: assetPath("assets/subject-pdhpe.webp"),
-  CAPA: assetPath("assets/subject-capa.jpg"),
-  "Technology & STEM": assetPath("assets/subject-stem.webp"),
-  "Early Years": assetPath("assets/subject-early-years.webp"),
-};
-// A specific subject shows its own photo; the "All subjects" hero (no active
-// subject) falls back to the Sydney-from-Taronga image.
-function subjectImage(label) {
-  return SUBJECT_IMAGE[label] || SUBJECT_BANNER_IMAGE;
-}
 
 function subjectIconType(label) {
   return {
@@ -1433,13 +1426,13 @@ function Reveal({ children, className = "", delay = 0, as: Tag = "div", style, .
 // (the big block at the very top). Editing a banner in the staff console
 // changes exactly this. Falls back to the koala hero image when the banner has
 // no image of its own.
-function HeroBannerView({ banner, fallbackImage }) {
+function HeroBannerView({ banner, fallbackImage, headingAs: Heading = "h1" }) {
   const img = bannerImage(banner) || fallbackImage;
   return (
     <section className="hero hero-banner">
       <div className="hero-copy">
         {banner.eyebrow ? <span className="hero-eyebrow">{banner.eyebrow}</span> : null}
-        {banner.title ? <h1>{banner.title}</h1> : null}
+        {banner.title ? <Heading>{banner.title}</Heading> : null}
         {banner.message ? <p className="hero-lead">{banner.message}</p> : null}
         {banner.linkUrl && banner.linkUrl.trim() ? (
           <div className="hero-actions">
@@ -1452,23 +1445,18 @@ function HeroBannerView({ banner, fallbackImage }) {
   );
 }
 
-// Rotates through the active staff banners in the hero slot.
+// Staff banners stay still while teachers read; navigation is user-controlled.
 function TeacherHeroRotator({ banners, fallbackImage }) {
   const [index, setIndex] = useState(0);
-  useEffect(() => {
-    if (banners.length <= 1) return undefined;
-    const timer = setInterval(() => setIndex((n) => (n + 1) % banners.length), 7000);
-    return () => clearInterval(timer);
-  }, [banners.length]);
   const active = Math.min(index, banners.length - 1);
   return (
     <div className="hero-rotator">
-      <HeroBannerView key={active} banner={banners[active]} fallbackImage={fallbackImage} />
+      <HeroBannerView key={active} banner={banners[active]} fallbackImage={fallbackImage} headingAs="h2" />
       {banners.length > 1 && (
-        <div className="hero-dots">
-          {banners.map((banner, n) => (
-            <button key={banner.id || n} type="button" className={n === active ? "active" : ""} onClick={() => setIndex(n)} aria-label={`Show banner ${n + 1}`} />
-          ))}
+        <div className="desk-banner-controls" aria-label="Dashboard banners">
+          <button type="button" onClick={() => setIndex((active - 1 + banners.length) % banners.length)} aria-label="Previous banner">←</button>
+          <span role="status" aria-live="polite">{active + 1} of {banners.length}</span>
+          <button type="button" onClick={() => setIndex((active + 1) % banners.length)} aria-label="Next banner">→</button>
         </div>
       )}
     </div>
@@ -1476,6 +1464,31 @@ function TeacherHeroRotator({ banners, fallbackImage }) {
 }
 
 function TeacherDashboard({ config, contentItems = defaultContentItems.map(resolveContentItem), professionalLearningItems = defaultProfessionalLearningItems, tarongaTvVideos = defaultTarongaTvVideos.map(resolveTarongaTvVideo), page = "dashboard", subject = "", contentId = "", tvVideoId = "", profile = null, teacherEmail = "", onSignOut = null, preview = false, workspace = createDefaultTeacherWorkspace(), onToggleSaved = () => {}, onCreateClass = () => {}, onDeleteClass = () => {}, onToggleAssignment = () => {}, upcomingEvents = [] }) {
+  const [navigationOpen, setNavigationOpen] = useState(false);
+  const navigationToggle = useRef(null);
+  const navigationPanel = useRef(null);
+  useEffect(() => { setNavigationOpen(false); }, [page, subject, contentId, tvVideoId]);
+  useEffect(() => {
+    if (!navigationOpen) return;
+    const originalOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    navigationPanel.current?.querySelector("button")?.focus();
+    const closeOnEscape = (event) => {
+      if (event.key === "Escape") { setNavigationOpen(false); navigationToggle.current?.focus(); }
+      if (event.key === "Tab") {
+        const targets = [...(navigationPanel.current?.querySelectorAll("a[href],button,summary") || [])].filter((node) => node.getClientRects().length);
+        const first = targets[0];
+        const last = targets[targets.length - 1];
+        if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last?.focus(); }
+        else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus(); }
+      }
+    };
+    document.addEventListener("keydown", closeOnEscape);
+    const viewport = window.matchMedia("(min-width: 901px)");
+    const closeOnDesktop = () => { if (viewport.matches) setNavigationOpen(false); };
+    viewport.addEventListener("change", closeOnDesktop);
+    return () => { document.removeEventListener("keydown", closeOnEscape); viewport.removeEventListener("change", closeOnDesktop); document.body.style.overflow = originalOverflow; };
+  }, [navigationOpen]);
   const [activeSubject, setActiveSubject] = useState(subjectFromSlug(subject));
   const [stageFilter, setStageFilter] = useState("");
   const [activeTvCategory, setActiveTvCategory] = useState("All");
@@ -1531,6 +1544,28 @@ function TeacherDashboard({ config, contentItems = defaultContentItems.map(resol
   const [assignClassId, setAssignClassId] = useState(null);
   const [detailClass, setDetailClass] = useState(null); // { kind: "wildly", id } | { kind: "tracka", ...class }
   const [createOpen, setCreateOpen] = useState(false);
+  const createClassDialog = useRef(null);
+  const createClassTrigger = useRef(null);
+  useEffect(() => {
+    if (!createOpen) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const handleKeyDown = (event) => {
+      if (event.key === "Escape") setCreateOpen(false);
+      if (event.key !== "Tab") return;
+      const controls = [...(createClassDialog.current?.querySelectorAll("button,input,select,a[href]") || [])].filter((node) => !node.disabled && node.getClientRects().length);
+      const first = controls[0];
+      const last = controls[controls.length - 1];
+      if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last?.focus(); }
+      else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus(); }
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+      document.body.style.overflow = previousOverflow;
+      createClassTrigger.current?.focus();
+    };
+  }, [createOpen]);
   const detailTrackaCode = detailClass?.kind === "tracka" ? (detailClass.classCode || detailClass.id) : "";
   const trackaStudents = useTrackaClassStudents(detailTrackaCode);
   const activeSubjectCopy = subjects.find(([label]) => label === activeSubject)?.[2] || "";
@@ -1598,10 +1633,6 @@ function TeacherDashboard({ config, contentItems = defaultContentItems.map(resol
     return (ia === -1 ? 99 : ia) - (ib === -1 ? 99 : ib);
   });
   const libraryFiltersActive = Boolean(activeSubject || stageFilter || libraryQuery);
-  const featuredLibrary = useMemo(
-    () => [...allResourceItems].sort((a, b) => (b.updatedAt?.seconds || 0) - (a.updatedAt?.seconds || 0)).slice(0, 3),
-    [allResourceItems],
-  );
 
   // Curated data for the dedicated subject pages (kept distinct from the Library).
   const STAGE_ORDER = ["Early Stage 1", "Stage 1", "Stage 2", "Stage 3", "Stage 4", "Stage 5", "Stage 6"];
@@ -1857,14 +1888,16 @@ function TeacherDashboard({ config, contentItems = defaultContentItems.map(resol
   }[page];
 
   return (
-    <div className="app-shell">
-      <aside className="sidebar" aria-label="Teacher navigation">
-        <a className="brand" href={routePath()} aria-label="Wildly by Taronga dashboard">
+    <div className={`app-shell teacher-studio${navigationOpen ? " navigation-open" : ""}`}>
+      {navigationOpen ? <button type="button" className="studio-nav-backdrop" aria-label="Close navigation" onClick={() => setNavigationOpen(false)} /> : null}
+      <aside ref={navigationPanel} className="sidebar" id="teacher-navigation" aria-label="Teacher navigation">
+        <button className="studio-nav-close" type="button" onClick={() => { setNavigationOpen(false); navigationToggle.current?.focus(); }} aria-label="Close navigation">×</button>
+        <a className="brand" href={teacherRoute()} aria-label="Wildly by Taronga dashboard">
           <img className="brand-logo" src={assets.wildlyLogo} alt="Wildly by Taronga - Learning through nature" />
         </a>
         <nav className="main-nav">
           {navItems.map(([path, label, icon]) => (
-            <a className={`nav-item ${page === (path || "dashboard") ? "active" : ""}`} key={label} href={teacherRoute(path)}>
+            <a className={`nav-item ${page === (path || "dashboard") ? "active" : ""}`} aria-current={page === (path || "dashboard") ? "page" : undefined} key={label} href={teacherRoute(path)}>
               <Icon type={icon} />
               {label}
             </a>
@@ -1872,9 +1905,9 @@ function TeacherDashboard({ config, contentItems = defaultContentItems.map(resol
         </nav>
         <section className="side-section" aria-labelledby="library-title">
           <h2 id="library-title">Content</h2>
-          <a className={`nav-item ${page === "resources" ? "active" : ""}`} href={teacherRoute("resources")}><Icon type="book" />Library</a>
-          <a className={`nav-item ${page === "taronga-tv" ? "active" : ""}`} href={teacherRoute("taronga-tv")}><Icon type="monitor" />Taronga TV</a>
-          <a className={`nav-item ${page === "professional-learning" ? "active" : ""}`} href={teacherRoute("professional-learning")}><Icon type="speech" />Professional Learning</a>
+          <a className={`nav-item ${page === "resources" ? "active" : ""}`} aria-current={page === "resources" ? "page" : undefined} href={teacherRoute("resources")}><Icon type="book" />Library</a>
+          <a className={`nav-item ${page === "taronga-tv" ? "active" : ""}`} aria-current={page === "taronga-tv" ? "page" : undefined} href={teacherRoute("taronga-tv")}><Icon type="monitor" />Taronga TV</a>
+          <a className={`nav-item ${page === "professional-learning" ? "active" : ""}`} aria-current={page === "professional-learning" ? "page" : undefined} href={teacherRoute("professional-learning")}><Icon type="speech" />Professional Learning</a>
         </section>
         <details className="side-section side-subjects">
           <summary className="side-subjects-summary">
@@ -1893,7 +1926,7 @@ function TeacherDashboard({ config, contentItems = defaultContentItems.map(resol
           <a className="nav-item small" href={appLinks.excursions}><Icon type="pin" />Excursions & Zoo Links</a>
           <a className="nav-item small" href={appLinks.tracka || appLinks.excursions}><Icon type="target" />Tracka Missions<span className="external"></span></a>
         </section>
-        {showTracka && (
+        {showTracka && page !== "dashboard" && (
           <article className="tracka-card">
             <img className="tracka-logo" src={assets.trackaLogo} alt="Taronga Tracka" />
             <div>
@@ -1907,12 +1940,14 @@ function TeacherDashboard({ config, contentItems = defaultContentItems.map(resol
 
       <main className="workspace">
         <header className="topbar">
-          <button className="menu-button" type="button" aria-label="Open navigation"></button>
+          <button ref={navigationToggle} className="menu-button" type="button" aria-label={navigationOpen ? "Close navigation" : "Open navigation"} aria-expanded={navigationOpen} aria-controls="teacher-navigation" onClick={() => setNavigationOpen((open) => !open)}></button>
+          <div className="studio-breadcrumb"><span>Your teaching space</span><span aria-hidden="true">/</span><strong>{page === "subjects" ? activeSubject || "Subjects" : pageMeta?.eyebrow || (page === "dashboard" ? "Dashboard" : page === "content" ? "Library" : "Explore")}</strong></div>
           <div className="top-actions">
             <button type="button" className="top-icon-button" aria-label="Notifications" onClick={() => setNotice(notificationItems.length ? notificationItems.map((item) => `${item.title} - ${item.date}${item.time ? `, ${item.time}` : ""}`).join("\n") : "No new professional learning notifications yet.")}>
               <Icon type="bell" className="" />
             </button>
             <a className="icon-button help" aria-label="Help" href={appLinks.support}></a>
+            <a className="studio-profile" href={aboutYouRoute()} aria-label="Your profile">{(profile?.name || "Teacher").slice(0, 1).toUpperCase()}</a>
             {!preview && onSignOut ? <button type="button" className="top-text-action" onClick={onSignOut}>Sign out</button> : null}
           </div>
         </header>
@@ -1920,128 +1955,19 @@ function TeacherDashboard({ config, contentItems = defaultContentItems.map(resol
         <NoticeBanner notice={notice} onClose={() => setNotice("")} />
 
         {page === "dashboard" && (
-          <>
-            {activeBanners.length ? (
-              <TeacherHeroRotator banners={activeBanners} fallbackImage={config.heroImageUrl} />
-            ) : (
-              <section className="hero">
-                <div className="hero-copy">
-                  <h1>{config.heroTitle}</h1>
-                  <p className="hero-subtitle">{config.heroSubtitle}</p>
-                  <p>Curriculum-aligned lessons, real-world experiences and conservation connections - for every learner, everywhere.</p>
-                  <div className="hero-actions">
-                    <a className="primary-action" href={teacherRoute("subjects")}>Browse Subjects</a>
-                    <a className="secondary-action" href={teacherRoute("paths")}><Icon type="path" className="path-action-icon" />Start a Learning Path</a>
-                  </div>
-                </div>
-                <img className="hero-animal" src={config.heroImageUrl} alt="Koala with joey at Taronga" />
-              </section>
-            )}
-
-            <div className="feature-cards">
-              <a className="feature-card feature-tv" href={teacherRoute("taronga-tv")}>
-                <div className="feature-media">
-                  {tarongaTvVideos[0]?.thumbnail ? <img src={tarongaTvVideos[0].thumbnail} alt="" /> : null}
-                  <span className="feature-play"><Icon type="play" className="" /></span>
-                </div>
-                <div className="feature-body">
-                  <span className="feature-eyebrow">Taronga TV</span>
-                  <h3>Keeper clips &amp; series</h3>
-                  <p>Bring the zoo into the classroom with short, curriculum-ready videos.</p>
-                  <span className="feature-cta">Browse videos →</span>
-                </div>
-              </a>
-              <a className="feature-card feature-pl" href={teacherRoute("professional-learning")}>
-                <div className="feature-media">
-                  <img src={assets.teacherPl} alt="" />
-                  <span className="feature-badge"><Icon type="book" className="" /></span>
-                </div>
-                <div className="feature-body">
-                  <span className="feature-eyebrow">Professional Learning</span>
-                  <h3>Grow your practice</h3>
-                  <p>Webinars, courses and resources to build your teaching confidence.</p>
-                  <span className="feature-cta">Explore →</span>
-                </div>
-              </a>
-            </div>
-
-            <section className="library-head">
-              <div>
-                <h2>Explore by Subject</h2>
-                <p>Filter the teacher library by curriculum area, stage and resource type.</p>
-              </div>
-              <label className="search-box">
-                <span></span>
-                <input value={query} onChange={(event) => setQuery(event.target.value)} type="search" placeholder="Search resources" />
-              </label>
-              <button type="button" className="text-link" onClick={resetFilters}>View All Subjects</button>
-            </section>
-
-            <section className="subject-grid" aria-label="Subject cards">
-              {subjects.map(([label, cls, copy]) => (
-                <a className={`subject-card ${cls} ${activeSubject === label ? "selected" : ""}`} key={label} href={teacherRoute(`subjects/${subjectSlug(label)}`)}>
-                  <Icon type={subjectIconType(label)} className="subject-icon" />
-                  <h3>{label}</h3>
-                  <p>{copy}</p>
-                  <span className="subject-card-cta">Explore</span>
-                </a>
-              ))}
-            </section>
-
-            <div className="dashboard-columns">
-              <section className="dashboard-col" style={{ "--i": 0 }}>
-                <h2 className="col-heading">Continue Learning</h2>
-                {recentItems.length === 0 ? (
-                  <p className="col-empty">Resources you open will appear here so you can pick up where you left off.</p>
-                ) : (
-                  <div className="col-items">
-                    {recentItems.map((item) => (
-                      <a key={item.id} href={teacherContentRoute(item.id)} className="dash-item-card">
-                        <span className="content-type">{item.type}</span>
-                        <strong>{item.title}</strong>
-                        <span className="dash-item-meta">{item.subject}{item.stage ? ` · ${item.stage}` : ""}</span>
-                      </a>
-                    ))}
-                  </div>
-                )}
-              </section>
-
-              <section className="dashboard-col" style={{ "--i": 1 }}>
-                <h2 className="col-heading">What's New</h2>
-                {newestItems.length === 0 ? (
-                  <p className="col-empty">Newly published resources from Taronga will appear here.</p>
-                ) : (
-                  <div className="col-items">
-                    {newestItems.map((item) => (
-                      <a key={item.id} href={teacherContentRoute(item.id)} className="dash-item-card">
-                        <span className="content-type">{item.type}</span>
-                        <strong>{item.title}</strong>
-                        <span className="dash-item-meta">{item.subject}{item.stage ? ` · ${item.stage}` : ""}</span>
-                      </a>
-                    ))}
-                  </div>
-                )}
-              </section>
-
-              <section className="dashboard-col" style={{ "--i": 2 }}>
-                <h2 className="col-heading">Upcoming</h2>
-                {upcomingEvents.length === 0 ? (
-                  <p className="col-empty">Events and sessions added by Taronga staff will appear here.</p>
-                ) : (
-                  <div className="col-items">
-                    {upcomingEvents.map((event) => (
-                      <div key={event.id} className="dash-upcoming-item">
-                        <time className="upcoming-date">{formatDisplayDate(event.date)}</time>
-                        <strong>{event.title}</strong>
-                        {event.description && <p className="upcoming-description">{event.description}</p>}
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </section>
-            </div>
-
-          </>
+          <TeacherHome
+            profile={profile} preview={preview} query={query}
+            onQueryChange={(value) => { setActiveSubject(null); setQuery(value); }}
+            results={filteredItems} renderCard={renderLibCard}
+            recentItems={recentItems} newestItems={newestItems}
+            subjects={subjects} subjectSlug={subjectSlug} route={teacherRoute}
+            contentRoute={teacherContentRoute} savedCount={savedItems.length}
+            classCount={unifiedClasses.length} upcomingEvents={upcomingEvents}
+            formatDate={formatDisplayDate} Icon={Icon} assets={assets}
+            banner={activeBanners.length
+              ? <TeacherHeroRotator banners={activeBanners} fallbackImage={config.heroImageUrl} />
+              : <HeroBannerView banner={{ title: config.heroTitle, message: config.heroSubtitle, image: config.heroImageUrl }} fallbackImage={assets.heroKoala} headingAs="h2" />}
+          />
         )}
 
         {pageMeta && page !== "dashboard" && page !== "content" && page !== "resources" && page !== "subjects" && page !== "classes" && page !== "saved" && page !== "taronga-tv" && page !== "professional-learning" && page !== "calendar" && (
@@ -2131,7 +2057,6 @@ function TeacherDashboard({ config, contentItems = defaultContentItems.map(resol
               <div className="subj-hero-media" aria-hidden="true"><img src={subjectImage(activeSubject)} alt="" /></div>
               <div className="subj-hero-content">
                 <a className="subj-back" href={teacherRoute("subjects")}><span aria-hidden="true">←</span> All subjects</a>
-                <span className="subj-hero-eyebrow">Subject</span>
                 <h1>{activeSubject}</h1>
                 <p>{activeSubjectCopy || `Every published ${activeSubject} unit, lesson and video — ready to teach.`}</p>
                 <div className="subj-hero-stats">
@@ -2223,19 +2148,21 @@ function TeacherDashboard({ config, contentItems = defaultContentItems.map(resol
             <div className="lib-toolbar">
               <label className="search-box lib-search">
                 <span></span>
-                <input value={query} onChange={(event) => setQuery(event.target.value)} type="search" placeholder="Search videos…" />
+                <input value={query} onChange={(event) => setQuery(event.target.value)} type="search" name="video-search" aria-label="Search Taronga TV videos" placeholder="Search videos…" autoComplete="off" />
               </label>
-              <div className="page-chip-row">
-                <button type="button" className={`page-chip ${!activeSubject ? "selected" : ""}`} onClick={() => setActiveSubject(null)}>All subjects</button>
-                {subjects.map(([label]) => (
-                  <button type="button" className={`page-chip ${activeSubject === label ? "selected" : ""}`} key={label} onClick={() => setActiveSubject(label)}>{label}</button>
-                ))}
-              </div>
-              <div className="page-chip-row">
-                <button type="button" className={`page-chip ${activeTvCategory === "All" ? "selected" : ""}`} onClick={() => setActiveTvCategory("All")}>All playlists</button>
-                {tarongaTvCategories.map((category) => (
-                  <button type="button" className={`page-chip ${activeTvCategory === category ? "selected" : ""}`} key={category} onClick={() => setActiveTvCategory(category)}>{category}</button>
-                ))}
+              <div className="lib-filters">
+                <label className="lib-select"><span>Subject</span>
+                  <select value={activeSubject || ""} onChange={(event) => setActiveSubject(event.target.value || null)}>
+                    <option value="">All subjects</option>
+                    {subjects.map(([label]) => <option key={label} value={label}>{label}</option>)}
+                  </select>
+                </label>
+                <label className="lib-select"><span>Playlist</span>
+                  <select value={activeTvCategory} onChange={(event) => setActiveTvCategory(event.target.value)}>
+                    <option value="All">All playlists</option>
+                    {tarongaTvCategories.map((category) => <option key={category} value={category}>{category}</option>)}
+                  </select>
+                </label>
               </div>
             </div>
 
@@ -2369,19 +2296,19 @@ function TeacherDashboard({ config, contentItems = defaultContentItems.map(resol
             </div>
 
             {publishedProfessionalLearningItems.length ? (
-              <div className="lib-grid">
+              <div className="lib-learning-grid">
                 {publishedProfessionalLearningItems.map((item) => (
                   <article className="lib-card" key={item.id} style={{ "--accent": "#135f3d" }}>
                     <div className="lib-card-media">
                       <img src={item.image || (item.imageKey ? assets[item.imageKey] : "") || assets.teacherPl} alt="" loading="lazy" />
-                      <span className="lib-card-type">PL</span>
+                      <span className="lib-card-type">Professional learning</span>
                     </div>
                     <div className="lib-card-body">
                       <div className="lib-card-subject"><span className="lib-card-dot" />Professional Learning</div>
                       <h3>{item.title}</h3>
                       <p>{item.summary || item.description}</p>
                       <div className="lib-card-meta">
-                        {item.date ? <span>{item.date}</span> : null}
+                        {item.date ? <span>{formatDisplayDate(item.date)}</span> : null}
                         {item.time ? <span>{item.time}</span> : null}
                       </div>
                       <div className="lib-card-actions">
@@ -2404,7 +2331,7 @@ function TeacherDashboard({ config, contentItems = defaultContentItems.map(resol
               <div className="lib-hero-inner">
                 <span className="lib-hero-eyebrow">Teacher Library</span>
                 <h1>Your teaching library</h1>
-                <p>Every published lesson, presentation, worksheet and check-in quiz — curriculum-aligned and ready to preview, assign or open.</p>
+                <p>Find lessons and resources by subject and stage. Preview, save or assign them to your class.</p>
                 <div className="lib-hero-stats">
                   <div><strong>{allResourceItems.length}</strong><span>{allResourceItems.length === 1 ? "resource" : "resources"}</span></div>
                   <div><strong>{librarySubjectCount}</strong><span>{librarySubjectCount === 1 ? "subject" : "subjects"}</span></div>
@@ -2419,7 +2346,7 @@ function TeacherDashboard({ config, contentItems = defaultContentItems.map(resol
             <div className="lib-toolbar">
               <label className="search-box lib-search">
                 <span></span>
-                <input value={query} onChange={(event) => setQuery(event.target.value)} type="search" placeholder="Search the library…" />
+                <input value={query} onChange={(event) => setQuery(event.target.value)} type="search" name="library-search" aria-label="Search the library" placeholder="Search the library…" autoComplete="off" />
               </label>
               <div className="lib-filters">
                 <label className="lib-select">
@@ -2439,19 +2366,12 @@ function TeacherDashboard({ config, contentItems = defaultContentItems.map(resol
               </div>
             </div>
 
-            {!libraryFiltersActive && featuredLibrary.length >= 3 ? (
-              <div className="subj-section lib-featured">
-                <div className="subj-section-head"><h2>Featured</h2><span className="subj-section-count">Latest</span></div>
-                <div className="lib-grid">{featuredLibrary.map((item, index) => renderLibCard(item, index))}</div>
-              </div>
-            ) : null}
-
             {allResourceItems.length ? (
               filteredLibrary.length ? (
                 <div className="subj-section">
                   <div className="subj-section-head">
                     <h2>{libraryFiltersActive ? "Results" : "All resources"}</h2>
-                    <span className="subj-section-count">{filteredLibrary.length}{activeSubject ? ` in ${activeSubject}` : ""}{stageFilter ? ` · ${stageFilter}` : ""}{libraryQuery ? ` matching “${query.trim()}”` : ""}</span>
+                    <span className="subj-section-count" role="status">{filteredLibrary.length}{activeSubject ? ` in ${activeSubject}` : ""}{stageFilter ? ` · ${stageFilter}` : ""}{libraryQuery ? ` matching “${query.trim()}”` : ""}</span>
                   </div>
                   <div className="lib-grid">{filteredLibrary.map((item, index) => renderLibCard(item, index))}</div>
                 </div>
@@ -2466,8 +2386,9 @@ function TeacherDashboard({ config, contentItems = defaultContentItems.map(resol
             ) : (
               <div className="lib-empty">
                 <Icon type="book" className="" />
-                <h3>No published content yet</h3>
-                <p>Publish lessons in the staff console and they'll appear here automatically.</p>
+                <h3>Resources are on their way</h3>
+                <p>Lessons and resources will appear here when they're ready. Explore Taronga TV for videos to use with your class.</p>
+                <a className="secondary-action" href={teacherTvRoute()}>Browse Taronga TV</a>
               </div>
             )}
           </section>
@@ -2519,7 +2440,7 @@ function TeacherDashboard({ config, contentItems = defaultContentItems.map(resol
                 <div className="mc-connect">
                   <img src={assets.trackaLogo} alt="Taronga Tracka" />
                   <div>
-                    <strong>Want the best out of this class?</strong>
+                    <strong>Class insights with Taronga Tracka</strong>
                     <p>Connect it to Taronga Tracka to unlock live student analytics — quiz scores, literacy and points — right here alongside your Wildly plan.</p>
                   </div>
                   <a className="secondary-action" href={appLinks.tracka} target="_blank" rel="noreferrer">See Taronga Tracka</a>
@@ -2627,7 +2548,7 @@ function TeacherDashboard({ config, contentItems = defaultContentItems.map(resol
               <div className="lib-hero-inner">
                 <span className="lib-hero-eyebrow">My Classes</span>
                 <h1>Your classes</h1>
-                <p>All your teaching groups in one place — Taronga Tracka classes and your own Wildly classes. Click any class for its analytics and lesson plan.</p>
+                <p>Plan lessons, follow progress and keep your teaching groups together.</p>
                 <div className="lib-hero-stats">
                   <div><strong>{unifiedClasses.length}</strong><span>{unifiedClasses.length === 1 ? "class" : "classes"}</span></div>
                   <div><strong>{assignments.length}</strong><span>assignments</span></div>
@@ -2638,8 +2559,8 @@ function TeacherDashboard({ config, contentItems = defaultContentItems.map(resol
             </div>
 
             <div className="mc-section-head">
-              <div><h2>Your classes</h2><p>Taronga Tracka classes appear automatically. Create your own anytime.</p></div>
-              <button type="button" className="primary-action" onClick={() => setCreateOpen(true)}>+ New class</button>
+              <div><h2>Teaching groups</h2><p>Your Taronga Tracka classes appear here automatically.</p></div>
+              <button ref={createClassTrigger} type="button" className="primary-action" onClick={() => setCreateOpen(true)}><span aria-hidden="true">＋</span> New class</button>
             </div>
             {trackaClasses.status === "loading" && <p className="mc-empty-line">Loading your Tracka classes…</p>}
             <div className="mc-tiles">
@@ -2667,22 +2588,19 @@ function TeacherDashboard({ config, contentItems = defaultContentItems.map(resol
                   </button>
                 );
               })}
-              <button type="button" className="mc-tile mc-tile-new" onClick={() => setCreateOpen(true)}>
-                <span className="mc-tile-new-plus"><Icon type="plus" className="" /></span>
-                <span>New class</span>
-              </button>
             </div>
+            {!unifiedClasses.length && trackaClasses.status !== "loading" ? <div className="lib-empty"><Icon type="users" className="" /><h3>A space for your first class</h3><p>Use New class to create a teaching group, then add lessons from the library.</p></div> : null}
 
             {createOpen && (
-              <div className="cc-modal-backdrop" role="dialog" aria-modal="true" onClick={() => setCreateOpen(false)}>
-                <div className="cc-modal sc-detail mc-create-modal" onClick={(event) => event.stopPropagation()}>
+              <div className="cc-modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="create-class-title" onClick={() => setCreateOpen(false)}>
+                <div ref={createClassDialog} className="cc-modal sc-detail mc-create-modal" onClick={(event) => event.stopPropagation()}>
                   <div className="sc-detail-header">
-                    <div><span className="content-type">New class</span><h3>Create a class</h3></div>
+                    <div><span className="content-type">New class</span><h3 id="create-class-title">Create a class</h3></div>
                     <div className="sc-detail-actions"><button type="button" className="secondary-button" onClick={() => setCreateOpen(false)}>Cancel</button></div>
                   </div>
                   <form className="sc-form-body mc-create-form" onSubmit={(event) => { const had = classDraft.title.trim(); submitNewClass(event); if (had) setCreateOpen(false); }}>
-                    <div className="sc-field"><label>Class name</label><input type="text" autoFocus value={classDraft.title} onChange={(event) => setClassDraft((current) => ({ ...current, title: event.target.value }))} placeholder="e.g. Year 5 Red" /></div>
-                    <div className="sc-field"><label>Stage</label><select value={classDraft.stage} onChange={(event) => setClassDraft((current) => ({ ...current, stage: event.target.value }))}>{["Early Years", "Early Stage 1", "Stage 1", "Stage 2", "Stage 3", "Stage 4", "Stage 5", "Stage 6"].map((stage) => <option key={stage} value={stage}>{stage}</option>)}</select></div>
+                    <div className="sc-field"><label htmlFor="teacher-class-name">Class name</label><input id="teacher-class-name" type="text" autoFocus required value={classDraft.title} onChange={(event) => setClassDraft((current) => ({ ...current, title: event.target.value }))} placeholder="e.g. Year 5 Red" /></div>
+                    <div className="sc-field"><label htmlFor="teacher-class-stage">Stage</label><select id="teacher-class-stage" value={classDraft.stage} onChange={(event) => setClassDraft((current) => ({ ...current, stage: event.target.value }))}>{["Early Years", "Early Stage 1", "Stage 1", "Stage 2", "Stage 3", "Stage 4", "Stage 5", "Stage 6"].map((stage) => <option key={stage} value={stage}>{stage}</option>)}</select></div>
                     <button type="submit" className="primary-action">Create class</button>
                   </form>
                 </div>
@@ -2894,7 +2812,7 @@ function TeacherDashboard({ config, contentItems = defaultContentItems.map(resol
                 })}
               </div>
             ) : (
-              <div className="lib-empty"><Icon type="calendar" className="" /><h3>Nothing scheduled yet</h3><p>Assignments and Taronga events will appear here as they're added.</p></div>
+              <div className="lib-empty"><Icon type="calendar" className="" /><h3>No upcoming dates</h3><p>Assignment due dates and upcoming professional learning will appear here. Explore the library to start planning.</p><a className="secondary-action" href={teacherRoute("resources")}>Explore the library <span aria-hidden="true">→</span></a></div>
             )}
           </section>
         )}
@@ -3483,9 +3401,9 @@ function StaffFirebaseLoginScreen() {
           <h1>Staff sign in</h1>
           <p>Sign in with your Taronga staff account to manage Wildly content.</p>
           <form onSubmit={handleSubmit}>
-            <label>Email<input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@zoo.nsw.gov.au" autoComplete="email" autoFocus /></label>
-            <label>Password<input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" autoComplete="current-password" /></label>
-            {error && <p className="auth-error">{error}</p>}
+            <label>Email<input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@zoo.nsw.gov.au" name="email" autoComplete="email" required /></label>
+            <label>Password<input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" name="password" autoComplete="current-password" required /></label>
+            {error && <p className="auth-error" role="alert">{error}</p>}
             <button type="submit" disabled={loading}>{loading ? "Signing in…" : "Sign in"}</button>
           </form>
           <a className="staff-auth-home" href={routePath()}>← Back to home</a>
@@ -3830,40 +3748,9 @@ function StaffConsole({ onLock, firebaseUser }) {
   }
 
   return (
-    <div className="staff-shell">
-      <aside className="staff-sidebar">
-        <a className="staff-logo" href={routePath()} aria-label="Wildly home"><img src={assets.wildlyLogo} alt="Wildly by Taronga" /></a>
-        <nav className="staff-nav" aria-label="Staff navigation">
-          {[
-            ["overview", "grid", "Overview"],
-            ["users", "users", "Users"],
-            ["analytics", "report", "Analytics"],
-            ["content", "report", "Content"],
-            ["taronga-tv", "play", "Taronga TV"],
-            ["professional-learning", "book", "Professional Learning"],
-            ["upcoming-events", "calendar", "Upcoming Events"],
-            ["banner", "speech", "Banner"],
-            ["control-room", "target", "Control Room"],
-          ].map(([id, icon, label]) => <button className={panel === id ? "active" : ""} type="button" data-panel={id} key={id} onClick={() => setPanel(id)}><Icon type={icon} className="" />{label}</button>)}
-        </nav>
-        <article className="tracka-mini"><img src={assets.trackaLogo} alt="Taronga Tracka" /><p>Part of the Taronga Education ecosystem — Wildly and Tracka share one staff sign-in.</p></article>
-      </aside>
-      <main className="staff-workspace">
-        <header className="staff-topbar">
-          <div className="staff-topbar-titles"><span>Wildly by Taronga</span><h1>Staff console</h1></div>
-          <div className="staff-actions">
-            {firebaseUser && (
-              <div className="staff-user" title={firebaseUser.email}>
-                <span className="staff-user-avatar" aria-hidden="true">{(firebaseUser.email || "?").charAt(0).toUpperCase()}</span>
-                <span className="staff-user-meta"><small>Signed in as</small><strong>{firebaseUser.email}</strong></span>
-              </div>
-            )}
-            <button type="button" className="staff-btn staff-btn-ghost" onClick={enterStaffPreview}>Teacher view</button>
-            <button type="button" className="staff-btn staff-btn-quiet" onClick={onLock}>Sign out</button>
-          </div>
-        </header>
+    <StaffWorkspace panel={panel} onNavigate={setPanel} email={firebaseUser?.email} onTeacherView={enterStaffPreview} onSignOut={onLock} Icon={Icon}>
         <NoticeBanner notice={notice} onClose={() => setNotice("")} />
-        {panel === "overview" && <OverviewPanel contentItems={contentItems} tvVideos={tarongaTvVideos} plItems={professionalLearningItems} upcomingEvents={upcomingEvents} users={users} onNavigate={setPanel} />}
+        {panel === "overview" && <OverviewPanel contentItems={contentItems} tvVideos={tarongaTvVideos} plItems={professionalLearningItems} upcomingEvents={upcomingEvents} users={users} contentStatus={contentStatus} tvStatus={tarongaTvStatus} plStatus={professionalLearningStatus} usersStatus={usersStatus} onNavigate={setPanel} />}
         {panel === "users" && <UsersPanel users={users} usersStatus={usersStatus} />}
         {panel === "analytics" && <AnalyticsPanel contentItems={contentItems} tvVideos={tarongaTvVideos} plItems={professionalLearningItems} users={users} />}
         {panel === "content" && <ContentPanel contentItems={contentItems} status={contentStatus} saveState={contentSaveState} seedContentItems={seedContentItems} addContentItem={addContentItem} deleteContentItem={deleteContentItem} />}
@@ -3872,8 +3759,7 @@ function StaffConsole({ onLock, firebaseUser }) {
         {panel === "upcoming-events" && <UpcomingEventsPanel events={upcomingEvents} saveEvent={saveUpcomingEvent} deleteEvent={deleteUpcomingEvent} />}
         {panel === "banner" && <BannerManager banners={config.banners || []} saveBanners={saveBanners} />}
         {panel === "control-room" && <ControlRoomPanel currentEmail={firebaseUser?.email} users={users} />}
-      </main>
-    </div>
+    </StaffWorkspace>
   );
 }
 
@@ -4073,102 +3959,13 @@ function useTrackaStats() {
   return stats;
 }
 
-function OverviewPanel({ contentItems, tvVideos, plItems, upcomingEvents = [], users = [], onNavigate }) {
+function OverviewPanel({ contentStatus, tvStatus, plStatus, usersStatus, ...props }) {
   const tracka = useTrackaStats();
-
-  const learningPaths = contentItems.filter((i) => i.type === "Learning Path").length;
-  const lessons = contentItems.filter((i) => i.type === "Lesson").length;
-  const resources = contentItems.filter((i) => i.type === "Resource").length;
-  const publishedContent = contentItems.filter((i) => i.status === "Published").length;
-  const publishedTv = tvVideos.filter((v) => v.status === "Published").length;
-  const publishedPl = plItems.filter((s) => s.status === "Published").length;
-
-  const contentBreakdown = [
-    { label: "Learning Paths", count: learningPaths },
-    { label: "Lessons", count: lessons },
-    { label: "Resources", count: resources },
-    { label: "Taronga TV", count: tvVideos.length },
-    { label: "Professional Learning", count: plItems.length },
-  ];
-  const maxCount = Math.max(...contentBreakdown.map((b) => b.count), 1);
-
-  const quickActions = [
-    ["content", "report", "Add content", "Learning paths, lessons and resources"],
-    ["taronga-tv", "play", "Taronga TV", "Publish curriculum videos"],
-    ["professional-learning", "book", "Professional learning", "Sessions and webinars for teachers"],
-    ["upcoming-events", "calendar", "Upcoming events", "What teachers see next"],
-    ["banner", "speech", "Banner", "Announcements on the teacher dashboard"],
-    ["users", "users", "Users", "Teachers and staff accounts"],
-  ];
-
-  const fmt = (n) => (tracka.loading ? "…" : n == null ? "—" : n.toLocaleString());
-
-  return (
-    <section className="staff-section staff-panel active sc-overview">
-      <div className="sc-overview-grid">
-        <button type="button" className="sc-stat-card accent" onClick={() => onNavigate("content")}>
-          <span>Published content</span>
-          <strong>{publishedContent}</strong>
-          <p>{learningPaths} paths · {lessons} lessons · {resources} resources</p>
-        </button>
-        <button type="button" className="sc-stat-card" onClick={() => onNavigate("taronga-tv")}>
-          <span>Taronga TV</span>
-          <strong>{publishedTv}</strong>
-          <p>{tvVideos.length} video{tvVideos.length !== 1 ? "s" : ""} in library</p>
-        </button>
-        <button type="button" className="sc-stat-card" onClick={() => onNavigate("professional-learning")}>
-          <span>Professional Learning</span>
-          <strong>{publishedPl}</strong>
-          <p>{plItems.length} session{plItems.length !== 1 ? "s" : ""} total</p>
-        </button>
-        <button type="button" className="sc-stat-card" onClick={() => onNavigate("upcoming-events")}>
-          <span>Upcoming events</span>
-          <strong>{upcomingEvents.length}</strong>
-          <p>Visible to teachers</p>
-        </button>
-      </div>
-
-      <div className="sc-overview-body">
-        <div className="sc-overview-card">
-          <h3>Content library</h3>
-          <div className="sc-content-breakdown">
-            {contentBreakdown.map((b) => (
-              <div key={b.label} className="sc-breakdown-row">
-                <span className="sc-breakdown-label">{b.label}</span>
-                <div className="sc-breakdown-bar"><span style={{ width: `${(b.count / maxCount) * 100}%` }} /></div>
-                <span className="sc-breakdown-count">{b.count}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-        <div className="sc-overview-card">
-          <h3>Quick actions</h3>
-          <div className="sc-quick-actions">
-            {quickActions.map(([panelId, icon, label, desc]) => (
-              <button type="button" key={panelId} className="sc-quick-action" onClick={() => onNavigate(panelId)}>
-                <span className="sc-quick-action-icon"><Icon type={icon} className="" /></span>
-                <span className="sc-quick-action-text"><strong>{label}</strong><small>{desc}</small></span>
-              </button>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      <div className="sc-tracka-band">
-        <div className="sc-tracka-head">
-          <img src={assets.trackaLogo} alt="Taronga Tracka" />
-          <div><span>Live from the field</span><h3>Taronga Tracka</h3></div>
-        </div>
-        <div className="sc-tracka-stats">
-          <div><strong>{fmt(tracka.schools)}</strong><span>Schools</span></div>
-          <div><strong>{fmt(tracka.classes)}</strong><span>Classes created</span></div>
-          <div><strong>{fmt(tracka.students)}</strong><span>Student records</span></div>
-          <div><strong>{users.length.toLocaleString()}</strong><span>Teacher accounts</span></div>
-        </div>
-        <p className="sc-tracka-note">Shared Taronga Education backend — the same teacher accounts sign in to Wildly and Tracka.</p>
-      </div>
-    </section>
-  );
+  const states = [contentStatus, tvStatus, plStatus];
+  const libraryState = states.includes("loading") ? "loading" : states.every((status) => ["live", "missing"].includes(status)) ? "ready" : "unavailable";
+  // Shared hooks retain sample fallbacks for teacher preview. Never count those
+  // samples as published items on the real staff overview.
+  return <StaffOverview {...props} contentItems={contentStatus === "live" ? props.contentItems : []} tvVideos={tvStatus === "live" ? props.tvVideos : []} plItems={plStatus === "live" ? props.plItems : []} libraryState={libraryState} accountsAvailable={["live", "empty"].includes(usersStatus)} tracka={tracka} Icon={Icon} />;
 }
 
 function displayRoleOf(user) {
@@ -4214,7 +4011,6 @@ function UsersPanel({ users = [], usersStatus = "loading" }) {
     <section className="staff-section staff-panel active">
       <div className="section-heading">
         <div>
-          <h2>Users</h2>
           <p>Everyone with a Taronga Education account. Manage access in the Control Room.</p>
         </div>
       </div>
@@ -4245,7 +4041,7 @@ function UsersPanel({ users = [], usersStatus = "loading" }) {
         <div className="table-toolbar">
           <label>
             <Icon type="target" className="" />
-            <input type="search" placeholder="Search email or school" value={search} onChange={(e) => setSearch(e.target.value)} />
+            <input type="search" aria-label="Search users by email or school" placeholder="Search email or school" value={search} onChange={(e) => setSearch(e.target.value)} />
           </label>
           <select aria-label="Filter by role" value={roleFilter} onChange={(e) => setRoleFilter(e.target.value)}>
             {roleOptions.map((r) => <option key={r}>{r}</option>)}
@@ -4323,11 +4119,15 @@ function useContentStats() {
   return stats;
 }
 
-function AnalyticsPanel({ contentItems = [], tvVideos = [], plItems = [], users = [] }) {
+function AnalyticsPanel(props) {
+  const stats = useContentStats();
+  return <StaffAnalytics {...props} stats={stats} />;
+}
+
+function StaffAnalytics({ contentItems = [], tvVideos = [], plItems = [], users = [], stats = [] }) {
   const [typeFilter, setTypeFilter] = useState("All");
   const [cell, setCell] = useState(null);
   const [detail, setDetail] = useState(null);
-  const stats = useContentStats();
 
   const statById = Object.fromEntries(stats.map((s) => [s.contentId || s.id, s]));
   const grandTotal = stats.reduce((sum, s) => sum + (s.views || 0), 0);
@@ -4395,8 +4195,7 @@ function AnalyticsPanel({ contentItems = [], tvVideos = [], plItems = [], users 
     <section className="staff-section staff-panel active">
       <div className="section-heading">
         <div>
-          <h2>Analytics</h2>
-          <p>How your teaching library is shaping up across the curriculum, and who can reach it.</p>
+          <p>Library coverage by subject and stage, publication status and registered accounts.</p>
         </div>
         <button type="button" onClick={exportLibrary} disabled={!contentItems.length}>Export library (CSV)</button>
       </div>
@@ -4620,7 +4419,9 @@ function AnalyticsPanel({ contentItems = [], tvVideos = [], plItems = [], users 
   );
 }
 
-function ContentPanel({ contentItems, status, saveState, seedContentItems, addContentItem, deleteContentItem }) {
+function ContentPanel({ contentItems, status, saveState, seedContentItems, addContentItem, deleteContentItem, preview = false }) {
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("All statuses");
   const [activeType, setActiveType] = useState("Learning Path");
   const [selectedId, setSelectedId] = useState("");
   const [draft, setDraft] = useState(createContentDraft("Learning Path"));
@@ -4632,6 +4433,7 @@ function ContentPanel({ contentItems, status, saveState, seedContentItems, addCo
   // saved as "Resource" are shown and edited as lessons too.
   const lessonOptions = contentItems.filter((item) => item.type !== "Learning Path");
   const currentItems = activeType === "Learning Path" ? learningPaths : lessonOptions;
+  const filteredItems = currentItems.filter((item) => (statusFilter === "All statuses" || (item.status || "Draft") === statusFilter) && `${item.title || ""} ${item.subject || ""} ${item.stage || ""}`.toLowerCase().includes(search.trim().toLowerCase()));
   const selectedItem = currentItems.find((item) => item.id === selectedId) || null;
   const selectedImage = draft.uploadedImageDataUrl || draft.customImageUrl || draft.image || assets[draft.imageKey] || assets.heroKoala;
   const selectedStockImage = stockImages.find((image) => (image.key && image.key === draft.imageKey) || (!draft.imageKey && !draft.uploadedImageDataUrl && !draft.customImageUrl && image.src === draft.image));
@@ -4771,6 +4573,7 @@ function ContentPanel({ contentItems, status, saveState, seedContentItems, addCo
   const [uploadError, setUploadError] = useState("");
 
   async function uploadPdf(event, field) {
+    if (preview) { setUploadError("File uploads are unavailable in the design preview."); event.target.value = ""; return; }
     const file = event.target.files?.[0];
     event.target.value = "";
     if (!file) return;
@@ -4804,7 +4607,7 @@ function ContentPanel({ contentItems, status, saveState, seedContentItems, addCo
         <label htmlFor={id} className={`sc-pdf-btn${uploadingField === field ? " is-busy" : ""}`}>
           {uploadingField === field ? "Uploading…" : uploaded ? "Replace PDF" : "Upload PDF"}
         </label>
-        <input id={id} type="file" accept="application/pdf,.pdf" style={{ display: "none" }} onChange={(e) => uploadPdf(e, field)} disabled={uploadingField === field} />
+        <input id={id} type="file" accept="application/pdf,.pdf" className="staff-file-input" onChange={(e) => uploadPdf(e, field)} disabled={preview || uploadingField === field} />
         {uploaded ? <span className="sc-pdf-done">✓ PDF uploaded</span> : null}
       </div>
     );
@@ -4973,15 +4776,14 @@ function ContentPanel({ contentItems, status, saveState, seedContentItems, addCo
     <section className="staff-section staff-panel active">
       <div className="sc-panel-header">
         <div>
-          <h2>Content Studio</h2>
           <p>Create and manage learning paths and lessons for teachers.</p>
         </div>
       </div>
       <ContentFirestoreStatus status={status} saveState={saveState} />
 
-      <div className="sc-type-tabs">
+      <div className="sc-type-tabs" role="group" aria-label="Content type">
         {["Learning Path", "Lesson"].map((type) => (
-          <button key={type} type="button" className={`sc-type-tab${activeType === type ? " active" : ""}`} onClick={() => { setActiveType(type); setSelectedId(""); }}>
+          <button key={type} type="button" className={`sc-type-tab${activeType === type ? " active" : ""}`} aria-pressed={activeType === type} onClick={() => { setActiveType(type); setSelectedId(""); }}>
             <Icon type={typeCopy[type].icon} className="" />
             {type}
             <span className="sc-type-count">{type === "Learning Path" ? learningPaths.length : lessonOptions.length}</span>
@@ -4994,12 +4796,13 @@ function ContentPanel({ contentItems, status, saveState, seedContentItems, addCo
         <button type="button" className="cc-new" onClick={() => openNew(activeType)}><Icon type="plus" className="" />New {activeType.toLowerCase()}</button>
       </div>
 
-      {currentItems.length ? (
-        <div className="cc-grid">
-          {currentItems.map((item) => (
-            <article key={item.id} className="cc-card" onClick={() => openEdit(item)}>
+      <div className="staff-library-filters"><label><span>Search library</span><input type="search" placeholder="Search titles, subjects or stages…" value={search} onChange={(event) => setSearch(event.target.value)} /></label><label><span>Publication status</span><select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}>{["All statuses", "Draft", "Review", "Published"].map((value) => <option key={value}>{value}</option>)}</select></label><span role="status">{filteredItems.length} of {currentItems.length} shown</span></div>
+      {filteredItems.length ? (
+        <div className="cc-grid staff-content-list">
+          {filteredItems.map((item) => (
+            <article key={item.id} className="cc-card">
               <div className="cc-card-top">
-                <span className={`sc-role-badge ${item.status === "Published" ? "staff" : "teacher"}`}>{item.status || "Draft"}</span>
+                <span data-status={item.status || "Draft"} className={`sc-role-badge ${item.status === "Published" ? "staff" : "teacher"}`}>{item.status || "Draft"}</span>
                 <button type="button" className="cc-card-del" aria-label={`Delete ${item.title}`} onClick={(e) => { e.stopPropagation(); confirmDelete(item); }}>✕</button>
               </div>
               <h3>{item.title || "Untitled"}</h3>
@@ -5007,7 +4810,7 @@ function ContentPanel({ contentItems, status, saveState, seedContentItems, addCo
               {item.summary && <p className="cc-card-summary">{item.summary}</p>}
               <div className="cc-card-foot">
                 <span>{materialCount(item)} file{materialCount(item) !== 1 ? "s" : ""}</span>
-                <span className="cc-card-edit">Edit<Icon type="arrowRight" className="" /></span>
+                <button type="button" className="cc-card-edit" aria-label={`Edit ${item.title || "untitled item"}`} onClick={() => openEdit(item)}>Edit<Icon type="arrowRight" className="" /></button>
               </div>
             </article>
           ))}
@@ -5015,14 +4818,15 @@ function ContentPanel({ contentItems, status, saveState, seedContentItems, addCo
       ) : (
         <div className="cc-empty">
           <Icon type={typeCopy[activeType].icon} className="" />
-          <h3>No {activeType.toLowerCase()}s yet</h3>
-          <p>{typeCopy[activeType].intro}</p>
+          <h3>{currentItems.length ? "No matching content" : `No ${activeType.toLowerCase()}s yet`}</h3>
+          <p>{currentItems.length ? "Try another search or clear your filters." : typeCopy[activeType].intro}</p>
+          {currentItems.length > 0 && <button type="button" className="secondary-button" onClick={() => { setSearch(""); setStatusFilter("All statuses"); }}>Clear filters</button>}
           <button type="button" className="cc-new" onClick={() => openNew(activeType)}><Icon type="plus" className="" />New {activeType.toLowerCase()}</button>
         </div>
       )}
 
       {editorOpen && (
-      <div className="cc-modal-backdrop" role="dialog" aria-modal="true" onClick={closeEditor}>
+      <StaffDialog label="Learning resource editor" onClose={closeEditor}>
         <form className="cc-modal sc-detail" onSubmit={submitContent} onClick={(e) => e.stopPropagation()}>
           <div className="sc-detail-header">
             <div>
@@ -5038,7 +4842,7 @@ function ContentPanel({ contentItems, status, saveState, seedContentItems, addCo
 
           <div className="sc-tabs">
             {contentFormTabs.map((tab) => (
-              <button key={tab.id} type="button" className={`sc-tab${formTab === tab.id ? " active" : ""}`} onClick={() => setFormTab(tab.id)}>{tab.label}</button>
+              <button key={tab.id} type="button" className={`sc-tab${formTab === tab.id ? " active" : ""}`} aria-pressed={formTab === tab.id} onClick={() => setFormTab(tab.id)}>{tab.label}</button>
             ))}
           </div>
 
@@ -5046,21 +4850,21 @@ function ContentPanel({ contentItems, status, saveState, seedContentItems, addCo
             {formTab === "details" && (
               <div className="sc-fields">
                 <div className="sc-field-row">
-                  <div className="sc-field"><label>Title</label><input type="text" required value={draft.title} onChange={(e) => updateDraft({ title: e.target.value })} /></div>
-                  <div className="sc-field"><label>Status</label><select value={draft.status} onChange={(e) => updateDraft({ status: e.target.value })}><option>Draft</option><option>Review</option><option>Published</option></select></div>
+                  <StaffField className="sc-field"><label>Title</label><input aria-label="Title" type="text" required value={draft.title} onChange={(e) => updateDraft({ title: e.target.value })} /></StaffField>
+                  <StaffField className="sc-field"><label>Status</label><select aria-label="Status" value={draft.status} onChange={(e) => updateDraft({ status: e.target.value })}><option>Draft</option><option>Review</option><option>Published</option></select></StaffField>
                 </div>
                 <div className="sc-field-row">
-                  <div className="sc-field"><label>Subject</label><select value={draft.subject} onChange={(e) => updateDraft({ subject: e.target.value })}>{subjects.map(([label]) => <option key={label}>{label}</option>)}</select></div>
-                  <div className="sc-field"><label>Stage</label><input type="text" value={draft.stage} onChange={(e) => updateDraft({ stage: e.target.value })} /></div>
+                  <StaffField className="sc-field"><label>Subject</label><select aria-label="Subject" value={draft.subject} onChange={(e) => updateDraft({ subject: e.target.value })}>{subjects.map(([label]) => <option key={label}>{label}</option>)}</select></StaffField>
+                  <StaffField className="sc-field"><label>Stage</label><input aria-label="Stage" type="text" value={draft.stage} onChange={(e) => updateDraft({ stage: e.target.value })} /></StaffField>
                 </div>
-                {draft.type === "Learning Path" && <div className="sc-field"><label>Duration (weeks)</label><input type="number" min="0" value={draft.durationWeeks} style={{maxWidth:140}} onChange={(e) => updateDraft({ durationWeeks: e.target.value })} /></div>}
-                {draft.type !== "Learning Path" && <div className="sc-field"><label>Duration (minutes)</label><input type="number" min="0" value={draft.durationMinutes} style={{maxWidth:140}} onChange={(e) => updateDraft({ durationMinutes: e.target.value })} /></div>}
-                <div className="sc-field"><label>Summary</label><input type="text" required value={draft.summary} onChange={(e) => updateDraft({ summary: e.target.value })} placeholder="One-line teacher-facing description" /></div>
-                <div className="sc-field"><label>Description</label><textarea value={draft.description} rows={4} onChange={(e) => updateDraft({ description: e.target.value })} /></div>
-                <div className="sc-field"><label>Syllabus outcomes</label><textarea placeholder="One outcome per line" value={draft.outcomeCodes} rows={3} onChange={(e) => updateDraft({ outcomeCodes: e.target.value })} /></div>
+                {draft.type === "Learning Path" && <StaffField className="sc-field"><label>Duration (weeks)</label><input aria-label="Duration (weeks)" type="number" min="0" value={draft.durationWeeks} style={{maxWidth:140}} onChange={(e) => updateDraft({ durationWeeks: e.target.value })} /></StaffField>}
+                {draft.type !== "Learning Path" && <StaffField className="sc-field"><label>Duration (minutes)</label><input aria-label="Duration (minutes)" type="number" min="0" value={draft.durationMinutes} style={{maxWidth:140}} onChange={(e) => updateDraft({ durationMinutes: e.target.value })} /></StaffField>}
+                <StaffField className="sc-field"><label>Summary</label><input aria-label="Summary" type="text" required value={draft.summary} onChange={(e) => updateDraft({ summary: e.target.value })} placeholder="One-line teacher-facing description" /></StaffField>
+                <StaffField className="sc-field"><label>Description</label><textarea aria-label="Description" value={draft.description} rows={4} onChange={(e) => updateDraft({ description: e.target.value })} /></StaffField>
+                <StaffField className="sc-field"><label>Syllabus outcomes</label><textarea aria-label="Syllabus outcomes" placeholder="One outcome per line" value={draft.outcomeCodes} rows={3} onChange={(e) => updateDraft({ outcomeCodes: e.target.value })} /></StaffField>
                 {draft.type !== "Learning Path" && <>
-                  <div className="sc-field"><label>Learning intention</label><textarea placeholder="By the end of this lesson students will…" value={draft.learningIntention} rows={2} onChange={(e) => updateDraft({ learningIntention: e.target.value })} /></div>
-                  <div className="sc-field"><label>Success criteria</label><textarea placeholder="One per line — I can…" value={draft.successCriteria} rows={3} onChange={(e) => updateDraft({ successCriteria: e.target.value })} /></div>
+                  <StaffField className="sc-field"><label>Learning intention</label><textarea aria-label="Learning intention" placeholder="By the end of this lesson students will…" value={draft.learningIntention} rows={2} onChange={(e) => updateDraft({ learningIntention: e.target.value })} /></StaffField>
+                  <StaffField className="sc-field"><label>Success criteria</label><textarea aria-label="Success criteria" placeholder="One per line — I can…" value={draft.successCriteria} rows={3} onChange={(e) => updateDraft({ successCriteria: e.target.value })} /></StaffField>
                 </>}
               </div>
             )}
@@ -5070,25 +4874,25 @@ function ContentPanel({ contentItems, status, saveState, seedContentItems, addCo
                 <div className="sc-image-picker">
                   <div className="sc-image-preview"><img src={selectedImage} alt="" /></div>
                   <div className="sc-image-options">
-                    <div className="sc-field"><label>Stock image</label><select value={selectedStockImage ? (selectedStockImage.key || selectedStockImage.src) : ""} onChange={(e) => chooseStockImage(e.target.value)}><option value="">Choose stock image</option>{stockImages.map((si) => <option value={si.key || si.src} key={`${si.label}-${si.src}`}>{si.label}</option>)}</select></div>
-                    <div className="sc-field"><label>Image URL</label><input type="url" value={draft.customImageUrl} onChange={(e) => updateDraft({ customImageUrl: e.target.value, uploadedImageDataUrl: "", image: e.target.value, imageKey: "" })} placeholder="https://..." /></div>
-                    <div className="sc-field"><label>Upload image</label>
+                    <StaffField className="sc-field"><label>Stock image</label><select aria-label="Stock image" value={selectedStockImage ? (selectedStockImage.key || selectedStockImage.src) : ""} onChange={(e) => chooseStockImage(e.target.value)}><option value="">Choose stock image</option>{stockImages.map((si) => <option value={si.key || si.src} key={`${si.label}-${si.src}`}>{si.label}</option>)}</select></StaffField>
+                    <StaffField className="sc-field"><label>Image URL</label><input aria-label="Image URL" type="url" value={draft.customImageUrl} onChange={(e) => updateDraft({ customImageUrl: e.target.value, uploadedImageDataUrl: "", image: e.target.value, imageKey: "" })} placeholder="https://..." /></StaffField>
+                    <StaffField className="sc-field"><label>Upload image</label>
                       <div className="sc-upload-zone" onClick={() => document.getElementById("content-img-upload").click()}><Icon type="plus" className="" /><span>Click to upload</span></div>
                       <input type="file" id="content-img-upload" accept="image/*" onChange={uploadCardImage} style={{display:"none"}} />
-                    </div>
+                    </StaffField>
                     {imageError ? <p className="auth-error">{imageError}</p> : null}
                   </div>
                 </div>
 
                 <p className="sc-files-hint">Paste a link (Canva, Drive, YouTube…) <strong>or</strong> upload a PDF — uploaded PDFs give teachers a clean, reliable download even when Canva is blocked.</p>
                 {draft.type === "Learning Path" && <>
-                  <div className="sc-field"><label>Teacher admin documents</label><input type="url" value={draft.teacherAdminUrl} onChange={(e) => updateDraft({ teacherAdminUrl: e.target.value })} placeholder="Drive, PDF or Canva link" />{pdfUploadControl("teacherAdminUrl")}</div>
-                  <div className="sc-field"><label>Unit plan</label><input type="url" value={draft.unitPlanUrl} onChange={(e) => updateDraft({ unitPlanUrl: e.target.value })} placeholder="Scope, sequence or program link" />{pdfUploadControl("unitPlanUrl")}</div>
-                  <div className="sc-field"><label>Teacher notes</label><textarea placeholder="One note per line" value={draft.activityPrompts} rows={3} onChange={(e) => updateDraft({ activityPrompts: e.target.value })} /></div>
+                  <StaffField className="sc-field"><label>Teacher admin documents</label><input aria-label="Teacher admin documents" type="url" value={draft.teacherAdminUrl} onChange={(e) => updateDraft({ teacherAdminUrl: e.target.value })} placeholder="Drive, PDF or Canva link" />{pdfUploadControl("teacherAdminUrl")}</StaffField>
+                  <StaffField className="sc-field"><label>Unit plan</label><input aria-label="Unit plan" type="url" value={draft.unitPlanUrl} onChange={(e) => updateDraft({ unitPlanUrl: e.target.value })} placeholder="Scope, sequence or program link" />{pdfUploadControl("unitPlanUrl")}</StaffField>
+                  <StaffField className="sc-field"><label>Teacher notes</label><textarea aria-label="Teacher notes" placeholder="One note per line" value={draft.activityPrompts} rows={3} onChange={(e) => updateDraft({ activityPrompts: e.target.value })} /></StaffField>
                 </>}
                 {draft.type !== "Learning Path" && <>
-                  <div className="sc-field"><label>Presentation (Canva embed link)</label><input type="url" value={draft.canvaEmbedUrl} onChange={(e) => updateDraft({ canvaEmbedUrl: e.target.value })} placeholder="Canva share / embed link for the deck" /></div>
-                  <div className="sc-field"><label>Student worksheet (downloadable)</label><input type="url" value={draft.studentWorksheetUrl} onChange={(e) => updateDraft({ studentWorksheetUrl: e.target.value })} placeholder="Worksheet link or upload a PDF" />{pdfUploadControl("studentWorksheetUrl")}</div>
+                  <StaffField className="sc-field"><label>Presentation (Canva embed link)</label><input aria-label="Presentation (Canva embed link)" type="url" value={draft.canvaEmbedUrl} onChange={(e) => updateDraft({ canvaEmbedUrl: e.target.value })} placeholder="Canva share / embed link for the deck" /></StaffField>
+                  <StaffField className="sc-field"><label>Student worksheet (downloadable)</label><input aria-label="Student worksheet (downloadable)" type="url" value={draft.studentWorksheetUrl} onChange={(e) => updateDraft({ studentWorksheetUrl: e.target.value })} placeholder="Worksheet link or upload a PDF" />{pdfUploadControl("studentWorksheetUrl")}</StaffField>
                 </>}
                 {uploadError ? <p className="auth-error">{uploadError}</p> : null}
               </div>
@@ -5101,13 +4905,13 @@ function ContentPanel({ contentItems, status, saveState, seedContentItems, addCo
                   <p>A teacher-led, Taronga-themed quiz to run on the board. The class answers together — no student devices needed.</p>
                 </div>
                 <div className="sc-field-row">
-                  <div className="sc-field"><label>Class response mode</label>
+                  <StaffField className="sc-field"><label>Class response mode</label>
                     <select value={draft.quizResponseMode} onChange={(e) => setQuizMode(e.target.value)}>
                       {QUIZ_RESPONSE_MODES.map((mode) => <option key={mode.id} value={mode.id}>{mode.label}</option>)}
                     </select>
-                  </div>
+                  </StaffField>
                 </div>
-                <div className="sc-field"><label>How the class answers (shown on screen)</label><textarea rows={2} value={draft.quizInstructions} onChange={(e) => updateDraft({ quizInstructions: e.target.value })} placeholder="e.g. TRUE → hands on head. FALSE → hands on tail!" /></div>
+                <StaffField className="sc-field"><label>How the class answers (shown on screen)</label><textarea aria-label="How the class answers (shown on screen)" rows={2} value={draft.quizInstructions} onChange={(e) => updateDraft({ quizInstructions: e.target.value })} placeholder="e.g. TRUE → hands on head. FALSE → hands on tail!" /></StaffField>
 
                 <div className="sc-quiz-add">
                   <button type="button" className="secondary-button slim-button" onClick={() => addQuizQuestion("true-false")}>+ True / False</button>
@@ -5120,7 +4924,7 @@ function ContentPanel({ contentItems, status, saveState, seedContentItems, addCo
                       <span className="sc-quiz-q-num">Question {index + 1} · {q.type === "true-false" ? "True / False" : "Multiple choice"}</span>
                       <button type="button" className="delete-button slim-button" onClick={() => removeQuizQuestion(q.id)}>Remove</button>
                     </div>
-                    <div className="sc-field"><label>Question</label><textarea rows={2} value={q.prompt} onChange={(e) => updateQuizQuestion(q.id, { prompt: e.target.value })} placeholder="Ask the class something…" /></div>
+                    <StaffField className="sc-field"><label>Question</label><textarea aria-label="Question" rows={2} value={q.prompt} onChange={(e) => updateQuizQuestion(q.id, { prompt: e.target.value })} placeholder="Ask the class something…" /></StaffField>
                     <label className="sc-quiz-opt-label">Answers — tick the correct one</label>
                     <div className="sc-quiz-options">
                       {q.options.map((opt, optIndex) => (
@@ -5134,7 +4938,7 @@ function ContentPanel({ contentItems, status, saveState, seedContentItems, addCo
                       ))}
                       {q.type === "multiple-choice" && q.options.length < 4 ? <button type="button" className="sc-quiz-add-opt" onClick={() => addQuizOption(q.id)}>+ Add answer</button> : null}
                     </div>
-                    <div className="sc-field"><label>Taronga fact (optional — shown when you reveal the answer)</label><input type="text" value={q.fact} onChange={(e) => updateQuizQuestion(q.id, { fact: e.target.value })} placeholder="A fun fact to share after the answer" /></div>
+                    <StaffField className="sc-field"><label>Taronga fact (optional — shown when you reveal the answer)</label><input aria-label="Taronga fact (optional — shown when you reveal the answer)" type="text" value={q.fact} onChange={(e) => updateQuizQuestion(q.id, { fact: e.target.value })} placeholder="A fun fact to share after the answer" /></StaffField>
                   </div>
                 )) : (
                   <div className="sc-empty-engagement">
@@ -5160,10 +4964,10 @@ function ContentPanel({ contentItems, status, saveState, seedContentItems, addCo
                     <li><strong>Duration</strong> {draft.durationMinutes ? `${draft.durationMinutes} min` : "—"}</li>
                   </ul>
                 </div>
-                <div className="sc-field"><label>Differentiation</label><textarea rows={3} value={draft.lpDifferentiation} onChange={(e) => updateDraft({ lpDifferentiation: e.target.value })} placeholder="Adjustments for support and extension" /></div>
+                <StaffField className="sc-field"><label>Differentiation</label><textarea aria-label="Differentiation" rows={3} value={draft.lpDifferentiation} onChange={(e) => updateDraft({ lpDifferentiation: e.target.value })} placeholder="Adjustments for support and extension" /></StaffField>
                 <div className="sc-field-row">
-                  <div className="sc-field"><label>Focus for literacy</label><textarea rows={3} value={draft.lpLiteracy} onChange={(e) => updateDraft({ lpLiteracy: e.target.value })} placeholder="Literacy focus" /></div>
-                  <div className="sc-field"><label>Focus for numeracy</label><textarea rows={3} value={draft.lpNumeracy} onChange={(e) => updateDraft({ lpNumeracy: e.target.value })} placeholder="Numeracy focus" /></div>
+                  <StaffField className="sc-field"><label>Focus for literacy</label><textarea aria-label="Focus for literacy" rows={3} value={draft.lpLiteracy} onChange={(e) => updateDraft({ lpLiteracy: e.target.value })} placeholder="Literacy focus" /></StaffField>
+                  <StaffField className="sc-field"><label>Focus for numeracy</label><textarea aria-label="Focus for numeracy" rows={3} value={draft.lpNumeracy} onChange={(e) => updateDraft({ lpNumeracy: e.target.value })} placeholder="Numeracy focus" /></StaffField>
                 </div>
 
                 <label className="sc-quiz-opt-label">Teaching &amp; learning sequence</label>
@@ -5173,9 +4977,9 @@ function ContentPanel({ contentItems, status, saveState, seedContentItems, addCo
                       <input type="text" className="sc-lp-phase-name" value={row.phase} onChange={(e) => updateSequenceRow(row.id, { phase: e.target.value })} />
                       <input type="text" className="sc-lp-phase-timing" value={row.timing} onChange={(e) => updateSequenceRow(row.id, { timing: e.target.value })} placeholder="Timing e.g. 10 min" />
                     </div>
-                    <div className="sc-field"><label>What the teacher does &amp; says</label><textarea rows={2} value={row.teacher} onChange={(e) => updateSequenceRow(row.id, { teacher: e.target.value })} /></div>
-                    <div className="sc-field"><label>What students do &amp; say</label><textarea rows={2} value={row.students} onChange={(e) => updateSequenceRow(row.id, { students: e.target.value })} /></div>
-                    <div className="sc-field"><label>Assessment &amp; feedback</label><textarea rows={2} value={row.assessment} onChange={(e) => updateSequenceRow(row.id, { assessment: e.target.value })} /></div>
+                    <StaffField className="sc-field"><label>What the teacher does &amp; says</label><textarea aria-label="What the teacher does &amp; says" rows={2} value={row.teacher} onChange={(e) => updateSequenceRow(row.id, { teacher: e.target.value })} /></StaffField>
+                    <StaffField className="sc-field"><label>What students do &amp; say</label><textarea aria-label="What students do &amp; say" rows={2} value={row.students} onChange={(e) => updateSequenceRow(row.id, { students: e.target.value })} /></StaffField>
+                    <StaffField className="sc-field"><label>Assessment &amp; feedback</label><textarea aria-label="Assessment &amp; feedback" rows={2} value={row.assessment} onChange={(e) => updateSequenceRow(row.id, { assessment: e.target.value })} /></StaffField>
                   </div>
                 ))}
                 <button type="button" className="sc-quiz-add-opt" onClick={addSequenceRow}>+ Add phase</button>
@@ -5202,13 +5006,13 @@ function ContentPanel({ contentItems, status, saveState, seedContentItems, addCo
                   </div>
                 )}
                 {draft.type !== "Learning Path" && (
-                  <div className="sc-field"><label>Parent learning path</label><select value={draft.learningPathId} onChange={(e) => updateDraft({ learningPathId: e.target.value })}><option value="">Standalone lesson</option>{learningPaths.map((p) => <option value={p.id} key={p.id || p.title}>{p.title}</option>)}</select></div>
+                  <StaffField className="sc-field"><label>Parent learning path</label><select aria-label="Parent learning path" value={draft.learningPathId} onChange={(e) => updateDraft({ learningPathId: e.target.value })}><option value="">Standalone lesson</option>{learningPaths.map((p) => <option value={p.id} key={p.id || p.title}>{p.title}</option>)}</select></StaffField>
                 )}
               </div>
             )}
           </div>
         </form>
-      </div>
+      </StaffDialog>
       )}
     </section>
   );
@@ -5370,7 +5174,6 @@ function TarongaTvPanel({ items, contentItems, status, saveState, saveVideo, del
     <section className="staff-section staff-panel active">
       <div className="sc-panel-header">
         <div>
-          <h2>Taronga TV</h2>
           <p>Curriculum-aligned videos with linked lessons, outcomes and timed discussion prompts.</p>
         </div>
       </div>
@@ -5384,7 +5187,7 @@ function TarongaTvPanel({ items, contentItems, status, saveState, saveVideo, del
       {items.length ? (
         <div className="cc-grid">
           {items.map((item) => (
-            <article key={item.id} className="cc-card cc-card-media" onClick={() => openEdit(item)}>
+            <article key={item.id} className="cc-card cc-card-media">
               <div className="cc-card-thumb">
                 <img src={tvThumb(item)} alt="" loading="lazy" />
                 <span className="cc-card-play"><Icon type="mediaPlay" className="" /></span>
@@ -5392,13 +5195,13 @@ function TarongaTvPanel({ items, contentItems, status, saveState, saveVideo, del
                 {item.duration && <span className="cc-card-duration">{item.duration}</span>}
               </div>
               <div className="cc-card-body">
-                <span className={`sc-role-badge ${(item.status || "Draft") === "Published" ? "staff" : "teacher"}`}>{item.status || "Draft"}</span>
+                <span data-status={item.status || "Draft"} className={`sc-role-badge ${(item.status || "Draft") === "Published" ? "staff" : "teacher"}`}>{item.status || "Draft"}</span>
                 <h3>{item.title || "Untitled"}</h3>
                 <p className="cc-card-meta">{item.subject} · {item.stage}</p>
                 {item.summary && <p className="cc-card-summary">{item.summary}</p>}
                 <div className="cc-card-foot">
                   <span>{(item.categories || []).length} categor{(item.categories || []).length === 1 ? "y" : "ies"}</span>
-                  <span className="cc-card-edit">Edit<Icon type="arrowRight" className="" /></span>
+                  <button type="button" className="cc-card-edit" aria-label={`Edit ${item.title || "untitled item"}`} onClick={() => openEdit(item)}>Edit<Icon type="arrowRight" className="" /></button>
                 </div>
               </div>
             </article>
@@ -5414,7 +5217,7 @@ function TarongaTvPanel({ items, contentItems, status, saveState, saveVideo, del
       )}
 
       {editorOpen && (
-      <div className="cc-modal-backdrop" role="dialog" aria-modal="true" onClick={closeEditor}>
+      <StaffDialog label="Taronga TV editor" onClose={closeEditor}>
         <form className="cc-modal sc-detail" onSubmit={handleSubmit} onClick={(e) => e.stopPropagation()}>
           <div className="sc-detail-header">
             <div>
@@ -5431,7 +5234,7 @@ function TarongaTvPanel({ items, contentItems, status, saveState, saveVideo, del
 
           <div className="sc-tabs">
             {tvFormTabs.map((tab) => (
-              <button key={tab.id} type="button" className={`sc-tab${formTab === tab.id ? " active" : ""}`} onClick={() => setFormTab(tab.id)}>{tab.label}</button>
+              <button key={tab.id} type="button" className={`sc-tab${formTab === tab.id ? " active" : ""}`} aria-pressed={formTab === tab.id} onClick={() => setFormTab(tab.id)}>{tab.label}</button>
             ))}
           </div>
 
@@ -5439,19 +5242,19 @@ function TarongaTvPanel({ items, contentItems, status, saveState, saveVideo, del
             {formTab === "details" && (
               <div className="sc-fields">
                 <div className="sc-field-row">
-                  <div className="sc-field"><label>Title</label><input type="text" required value={draft.title} onChange={(e) => updateDraft({ title: e.target.value })} /></div>
-                  <div className="sc-field"><label>Status</label><select value={draft.status} onChange={(e) => updateDraft({ status: e.target.value })}><option>Draft</option><option>Published</option></select></div>
+                  <StaffField className="sc-field"><label>Title</label><input aria-label="Title" type="text" required value={draft.title} onChange={(e) => updateDraft({ title: e.target.value })} /></StaffField>
+                  <StaffField className="sc-field"><label>Status</label><select aria-label="Status" value={draft.status} onChange={(e) => updateDraft({ status: e.target.value })}><option>Draft</option><option>Published</option></select></StaffField>
                 </div>
                 <div className="sc-field-row">
-                  <div className="sc-field"><label>Subject</label><select value={draft.subject} onChange={(e) => updateDraft({ subject: e.target.value })}>{subjects.map(([label]) => <option key={label}>{label}</option>)}</select></div>
-                  <div className="sc-field"><label>Stage</label><input type="text" value={draft.stage} onChange={(e) => updateDraft({ stage: e.target.value })} /></div>
+                  <StaffField className="sc-field"><label>Subject</label><select aria-label="Subject" value={draft.subject} onChange={(e) => updateDraft({ subject: e.target.value })}>{subjects.map(([label]) => <option key={label}>{label}</option>)}</select></StaffField>
+                  <StaffField className="sc-field"><label>Stage</label><input aria-label="Stage" type="text" value={draft.stage} onChange={(e) => updateDraft({ stage: e.target.value })} /></StaffField>
                 </div>
                 <div className="sc-field-row">
-                  <div className="sc-field"><label>Duration</label><input type="text" value={draft.duration} onChange={(e) => updateDraft({ duration: e.target.value })} placeholder="6 min" /></div>
-                  <div className="sc-field"><label>YouTube or Embed URL</label><input type="url" value={draft.embedUrl} onChange={(e) => updateDraft({ embedUrl: e.target.value })} placeholder="https://youtube.com/watch?v=..." /></div>
+                  <StaffField className="sc-field"><label>Duration</label><input aria-label="Duration" type="text" value={draft.duration} onChange={(e) => updateDraft({ duration: e.target.value })} placeholder="6 min" /></StaffField>
+                  <StaffField className="sc-field"><label>YouTube or Embed URL</label><input aria-label="YouTube or Embed URL" type="url" value={draft.embedUrl} onChange={(e) => updateDraft({ embedUrl: e.target.value })} placeholder="https://youtube.com/watch?v=..." /></StaffField>
                 </div>
-                <div className="sc-field"><label>Summary</label><input type="text" required value={draft.summary} onChange={(e) => updateDraft({ summary: e.target.value })} /></div>
-                <div className="sc-field"><label>Description</label><textarea value={draft.description} rows={4} onChange={(e) => updateDraft({ description: e.target.value })} /></div>
+                <StaffField className="sc-field"><label>Summary</label><input aria-label="Summary" type="text" required value={draft.summary} onChange={(e) => updateDraft({ summary: e.target.value })} /></StaffField>
+                <StaffField className="sc-field"><label>Description</label><textarea aria-label="Description" value={draft.description} rows={4} onChange={(e) => updateDraft({ description: e.target.value })} /></StaffField>
                 <div className="sc-field">
                   <label>Categories</label>
                   <div className="sc-checkbox-list" style={{maxHeight:160}}>
@@ -5463,7 +5266,7 @@ function TarongaTvPanel({ items, contentItems, status, saveState, saveVideo, del
                     ))}
                   </div>
                 </div>
-                <div className="sc-field"><label>Download links</label><textarea placeholder="One per line: Label | URL" value={draft.downloadLinks} rows={3} onChange={(e) => updateDraft({ downloadLinks: e.target.value })} /></div>
+                <StaffField className="sc-field"><label>Download links</label><textarea aria-label="Download links" placeholder="One per line: Label | URL" value={draft.downloadLinks} rows={3} onChange={(e) => updateDraft({ downloadLinks: e.target.value })} /></StaffField>
               </div>
             )}
 
@@ -5472,12 +5275,12 @@ function TarongaTvPanel({ items, contentItems, status, saveState, saveVideo, del
                 <div className="sc-image-picker">
                   <div className="sc-image-preview"><img src={selectedImage} alt="" /></div>
                   <div className="sc-image-options">
-                    <div className="sc-field"><label>Stock image</label><select value={selectedStockImage ? (selectedStockImage.key || selectedStockImage.src) : ""} onChange={(e) => chooseStockImage(e.target.value)}><option value="">Choose stock image</option>{stockImages.map((si) => <option value={si.key || si.src} key={`${si.label}-${si.src}`}>{si.label}</option>)}</select></div>
-                    <div className="sc-field"><label>Thumbnail URL</label><input type="url" value={draft.customImageUrl} onChange={(e) => updateDraft({ customImageUrl: e.target.value, uploadedImageDataUrl: "", thumbnailUrl: e.target.value, imageKey: "" })} placeholder="https://..." /></div>
-                    <div className="sc-field"><label>Upload thumbnail</label>
+                    <StaffField className="sc-field"><label>Stock image</label><select aria-label="Stock image" value={selectedStockImage ? (selectedStockImage.key || selectedStockImage.src) : ""} onChange={(e) => chooseStockImage(e.target.value)}><option value="">Choose stock image</option>{stockImages.map((si) => <option value={si.key || si.src} key={`${si.label}-${si.src}`}>{si.label}</option>)}</select></StaffField>
+                    <StaffField className="sc-field"><label>Thumbnail URL</label><input aria-label="Thumbnail URL" type="url" value={draft.customImageUrl} onChange={(e) => updateDraft({ customImageUrl: e.target.value, uploadedImageDataUrl: "", thumbnailUrl: e.target.value, imageKey: "" })} placeholder="https://..." /></StaffField>
+                    <StaffField className="sc-field"><label>Upload thumbnail</label>
                       <div className="sc-upload-zone" onClick={() => document.getElementById("tv-thumb-upload").click()}><Icon type="plus" className="" /><span>Click to upload</span></div>
                       <input type="file" id="tv-thumb-upload" accept="image/*" onChange={uploadCardImage} style={{display:"none"}} />
-                    </div>
+                    </StaffField>
                     {imageError ? <p className="auth-error">{imageError}</p> : null}
                   </div>
                 </div>
@@ -5486,7 +5289,7 @@ function TarongaTvPanel({ items, contentItems, status, saveState, saveVideo, del
 
             {formTab === "curriculum" && (
               <div className="sc-fields">
-                <div className="sc-field"><label>Curriculum outcomes</label><textarea placeholder="One outcome per line" value={draft.outcomeCodes} rows={4} onChange={(e) => updateDraft({ outcomeCodes: e.target.value })} /></div>
+                <StaffField className="sc-field"><label>Curriculum outcomes</label><textarea aria-label="Curriculum outcomes" placeholder="One outcome per line" value={draft.outcomeCodes} rows={4} onChange={(e) => updateDraft({ outcomeCodes: e.target.value })} /></StaffField>
                 <div className="sc-field">
                   <label>Linked lessons</label>
                   <div className="sc-checkbox-list">
@@ -5517,8 +5320,8 @@ function TarongaTvPanel({ items, contentItems, status, saveState, saveVideo, del
                 <p style={{margin:0,color:"var(--muted)",fontSize:13}}>Add pause moments with timestamps so teachers know exactly when to stop the video and prompt discussion.</p>
                 {draft.discussionPoints.map((point, index) => (
                   <div key={`dp-${index}`} className="sc-discussion-point">
-                    <div className="sc-field" style={{margin:0}}><label>Timestamp</label><input type="text" value={point.time} onChange={(e) => updateDiscussionPoint(index, { time: e.target.value })} placeholder="02:15" /></div>
-                    <div className="sc-field" style={{margin:0}}><label>Talking point</label><textarea value={point.prompt} rows={2} onChange={(e) => updateDiscussionPoint(index, { prompt: e.target.value })} placeholder="Pause and ask..." /></div>
+                    <StaffField className="sc-field" style={{margin:0}}><label>Timestamp</label><input aria-label="Timestamp" type="text" value={point.time} onChange={(e) => updateDiscussionPoint(index, { time: e.target.value })} placeholder="02:15" /></StaffField>
+                    <StaffField className="sc-field" style={{margin:0}}><label>Talking point</label><textarea aria-label="Talking point" value={point.prompt} rows={2} onChange={(e) => updateDiscussionPoint(index, { prompt: e.target.value })} placeholder="Pause and ask..." /></StaffField>
                     <button type="button" className="delete-button slim-button" style={{alignSelf:"flex-end",marginBottom:2}} onClick={() => removeDiscussionPoint(index)}>✕</button>
                   </div>
                 ))}
@@ -5527,7 +5330,7 @@ function TarongaTvPanel({ items, contentItems, status, saveState, saveVideo, del
             )}
           </div>
         </form>
-      </div>
+      </StaffDialog>
       )}
     </section>
   );
@@ -5629,8 +5432,7 @@ function ProfessionalLearningPanel({ items, status, saveState, saveItem, deleteI
     <section className="staff-section staff-panel active">
       <div className="sc-panel-header">
         <div>
-          <h2>Professional Learning</h2>
-          <p>Publish sessions for teachers — they surface in the PL page, calendar and notification bell.</p>
+          <p>Manage teacher sessions, registration links and supporting materials.</p>
         </div>
       </div>
       <ContentFirestoreStatus status={status} saveState={saveState} />
@@ -5643,9 +5445,9 @@ function ProfessionalLearningPanel({ items, status, saveState, saveItem, deleteI
       {items.length ? (
         <div className="cc-grid">
           {items.map((item) => (
-            <article key={item.id} className="cc-card" onClick={() => openEdit(item)}>
+            <article key={item.id} className="cc-card">
               <div className="cc-card-top">
-                <span className={`sc-role-badge ${(item.status || "Draft") === "Published" ? "staff" : "teacher"}`}>{item.status || "Draft"}</span>
+                <span data-status={item.status || "Draft"} className={`sc-role-badge ${(item.status || "Draft") === "Published" ? "staff" : "teacher"}`}>{item.status || "Draft"}</span>
                 <button type="button" className="cc-card-del" aria-label={`Delete ${item.title}`} onClick={(e) => { e.stopPropagation(); handleDelete(item); }}>✕</button>
               </div>
               <h3>{item.title || "Untitled session"}</h3>
@@ -5653,7 +5455,7 @@ function ProfessionalLearningPanel({ items, status, saveState, saveItem, deleteI
               {item.summary && <p className="cc-card-summary">{item.summary}</p>}
               <div className="cc-card-foot">
                 <span>{plLinkCount(item)} link{plLinkCount(item) !== 1 ? "s" : ""}</span>
-                <span className="cc-card-edit">Edit<Icon type="arrowRight" className="" /></span>
+                <button type="button" className="cc-card-edit" aria-label={`Edit ${item.title || "untitled item"}`} onClick={() => openEdit(item)}>Edit<Icon type="arrowRight" className="" /></button>
               </div>
             </article>
           ))}
@@ -5668,7 +5470,7 @@ function ProfessionalLearningPanel({ items, status, saveState, saveItem, deleteI
       )}
 
       {editorOpen && (
-      <div className="cc-modal-backdrop" role="dialog" aria-modal="true" onClick={closeEditor}>
+      <StaffDialog label="Professional learning editor" onClose={closeEditor}>
         <form className="cc-modal sc-detail" onSubmit={handleSubmit} onClick={(e) => e.stopPropagation()}>
           <div className="sc-detail-header">
             <div>
@@ -5684,7 +5486,7 @@ function ProfessionalLearningPanel({ items, status, saveState, saveItem, deleteI
 
           <div className="sc-tabs">
             {plFormTabs.map((tab) => (
-              <button key={tab.id} type="button" className={`sc-tab${formTab === tab.id ? " active" : ""}`} onClick={() => setFormTab(tab.id)}>{tab.label}</button>
+              <button key={tab.id} type="button" className={`sc-tab${formTab === tab.id ? " active" : ""}`} aria-pressed={formTab === tab.id} onClick={() => setFormTab(tab.id)}>{tab.label}</button>
             ))}
           </div>
 
@@ -5692,30 +5494,30 @@ function ProfessionalLearningPanel({ items, status, saveState, saveItem, deleteI
             {formTab === "details" && (
               <div className="sc-fields">
                 <div className="sc-field-row">
-                  <div className="sc-field"><label>Title</label><input type="text" required value={draft.title} onChange={(e) => setDraft((c) => ({ ...c, title: e.target.value }))} /></div>
-                  <div className="sc-field"><label>Status</label><select value={draft.status} onChange={(e) => setDraft((c) => ({ ...c, status: e.target.value }))}><option>Draft</option><option>Published</option></select></div>
+                  <StaffField className="sc-field"><label>Title</label><input aria-label="Title" type="text" required value={draft.title} onChange={(e) => setDraft((c) => ({ ...c, title: e.target.value }))} /></StaffField>
+                  <StaffField className="sc-field"><label>Status</label><select aria-label="Status" value={draft.status} onChange={(e) => setDraft((c) => ({ ...c, status: e.target.value }))}><option>Draft</option><option>Published</option></select></StaffField>
                 </div>
                 <div className="sc-field-row">
-                  <div className="sc-field"><label>Date</label><input type="date" value={draft.date} onChange={(e) => setDraft((c) => ({ ...c, date: e.target.value }))} /></div>
-                  <div className="sc-field"><label>Time</label><input type="text" value={draft.time} onChange={(e) => setDraft((c) => ({ ...c, time: e.target.value }))} placeholder="4:00 PM AEST" /></div>
+                  <StaffField className="sc-field"><label>Date</label><input aria-label="Date" type="date" value={draft.date} onChange={(e) => setDraft((c) => ({ ...c, date: e.target.value }))} /></StaffField>
+                  <StaffField className="sc-field"><label>Time</label><input aria-label="Time" type="text" value={draft.time} onChange={(e) => setDraft((c) => ({ ...c, time: e.target.value }))} placeholder="4:00 PM AEST" /></StaffField>
                 </div>
-                <div className="sc-field"><label>Summary</label><input type="text" value={draft.summary} onChange={(e) => setDraft((c) => ({ ...c, summary: e.target.value }))} placeholder="One-line description teachers will see" /></div>
-                <div className="sc-field"><label>Description</label><textarea value={draft.description} rows={5} onChange={(e) => setDraft((c) => ({ ...c, description: e.target.value }))} /></div>
+                <StaffField className="sc-field"><label>Summary</label><input aria-label="Summary" type="text" value={draft.summary} onChange={(e) => setDraft((c) => ({ ...c, summary: e.target.value }))} placeholder="One-line description teachers will see" /></StaffField>
+                <StaffField className="sc-field"><label>Description</label><textarea aria-label="Description" value={draft.description} rows={5} onChange={(e) => setDraft((c) => ({ ...c, description: e.target.value }))} /></StaffField>
               </div>
             )}
 
             {formTab === "links" && (
               <div className="sc-fields">
-                <div className="sc-field"><label>Registration link</label><input type="url" value={draft.registrationUrl} onChange={(e) => setDraft((c) => ({ ...c, registrationUrl: e.target.value }))} placeholder="https://..." /></div>
-                <div className="sc-field"><label>Information link</label><input type="url" value={draft.infoUrl} onChange={(e) => setDraft((c) => ({ ...c, infoUrl: e.target.value }))} placeholder="https://..." /></div>
-                <div className="sc-field"><label>PDF link</label><input type="url" value={draft.pdfUrl} onChange={(e) => setDraft((c) => ({ ...c, pdfUrl: e.target.value }))} placeholder="https://..." /></div>
-                <div className="sc-field"><label>Download links</label><textarea placeholder="One per line: Label | URL" value={draft.downloadLinks} rows={4} onChange={(e) => setDraft((c) => ({ ...c, downloadLinks: e.target.value }))} /></div>
+                <StaffField className="sc-field"><label>Registration link</label><input aria-label="Registration link" type="url" value={draft.registrationUrl} onChange={(e) => setDraft((c) => ({ ...c, registrationUrl: e.target.value }))} placeholder="https://..." /></StaffField>
+                <StaffField className="sc-field"><label>Information link</label><input aria-label="Information link" type="url" value={draft.infoUrl} onChange={(e) => setDraft((c) => ({ ...c, infoUrl: e.target.value }))} placeholder="https://..." /></StaffField>
+                <StaffField className="sc-field"><label>PDF link</label><input aria-label="PDF link" type="url" value={draft.pdfUrl} onChange={(e) => setDraft((c) => ({ ...c, pdfUrl: e.target.value }))} placeholder="https://..." /></StaffField>
+                <StaffField className="sc-field"><label>Download links</label><textarea aria-label="Download links" placeholder="One per line: Label | URL" value={draft.downloadLinks} rows={4} onChange={(e) => setDraft((c) => ({ ...c, downloadLinks: e.target.value }))} /></StaffField>
                 <p style={{margin:0,padding:"12px 14px",borderRadius:8,background:"#f0f6f0",color:"#3a5244",fontSize:13}}>Published sessions appear in the Professional Learning page, teacher calendar and notification bell.</p>
               </div>
             )}
           </div>
         </form>
-      </div>
+      </StaffDialog>
       )}
     </section>
   );
@@ -5773,7 +5575,7 @@ function UpcomingEventsPanel({ events = [], saveEvent, deleteEvent }) {
   return (
     <section className="staff-section staff-panel active">
       <div className="sc-panel-header">
-        <div><h2>Upcoming Events</h2><p>Add events and sessions that appear on every teacher's dashboard. Past events are hidden automatically.</p></div>
+        <div><p>Manage events on the teacher dashboard. Past events are hidden automatically.</p></div>
       </div>
 
       <div className="cc-toolbar">
@@ -5786,10 +5588,10 @@ function UpcomingEventsPanel({ events = [], saveEvent, deleteEvent }) {
           {events.map((event) => {
             const parts = eventDateParts(event.date);
             return (
-              <article key={event.id} className="ev-card" onClick={() => openEdit(event)}>
+              <article key={event.id} className="ev-card">
                 <div className="ev-date"><strong>{parts.day}</strong><span>{parts.month}</span></div>
                 <div className="ev-body">
-                  <h3>{event.title}</h3>
+                  <h3><button type="button" className="staff-event-edit" onClick={() => openEdit(event)} aria-label={`Edit ${event.title}`}>{event.title}</button></h3>
                   <p className="ev-full">{parts.full}</p>
                   {event.description && <p className="ev-desc">{event.description}</p>}
                 </div>
@@ -5808,7 +5610,7 @@ function UpcomingEventsPanel({ events = [], saveEvent, deleteEvent }) {
       )}
 
       {editorOpen && (
-      <div className="cc-modal-backdrop" role="dialog" aria-modal="true" onClick={closeEditor}>
+      <StaffDialog label="Event editor" onClose={closeEditor}>
         <form className="cc-modal sc-detail" onSubmit={(e) => { e.preventDefault(); handleSave(); }} onClick={(e) => e.stopPropagation()}>
           <div className="sc-detail-header">
             <div>
@@ -5823,13 +5625,13 @@ function UpcomingEventsPanel({ events = [], saveEvent, deleteEvent }) {
           </div>
           <div className="sc-form-body">
             <div className="sc-fields">
-              <div className="sc-field"><label>Event title</label><input type="text" required value={draft.title} onChange={(e) => updateDraft({ title: e.target.value })} placeholder="e.g. Wildlife Photography Workshop" /></div>
-              <div className="sc-field"><label>Date</label><input type="date" required value={draft.date} onChange={(e) => updateDraft({ date: e.target.value })} /></div>
-              <div className="sc-field"><label>Description (optional)</label><textarea rows={3} value={draft.description} onChange={(e) => updateDraft({ description: e.target.value })} placeholder="Short note for teachers about this event" /></div>
+              <StaffField className="sc-field"><label>Event title</label><input aria-label="Event title" type="text" required value={draft.title} onChange={(e) => updateDraft({ title: e.target.value })} placeholder="e.g. Wildlife Photography Workshop" /></StaffField>
+              <StaffField className="sc-field"><label>Date</label><input aria-label="Date" type="date" required value={draft.date} onChange={(e) => updateDraft({ date: e.target.value })} /></StaffField>
+              <StaffField className="sc-field"><label>Description (optional)</label><textarea aria-label="Description (optional)" rows={3} value={draft.description} onChange={(e) => updateDraft({ description: e.target.value })} placeholder="Short note for teachers about this event" /></StaffField>
             </div>
           </div>
         </form>
-      </div>
+      </StaffDialog>
       )}
     </section>
   );
@@ -5886,7 +5688,7 @@ function BannerManager({ banners, saveBanners }) {
   return (
     <section className="staff-section staff-panel active">
       <div className="sc-panel-header">
-        <div><h2>Banner</h2><p>The hero banner at the top of every teacher's dashboard. Add one to replace the default "Learning through nature" hero; add several to rotate them.</p></div>
+        <div><p>Create teacher dashboard announcements, set their order and choose which are visible.</p></div>
       </div>
 
       <div className="cc-toolbar">
@@ -5933,7 +5735,7 @@ function BannerManager({ banners, saveBanners }) {
       )}
 
       {editorOpen && (
-      <div className="cc-modal-backdrop" role="dialog" aria-modal="true" onClick={closeEditor}>
+      <StaffDialog label="Banner editor" onClose={closeEditor}>
         <form className="cc-modal sc-detail" onSubmit={handleSave} onClick={(e) => e.stopPropagation()}>
           <div className="sc-detail-header">
             <div><span className="content-type">{editingId ? "Editing" : "New"}</span><h3>{draft.title || "New banner"}</h3></div>
@@ -5949,22 +5751,22 @@ function BannerManager({ banners, saveBanners }) {
                 <input type="checkbox" checked={draft.active} onChange={(e) => update({ active: e.target.checked })} />
                 <span><strong>Show banner</strong><small>{draft.active ? "Visible to teachers" : "Hidden from teachers"}</small></span>
               </label>
-              <div className="sc-field"><label>Eyebrow (small tagline)</label><input type="text" value={draft.eyebrow} onChange={(e) => update({ eyebrow: e.target.value })} placeholder="e.g. NEW THIS TERM" /></div>
-              <div className="sc-field"><label>Title</label><input type="text" value={draft.title} onChange={(e) => update({ title: e.target.value })} placeholder="e.g. Sustainable Futures unit is live" /></div>
-              <div className="sc-field"><label>Message</label><textarea rows={2} value={draft.message} onChange={(e) => update({ message: e.target.value })} placeholder="A short line about what's new" /></div>
+              <StaffField className="sc-field"><label>Eyebrow (small tagline)</label><input aria-label="Eyebrow (small tagline)" type="text" value={draft.eyebrow} onChange={(e) => update({ eyebrow: e.target.value })} placeholder="e.g. NEW THIS TERM" /></StaffField>
+              <StaffField className="sc-field"><label>Title</label><input aria-label="Title" type="text" value={draft.title} onChange={(e) => update({ title: e.target.value })} placeholder="e.g. Sustainable Futures unit is live" /></StaffField>
+              <StaffField className="sc-field"><label>Message</label><textarea aria-label="Message" rows={2} value={draft.message} onChange={(e) => update({ message: e.target.value })} placeholder="A short line about what's new" /></StaffField>
               <div className="sc-field-row">
-                <div className="sc-field"><label>Button label</label><input type="text" value={draft.linkLabel} onChange={(e) => update({ linkLabel: e.target.value })} placeholder="Explore now" /></div>
-                <div className="sc-field"><label>Button link</label><input type="url" value={draft.linkUrl} onChange={(e) => update({ linkUrl: e.target.value })} placeholder="https://..." /></div>
+                <StaffField className="sc-field"><label>Button label</label><input aria-label="Button label" type="text" value={draft.linkLabel} onChange={(e) => update({ linkLabel: e.target.value })} placeholder="Explore now" /></StaffField>
+                <StaffField className="sc-field"><label>Button link</label><input aria-label="Button link" type="url" value={draft.linkUrl} onChange={(e) => update({ linkUrl: e.target.value })} placeholder="https://..." /></StaffField>
               </div>
               <p className="bn-field-hint">Add a <strong>button link</strong> to show a button on the banner — the label is optional (defaults to “Learn more”). No link means no button.</p>
               <div className="sc-field-row">
-                <div className="sc-field"><label>Stock image</label><select value={selectedStock ? selectedStock.key : ""} onChange={(e) => chooseStock(e.target.value)}><option value="">No image</option>{stockImages.map((si) => <option key={si.key || si.src} value={si.key || si.src}>{si.label}</option>)}</select></div>
-                <div className="sc-field"><label>Image URL</label><input type="url" value={draft.image} onChange={(e) => update({ image: e.target.value, imageKey: "" })} placeholder="https://..." /></div>
+                <StaffField className="sc-field"><label>Stock image</label><select aria-label="Stock image" value={selectedStock ? selectedStock.key : ""} onChange={(e) => chooseStock(e.target.value)}><option value="">No image</option>{stockImages.map((si) => <option key={si.key || si.src} value={si.key || si.src}>{si.label}</option>)}</select></StaffField>
+                <StaffField className="sc-field"><label>Image URL</label><input aria-label="Image URL" type="url" value={draft.image} onChange={(e) => update({ image: e.target.value, imageKey: "" })} placeholder="https://..." /></StaffField>
               </div>
-              <div className="sc-field"><label>Or upload image</label>
+              <StaffField className="sc-field"><label>Or upload image</label>
                 <div className="sc-upload-zone" onClick={() => document.getElementById("bn-img-upload").click()}><Icon type="plus" className="" /><span>Click to upload</span></div>
                 <input type="file" id="bn-img-upload" accept="image/*" onChange={uploadImage} style={{ display: "none" }} />
-              </div>
+              </StaffField>
               {imageError ? <p className="auth-error">{imageError}</p> : null}
               <div className="bn-preview-block">
                 <span className="bn-preview-label">Live preview — how it appears on the teacher dashboard</span>
@@ -5973,11 +5775,14 @@ function BannerManager({ banners, saveBanners }) {
             </div>
           </div>
         </form>
-      </div>
+      </StaffDialog>
       )}
     </section>
   );
 }
+
+// Pure UI exports for the development-only fixture; staff authentication is unchanged.
+export { ContentPanel, TarongaTvPanel, ProfessionalLearningPanel, UpcomingEventsPanel, BannerManager, UsersPanel, StaffAnalytics, Icon, defaultContentItems, defaultTarongaTvVideos, defaultProfessionalLearningItems };
 
 function FirestoreStatus({ status, saveState }) {
   if (status === "live" && !saveState) return null;
