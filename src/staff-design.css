@@ -167,6 +167,12 @@
 .staff-studio .bn-row { padding: 20px; border-radius: 6px; border: 1px solid var(--wly-border); box-shadow: none; }
 .staff-studio .bn-row-text strong { font-weight: 600; font-size: 15px; }
 .staff-studio .bn-edit, .staff-studio .bn-toggle { min-height: 44px; font-weight: 600; }
+.staff-studio .bn-confirm { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding: 12px 14px; border-radius: 6px; color: var(--wly-danger-text); background: var(--wly-danger-surface); font-size: 14px; }
+.staff-studio .bn-confirm span { flex: 1 1 240px; }
+.staff-studio .bn-confirm button { min-height: 40px; padding: 0 16px; border-radius: 6px; font: inherit; font-weight: 600; cursor: pointer; }
+.staff-studio .bn-confirm .secondary-button { border: 1px solid var(--wly-border); background: var(--wly-surface); color: var(--wly-text-secondary); }
+.staff-studio .bn-confirm .delete-button { border: 0; background: var(--wly-danger-600); color: #fff; }
+.staff-studio .bn-confirm .delete-button:hover { background: var(--wly-danger-800); }
 .staff-studio .bn-order { flex-direction: row; gap: 4px; }
 .staff-studio .bn-order button { min-width: 32px; min-height: 36px; border: 1px solid var(--wly-border); border-radius: 4px; }
 .staff-studio .section-heading { align-items: start; gap: 24px; }

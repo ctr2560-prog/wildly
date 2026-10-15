@@ -3458,11 +3458,19 @@ function StaffConsole({ onLock, firebaseUser }) {
   }
 
   async function saveBanners(banners) {
+    const previous = config.banners || [];
     setConfig((current) => ({ ...current, banners }));
     try {
       await setDoc(dashboardConfigRef, { banners, updatedAt: serverTimestamp() }, { merge: true });
+      return true;
     } catch (error) {
       console.error("Unable to save banners", error);
+      // Roll back the optimistic change so the list matches what teachers actually see.
+      setConfig((current) => ({ ...current, banners: previous }));
+      setNotice(error.code === "permission-denied"
+        ? "Banners weren't saved: this account doesn't have staff write access in Firestore."
+        : "Banners weren't saved. Check your connection and try again.");
+      return false;
     }
   }
 
@@ -5646,6 +5654,7 @@ function BannerManager({ banners, saveBanners }) {
   const [draft, setDraft] = useState(createBanner());
   const [editingId, setEditingId] = useState(null);
   const [imageError, setImageError] = useState("");
+  const [pendingDeleteId, setPendingDeleteId] = useState(null);
 
   function openNew() { setDraft(createBanner()); setEditingId(null); setImageError(""); setEditorOpen(true); }
   function openEdit(banner) { setDraft({ ...createBanner(), ...banner }); setEditingId(banner.id); setImageError(""); setEditorOpen(true); }
@@ -5658,8 +5667,10 @@ function BannerManager({ banners, saveBanners }) {
     saveBanners(next);
     closeEditor();
   }
+  // In-app confirm rather than window.confirm: once Chrome is told to block a
+  // site's dialogs, confirm() returns false silently and delete did nothing.
   function handleDelete(banner) {
-    if (!window.confirm(`Delete banner "${banner.title || "Untitled"}"?`)) return;
+    setPendingDeleteId(null);
     saveBanners(banners.filter((b) => b.id !== banner.id));
     closeEditor();
   }
@@ -5720,8 +5731,15 @@ function BannerManager({ banners, saveBanners }) {
                   <button type="button" onClick={() => move(i, 1)} disabled={i === banners.length - 1} aria-label="Move down">↓</button>
                 </div>
                 <button type="button" className="bn-edit" onClick={() => openEdit(banner)}>Edit</button>
-                <button type="button" className="cc-card-del" onClick={() => handleDelete(banner)} aria-label={`Delete ${banner.title}`}>✕</button>
+                <button type="button" className="cc-card-del" onClick={() => setPendingDeleteId(banner.id)} aria-label={`Delete ${banner.title || "untitled banner"}`}>✕</button>
               </div>
+              {pendingDeleteId === banner.id && (
+                <div className="bn-confirm" role="alert">
+                  <span>Delete “{banner.title || "Untitled banner"}”? Teachers will stop seeing it straight away.</span>
+                  <button type="button" className="secondary-button" onClick={() => setPendingDeleteId(null)}>Cancel</button>
+                  <button type="button" className="delete-button" onClick={() => handleDelete(banner)}>Delete banner</button>
+                </div>
+              )}
             </div>
           ))}
         </div>
@@ -5740,7 +5758,7 @@ function BannerManager({ banners, saveBanners }) {
           <div className="sc-detail-header">
             <div><span className="content-type">{editingId ? "Editing" : "New"}</span><h3>{draft.title || "New banner"}</h3></div>
             <div className="sc-detail-actions">
-              {editingId ? <button type="button" className="delete-button" onClick={() => handleDelete(draft)}>Delete</button> : null}
+              {editingId ? <button type="button" className="delete-button" onClick={() => { closeEditor(); setPendingDeleteId(draft.id); }}>Delete</button> : null}
               <button type="button" className="secondary-button" onClick={closeEditor}>Cancel</button>
               <button type="submit">{editingId ? "Update" : "Add banner"}</button>
             </div>
