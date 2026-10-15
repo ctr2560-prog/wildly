@@ -121,3 +121,13 @@
   .ed-product-links > a + a { border-top: 0; }
   .ed-product-title { font-size: 23px; }
 }
+
+/* Privacy & terms */
+.ed-legal { padding: clamp(40px, 7vw, 96px) var(--ed-gutter, 16px); }
+.ed-legal-head, .ed-legal-body { max-width: 760px; margin: 0 auto; }
+.ed-legal-head { display: grid; gap: 14px; padding-bottom: 32px; border-bottom: 1px solid var(--wly-border); }
+.ed-legal-head a, .ed-legal-body a:not(.ed-link) { color: var(--wly-taronga-ink); text-decoration: underline; }
+.ed-legal-body { display: grid; gap: 14px; padding-top: 32px; }
+.ed-legal-body h2 { margin-top: 28px; scroll-margin-top: 96px; }
+.ed-legal-body h3 { margin-top: 12px; font-size: 19px; }
+.ed-legal-body ul { margin: 0; padding-left: 20px; display: grid; gap: 10px; color: var(--wly-text-secondary); font-size: 16px; line-height: 1.7; }

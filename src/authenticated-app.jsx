@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { createUserWithEmailAndPassword, onAuthStateChanged, signInWithEmailAndPassword, signOut } from "firebase/auth";
+import { createUserWithEmailAndPassword, onAuthStateChanged, sendPasswordResetEmail, signInWithEmailAndPassword, signOut } from "firebase/auth";
 import { addDoc, arrayUnion, collection, collectionGroup, deleteDoc, doc, getCountFromServer, getDoc, getDocs, increment, onSnapshot, orderBy, query, serverTimestamp, setDoc, updateDoc, where } from "firebase/firestore";
 import { ref as storageRef, uploadBytes, getDownloadURL } from "firebase/storage";
 import { auth, db, storage } from "./firebase";
@@ -25,6 +25,10 @@ const loginRoute = () => routePath("login");
 const signupRoute = () => routePath("get-started");
 const aboutYouRoute = () => routePath("about-you");
 const demoSessionKey = "wildly-demo-session";
+// The `demo@zoo` shortcut is a client-only sign-in bypass for local demos. It is
+// never offered on the live site — visitors there use the teacher workspace
+// preview instead.
+const demoLoginEnabled = import.meta.env.DEV;
 
 const assets = {
   wildlyLogo: assetPath("assets/wildly-logo-transparent.png"),
@@ -1099,12 +1103,35 @@ function useTrackaClassStudents(code) {
   return state;
 }
 
+// Plain-English versions of the Firebase Auth errors teachers actually hit,
+// instead of raw "Firebase: Error (auth/...)" strings.
+function authErrorMessage(error) {
+  switch (error?.code) {
+    case "auth/invalid-credential":
+    case "auth/wrong-password":
+    case "auth/user-not-found":
+      return "Incorrect email or password. Use “Forgot password?” if you need to reset it.";
+    case "auth/email-already-in-use":
+      return "There's already an account for that email — log in instead (it works for Taronga Tracka too).";
+    case "auth/invalid-email":
+      return "That email address isn't valid.";
+    case "auth/weak-password":
+      return "Choose a password with at least 6 characters.";
+    case "auth/too-many-requests":
+      return "Too many attempts. Wait a few minutes, or reset your password.";
+    case "auth/network-request-failed":
+      return "We couldn't reach the server. Check your connection and try again.";
+    default:
+      return "Something went wrong. Please try again.";
+  }
+}
+
 function useSessionUser() {
   const [state, setState] = useState({ status: "loading", user: null, profile: null });
 
   useEffect(() => {
     const demoSession = window.localStorage.getItem(demoSessionKey);
-    if (demoSession === "active") {
+    if (demoSession === "active" && demoLoginEnabled) {
       const demoProfile = buildDemoProfile();
       setState({ status: "ready", user: demoProfile, profile: demoProfile });
       return () => {};
@@ -1145,6 +1172,7 @@ function AuthScreen({ mode = "login" }) {
   const [schoolManual, setSchoolManual] = useState("");
   const [cantFindSchool, setCantFindSchool] = useState(false);
   const [notice, setNotice] = useState("");
+  const [resetSent, setResetSent] = useState("");
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
@@ -1165,7 +1193,7 @@ function AuthScreen({ mode = "login" }) {
     setBusy(true);
 
     try {
-      if (!isSignup && email.trim().toLowerCase() === "demo@zoo") {
+      if (demoLoginEnabled && !isSignup && email.trim().toLowerCase() === "demo@zoo") {
         window.localStorage.setItem(demoSessionKey, "active");
         window.location.hash = "#teacher";
         return;
@@ -1200,7 +1228,30 @@ function AuthScreen({ mode = "login" }) {
       window.location.hash = "#teacher";
     } catch (error) {
       console.error("Auth flow failed", error);
-      setNotice(error.message || "Unable to complete authentication.");
+      setNotice(authErrorMessage(error));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  // Firebase sends the reset email itself. With email-enumeration protection it
+  // succeeds whether or not the account exists, so the message never confirms
+  // that an address is registered.
+  async function handleForgotPassword() {
+    setNotice("");
+    setResetSent("");
+    const clean = email.trim();
+    if (!clean.includes("@")) {
+      setNotice("Enter your email address above, then choose “Forgot password?” again.");
+      return;
+    }
+    setBusy(true);
+    try {
+      await sendPasswordResetEmail(auth, clean);
+      setResetSent(clean);
+    } catch (error) {
+      console.error("Password reset failed", error);
+      setNotice(error.code === "auth/invalid-email" ? "That email address isn't valid." : "We couldn't send a reset email. Check your connection and try again.");
     } finally {
       setBusy(false);
     }
@@ -1235,6 +1286,7 @@ function AuthScreen({ mode = "login" }) {
             Password{isSignup ? " (min. 6 characters)" : ""}
             <input type="password" value={password} onChange={(event) => setPassword(event.target.value)} placeholder="Enter your password" autoComplete={isSignup ? "new-password" : "current-password"} />
           </label>
+          {!isSignup ? <button type="button" className="auth-forgot" onClick={handleForgotPassword} disabled={busy}>Forgot password?</button> : null}
           {isSignup ? (
             <>
               <label>
@@ -1260,13 +1312,13 @@ function AuthScreen({ mode = "login" }) {
               ) : null}
             </>
           ) : null}
-            {!isSignup ? <p className="auth-helper">Use `demo@zoo` to enter the demo teacher account instantly.</p> : null}
-            {notice ? <p className="auth-error">{notice}</p> : null}
+            {resetSent ? <p className="auth-success" role="status">If there's an account for {resetSent}, a password reset link is on its way. It can take a few minutes to reach school email, so check your junk or quarantine folder too.</p> : null}
+            {notice ? <p className="auth-error" role="alert">{notice}</p> : null}
+            {isSignup ? <p className="auth-helper">By creating an account you agree to the <a href={routePath("terms")}>terms of use</a> and <a href={routePath("privacy")}>privacy policy</a>.</p> : null}
             <button type="submit" disabled={busy}>{busy ? "Working..." : isSignup ? "Create account" : "Log in"}</button>
           </form>
           <div className="auth-links">
             {isSignup ? <a href={loginRoute()}>Already have an account? Log in</a> : <a href={signupRoute()}>Need an account? Get started</a>}
-            <a href={routePath("staff")}>Taronga staff login</a>
           </div>
           <a className="auth-home" href={routePath()}>← Back to home</a>
         </section>

@@ -84,3 +84,76 @@ export function AboutPage({ SiteHeader, SiteFooter, assets, routePath, Icon, app
     <SiteFooter />
   </>;
 }
+
+// ⚠️ DRAFT FOR TARONGA REVIEW. Written from what the code actually collects
+// (October 2026), not legal advice. Taronga's privacy officer / legal team must
+// approve it — and fill in a direct privacy contact — before launch. Keep it in
+// step with the app: if a feature starts collecting something new, update this.
+const LEGAL_UPDATED = "15 October 2026";
+
+export function LegalPage({ SiteHeader, routePath, section = "privacy" }) {
+  // The site routes on the URL hash, so in-page "#anchor" links would navigate
+  // away. #privacy and #terms are both routes to this page; scroll to match.
+  React.useEffect(() => {
+    // Next frame: main.jsx scrolls to the top on every route change after this runs.
+    const frame = requestAnimationFrame(() => {
+      if (section === "terms") document.getElementById("terms")?.scrollIntoView();
+      else window.scrollTo(0, 0);
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [section]);
+  return <>
+    <SiteHeader />
+    <main className="ed-page ed-legal" id="main-content" tabIndex={-1}>
+      <header className="ed-legal-head">
+        <span className="ed-label">Wildly by Taronga</span>
+        <h1>Privacy &amp; terms</h1>
+        <p>Last updated {LEGAL_UPDATED}. <a href={routePath("privacy")}>Privacy policy</a> · <a href={routePath("terms")}>Terms of use</a></p>
+      </header>
+
+      <article className="ed-legal-body">
+        <h2 id="privacy-policy">Privacy policy</h2>
+        <p>Wildly is run by Taronga Conservation Society Australia (“Taronga”, “we”), a NSW Government statutory authority. We handle personal information in line with the <em>Privacy and Personal Information Protection Act 1998</em> (NSW). This policy explains what Wildly collects and why.</p>
+
+        <h3>Who Wildly is for</h3>
+        <p>Wildly is for teachers and Taronga education staff. Students do not create Wildly accounts.</p>
+
+        <h3>What we collect</h3>
+        <ul>
+          <li><strong>Your account:</strong> your email address and your school. Your password is handled by our sign-in provider (Google Firebase Authentication). We never see or store it.</li>
+          <li><strong>Your profile, if you complete it:</strong> your name, role and country.</li>
+          <li><strong>How Wildly is used:</strong> we count how often each resource is opened. These counts are totals and are not linked to you. We also use Google Analytics for Firebase to understand overall use, such as pages viewed, device type and approximate location.</li>
+          <li><strong>Security checks:</strong> Google reCAPTCHA and Firebase App Check confirm requests come from the real Wildly site, to protect accounts and student data from automated attacks.</li>
+        </ul>
+
+        <h3>What stays on your device</h3>
+        <p>Resources you save and classes you set up in Wildly are stored in your own browser. They are not sent to Taronga, and clearing your browser data removes them.</p>
+
+        <h3>One account with Taronga Tracka</h3>
+        <p>Your Wildly account is the same account you use for Taronga Tracka. If you use Tracka, Wildly can show your Tracka classes and their observations to you. Nobody else can see them. Information about students in Tracka is covered by Tracka's own privacy information.</p>
+
+        <h3>How we use it</h3>
+        <p>We use your information to run your account, show you relevant resources, keep Wildly secure and improve our education programs. We do not sell your information. We do not send you marketing without your consent.</p>
+
+        <h3>Where it is stored</h3>
+        <p>Wildly runs on Google Firebase. Our database is hosted in Sydney. Some services, including sign-in and analytics, may process information outside Australia.</p>
+
+        <h3>Access, correction and deletion</h3>
+        <p>You can update your profile at any time from your account. To see the information we hold about you, correct it, delete your account or make a privacy complaint, contact Taronga through <a href="https://taronga.org.au" target="_blank" rel="noopener noreferrer">taronga.org.au</a>.</p>
+
+        <h2 id="terms">Terms of use</h2>
+        <p>By creating an account or using Wildly, you agree to these terms.</p>
+        <h3>Using the resources</h3>
+        <p>Wildly resources are provided free for educational use. You may use, print and adapt them for your own teaching and students. Do not sell them, republish them as your own or remove Taronga's attribution. Unless a resource says otherwise, copyright stays with Taronga or the credited creators.</p>
+        <h3>Your account</h3>
+        <p>Keep your password to yourself and tell us if you think someone else has used your account. We may suspend accounts that are misused or used in ways that could harm students, other users or Wildly.</p>
+        <h3>Accuracy and availability</h3>
+        <p>We take care to keep resources accurate and suitable for schools, but you are responsible for checking a resource suits your students and setting. Wildly may change, or be unavailable at times.</p>
+        <h3>Changes</h3>
+        <p>We may update this page. The date at the top shows when it last changed.</p>
+
+        <p><a className="ed-link" href={routePath()}>← Back to Wildly</a></p>
+      </article>
+    </main>
+  </>;
+}
