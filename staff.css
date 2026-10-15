@@ -3297,6 +3297,12 @@ td {
 }
 .sc-controlroom-form button { padding: 0 20px; white-space: nowrap; }
 .sc-controlroom-form button:disabled { opacity: 0.6; cursor: default; }
+.sc-staff-add { grid-template-columns: 1fr auto; margin-bottom: 4px; }
+.sc-staff-invite { margin: 12px 0; padding: 14px 16px; border: 1px solid var(--line); border-radius: 10px; background: #f4f9f2; font-size: 14px; color: var(--green-950); }
+.sc-staff-invite p { margin: 0 0 10px; line-height: 1.5; }
+.sc-staff-invite-actions { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.sc-staff-invite-actions button { height: 38px; padding: 0 16px; border: 0; border-radius: 8px; background: var(--green-900); color: #fff; font: inherit; font-weight: 600; cursor: pointer; }
+.sc-staff-invite-actions a { color: var(--green-900); font-weight: 600; }
 .sc-controlroom-success {
   margin: 14px 0 0;
   color: #1d7d50;

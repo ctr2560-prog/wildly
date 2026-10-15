@@ -51,7 +51,13 @@ export const app = initializeApp(firebaseConfig);
 const APPCHECK_SITE_KEY = "6LckH9stAAAAABNS8suCHEo2TJUGFh2L2m-QzcU0";
 const appCheckSiteKey = import.meta.env.VITE_APPCHECK_SITE_KEY || APPCHECK_SITE_KEY;
 if (appCheckSiteKey) {
-  if (import.meta.env.VITE_APPCHECK_DEBUG === "true") {
+  // Local dev only (never in a production build): reCAPTCHA won't attest on 127.0.0.1, so
+  // Firestore rejects every request. A debug token registered under App Check → Manage debug
+  // tokens stands in for it. Put a registered token in .env.local (gitignored) as
+  // VITE_APPCHECK_DEBUG_TOKEN, or set VITE_APPCHECK_DEBUG=true to have the SDK print a new one.
+  if (import.meta.env.DEV && import.meta.env.VITE_APPCHECK_DEBUG_TOKEN) {
+    self.FIREBASE_APPCHECK_DEBUG_TOKEN = import.meta.env.VITE_APPCHECK_DEBUG_TOKEN;
+  } else if (import.meta.env.VITE_APPCHECK_DEBUG === "true") {
     self.FIREBASE_APPCHECK_DEBUG_TOKEN = true;
   }
   try {

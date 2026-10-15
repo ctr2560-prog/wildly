@@ -1,0 +1,84 @@
+/* ── Branded loading screen — animated logo ──────────────────────── */
+.wl-load {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: grid;
+  place-items: center;
+  background:
+    radial-gradient(900px 500px at 50% -10%, #eef7ea 0%, rgba(238, 247, 234, 0) 60%),
+    linear-gradient(180deg, #fbfdfb, #eaf3e4);
+  animation: wlFade 0.35s ease;
+}
+@keyframes wlFade { from { opacity: 0; } to { opacity: 1; } }
+
+.wl-load-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 26px;
+}
+
+.wl-logo-wrap {
+  position: relative;
+  width: 230px;
+  max-width: 66vw;
+  animation: wlLogo 3.2s ease-in-out infinite;
+}
+.wl-load-logo {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+/* gloss sweep clipped to the logo's shape */
+.wl-logo-shine {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(105deg, transparent 38%, rgba(255, 255, 255, 0.85) 50%, transparent 62%);
+  background-size: 250% 100%;
+  background-repeat: no-repeat;
+  -webkit-mask-size: contain;
+  mask-size: contain;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  mask-position: center;
+  animation: wlShine 2.6s ease-in-out infinite;
+}
+@keyframes wlLogo {
+  0%, 100% { transform: translateY(0) scale(1); }
+  50% { transform: translateY(-6px) scale(1.03); }
+}
+@keyframes wlShine {
+  0% { background-position: 180% 0; }
+  55%, 100% { background-position: -80% 0; }
+}
+
+.wl-dots { display: flex; gap: 9px; }
+.wl-dots span {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #135f3d;
+  opacity: 0.35;
+  animation: wlDot 1.1s ease-in-out infinite;
+}
+.wl-dots span:nth-child(2) { animation-delay: 0.16s; }
+.wl-dots span:nth-child(3) { animation-delay: 0.32s; }
+@keyframes wlDot {
+  0%, 100% { opacity: 0.3; transform: translateY(0); }
+  40% { opacity: 1; transform: translateY(-5px); }
+}
+
+.wl-load-label {
+  margin: 0;
+  color: #0b4c32;
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wl-logo-wrap, .wl-logo-shine, .wl-dots span { animation: none; }
+  .wl-logo-shine { display: none; }
+}

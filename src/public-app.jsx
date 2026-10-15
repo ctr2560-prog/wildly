@@ -5,6 +5,7 @@ import TrackaPage from "./tracka-page.jsx";
 import { SchoolsPage, AboutPage } from "./education-pages.jsx";
 import "./public-design.css";
 import { subjectImage } from "./subject-identity.js";
+import LoadingScreen from "./wildly-loader.jsx";
 
 const basePath = import.meta.env.BASE_URL;
 const routePath = (path = "") => `${basePath}#${path}`;
@@ -800,8 +801,34 @@ function getPublicRoutePath() {
   return hashPath || window.location.pathname.replace(basePath, "").replace(/^\//, "").replace(/\/$/, "");
 }
 
+// On first arrival, hold the branded loader until the logo and the page's
+// first-screen image have loaded, so the site appears fully formed (same idea
+// as the teacher side's boot). Capped so it can never hang.
+function useFirstScreenReady(path) {
+  const [ready, setReady] = useState(false);
+  const firstPathRef = useRef(path);
+  useEffect(() => {
+    const urls = [assets.wildlyLogo, firstPathRef.current === "" ? assets.homeVideoPoster : null].filter(Boolean);
+    let done = false;
+    const finish = () => { if (!done) { done = true; setReady(true); } };
+    const cap = window.setTimeout(finish, 4000);
+    Promise.all(urls.map((src) => new Promise((resolve) => {
+      const img = new Image();
+      img.onload = resolve;
+      img.onerror = resolve;
+      img.src = src;
+    }))).then(() => {
+      // Let the animation play at least briefly instead of flashing.
+      window.setTimeout(finish, Math.max(0, 900 - performance.now()));
+    });
+    return () => window.clearTimeout(cap);
+  }, []);
+  return ready;
+}
+
 export default function PublicApp() {
   const [path, setPath] = useState(getPublicRoutePath);
+  const ready = useFirstScreenReady(path);
 
   useEffect(() => {
     const syncRoute = () => setPath(getPublicRoutePath());
@@ -813,6 +840,7 @@ export default function PublicApp() {
     };
   }, []);
 
+  if (!ready) return <LoadingScreen label="Loading Wildly…" />;
   if (path === "about") return <AboutMarketingPage />;
   if (path === "subjects" || path.startsWith("subjects/")) return <SubjectsMarketingPage key={path} initialSubject={subjects.find(([label]) => encodeURIComponent(label) === path.split("/")[1])?.[0] || ""} />;
   if (path === "learning-paths") return <LearningPathsMarketingPage />;

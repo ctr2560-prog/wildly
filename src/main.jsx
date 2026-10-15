@@ -1,7 +1,7 @@
 import React, { Suspense, lazy, useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
 import "./fonts.css";
-import "./bootstrap.css";
+import LoadingScreen from "./wildly-loader.jsx";
 
 const PublicApp = lazy(() => import("./public-app.jsx"));
 const AuthenticatedApp = lazy(() => import("./authenticated-app.jsx"));
@@ -36,7 +36,7 @@ function AppLoader() {
 
   const RouteApp = isAuthenticatedRoute(path) ? AuthenticatedApp : PublicApp;
   return (
-    <Suspense fallback={<div className="app-route-loader" role="status"><span>Loading Wildly</span></div>}>
+    <Suspense fallback={<LoadingScreen label="Loading Wildly…" />}>
       <RouteApp />
     </Suspense>
   );

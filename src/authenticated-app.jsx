@@ -1,7 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { initializeApp, deleteApp } from "firebase/app";
-import { createUserWithEmailAndPassword, getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut } from "firebase/auth";
-import { addDoc, arrayUnion, collection, collectionGroup, deleteDoc, doc, getCountFromServer, getDoc, getDocs, getFirestore, increment, onSnapshot, orderBy, query, serverTimestamp, setDoc, updateDoc, where } from "firebase/firestore";
+import { createUserWithEmailAndPassword, onAuthStateChanged, signInWithEmailAndPassword, signOut } from "firebase/auth";
+import { addDoc, arrayUnion, collection, collectionGroup, deleteDoc, doc, getCountFromServer, getDoc, getDocs, increment, onSnapshot, orderBy, query, serverTimestamp, setDoc, updateDoc, where } from "firebase/firestore";
 import { ref as storageRef, uploadBytes, getDownloadURL } from "firebase/storage";
 import { auth, db, storage } from "./firebase";
 import "../landing.css";
@@ -10,6 +9,7 @@ import "../staff.css";
 import "./teacher-design.css";
 import TeacherHome from "./teacher-home.jsx";
 // Shared staff controls keep editor labels and focus behaviour consistent.
+import LoadingScreen from "./wildly-loader.jsx";
 import StaffWorkspace, { StaffOverview, StaffDialog, StaffField } from "./staff-workspace.jsx";
 import "./staff-design.css";
 import { subjectImage } from "./subject-identity.js";
@@ -336,11 +336,44 @@ function buildLessonActivityBlocks(item) {
   }));
 }
 
-// Staff console access is gated solely by a real Firebase email + password
-// login whose teachers/{email}.role is a Wildly staff role (enforced by the
-// isWildlyStaff() Firestore rule). The old shared "admin" password gate was
-// removed — it was session-only and not real security.
+// Staff console access = the root admin, or an entry in `staffAdmins/{email}`
+// (writable only by existing staff). The real boundary is isWildlyStaff() in
+// taronga-tracka-vite/firestore.rules and verifyStaff() in its manageStaffAdmins
+// function; the check below only keeps non-staff out of the console UI.
+// Mirrors taronga-tracka-vite/src/constants/tarongaStaff.js — keep in step.
+// 🚫 Never grant staff access from `teachers/{email}.role` — users write their
+//    own teacher doc, so that was a privilege-escalation hole (fixed 2026-10-03).
+const ROOT_ADMIN_EMAILS = ["thebiologybloke@gmail.com"];
+const STAFF_ADMIN_FN = "https://australia-southeast1-tarongatracka.cloudfunctions.net/manageStaffAdmins";
+
+// Legacy display labels only — these roles no longer grant access.
 const staffRoles = ["Education Staff", "Curriculum Leader", "School Leader"];
+
+// Rules let a signed-in user read only their OWN staffAdmins entry; a denied
+// read means "not staff", same as a missing document.
+async function isTarongaStaff(email) {
+  const key = (email || "").trim().toLowerCase();
+  if (!key) return false;
+  if (ROOT_ADMIN_EMAILS.includes(key)) return true;
+  try {
+    return (await getDoc(doc(db, "staffAdmins", key))).exists();
+  } catch (error) {
+    console.warn("Staff access check failed", error.code || error);
+    return false;
+  }
+}
+
+async function callStaffAdminFn(body) {
+  const idToken = await auth.currentUser?.getIdToken();
+  const res = await fetch(STAFF_ADMIN_FN, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${idToken}` },
+    body: JSON.stringify(body),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok || !data.ok) throw new Error(data?.error || "Request failed.");
+  return data;
+}
 
 function listFromText(value) {
   return value
@@ -1316,7 +1349,7 @@ function AboutYouPage() {
   }
 
   if (status === "loading") {
-    return <main className="auth-page"><section className="auth-card"><p>Loading your profile...</p></section></main>;
+    return <LoadingScreen label="Loading your profile…" />;
   }
 
   return (
@@ -3209,25 +3242,6 @@ function StaffPreviewBar() {
   );
 }
 
-// Full-screen brand loader with the Wildly logo and a platypus swimming through
-// a little pond. Shown while the teacher side boots so hero/banner images can
-// preload before the dashboard appears.
-function LoadingScreen({ label = "Loading…" }) {
-  const logoMask = { WebkitMaskImage: `url("${assets.wildlyLogo}")`, maskImage: `url("${assets.wildlyLogo}")` };
-  return (
-    <div className="wl-load">
-      <div className="wl-load-inner">
-        <div className="wl-logo-wrap">
-          <img className="wl-load-logo" src={assets.wildlyLogo} alt="Wildly by Taronga" />
-          <span className="wl-logo-shine" style={logoMask} aria-hidden="true" />
-        </div>
-        <div className="wl-dots" aria-hidden="true"><span /><span /><span /></div>
-        <p className="wl-load-label">{label}</p>
-      </div>
-    </div>
-  );
-}
-
 function TeacherPage({ page = "dashboard", subject = "", contentId = "", tvVideoId = "", preview: previewProp = false }) {
   const preview = previewProp || staffPreviewActive();
   const { config, status } = useDashboardConfig();
@@ -3321,11 +3335,16 @@ function TeacherPage({ page = "dashboard", subject = "", contentId = "", tvVideo
 function StaffPage() {
   const [firebaseUser, setFirebaseUser] = useState(null);
   const [authChecked, setAuthChecked] = useState(false);
+  const [staffAccess, setStaffAccess] = useState("checking"); // checking | granted | denied
 
   useEffect(() => {
-    return onAuthStateChanged(auth, (user) => {
+    return onAuthStateChanged(auth, async (user) => {
+      setStaffAccess("checking");
       setFirebaseUser(user);
       setAuthChecked(true);
+      if (!user) return;
+      const granted = await isTarongaStaff(user.email);
+      if (auth.currentUser?.uid === user.uid) setStaffAccess(granted ? "granted" : "denied");
     });
   }, []);
 
@@ -3342,19 +3361,29 @@ function StaffPage() {
     window.location.hash = "";
   }
 
-  if (!authChecked) {
-    return (
-      <main className="staff-auth-page">
-        <section className="staff-auth-card">
-          <img src={assets.wildlyLogo} alt="Wildly by Taronga" />
-          <p style={{ marginTop: 16 }}>Checking authentication…</p>
-        </section>
-      </main>
-    );
+  if (!authChecked || (firebaseUser && staffAccess === "checking")) {
+    return <LoadingScreen label="Checking staff access…" />;
   }
 
   if (!firebaseUser) {
     return <StaffFirebaseLoginScreen />;
+  }
+
+  // Signed in, but not staff (e.g. a teacher). Don't sign them out on arrival —
+  // the session is shared with the teacher side — just keep the console closed.
+  if (staffAccess === "denied") {
+    return (
+      <main className="staff-auth-page">
+        <section className="staff-auth-card" aria-label="No staff access">
+          <img src={assets.wildlyLogo} alt="Wildly by Taronga" className="staff-auth-card-logo" />
+          <span>Taronga Staff Console</span>
+          <h1>No staff access</h1>
+          <p>{firebaseUser.email} isn't a Taronga staff account. Ask a staff administrator to add you in the Control Room.</p>
+          <button type="button" onClick={() => signOut(auth)}>Sign in with a different account</button>
+          <a className="staff-auth-home" href={routePath()}>← Back to home</a>
+        </section>
+      </main>
+    );
   }
 
   return <StaffConsole onLock={lock} firebaseUser={firebaseUser} />;
@@ -3424,6 +3453,17 @@ function StaffConsole({ onLock, firebaseUser }) {
   const { items: liveResponses, status: liveResponsesStatus } = useLiveResponses();
   const { users, status: usersStatus } = useUsers();
   const [config, setConfig] = useState(defaultDashboardConfig);
+  // Hold the branded loader until the first snapshots land, so panels don't
+  // open on empty lists that then fill in. Capped so it can never hang.
+  const firstLoadPending = [status, contentStatus, professionalLearningStatus, tarongaTvStatus, usersStatus].includes("loading");
+  const [booted, setBooted] = useState(false);
+  useEffect(() => {
+    if (!firstLoadPending) setBooted(true);
+  }, [firstLoadPending]);
+  useEffect(() => {
+    const cap = window.setTimeout(() => setBooted(true), 8000);
+    return () => window.clearTimeout(cap);
+  }, []);
   const [previewKey, setPreviewKey] = useState(0);
   const [saveState, setSaveState] = useState("idle");
   const [contentSaveState, setContentSaveState] = useState("idle");
@@ -3755,6 +3795,8 @@ function StaffConsole({ onLock, firebaseUser }) {
     }
   }
 
+  if (!booted) return <LoadingScreen label="Opening the staff workspace…" />;
+
   return (
     <StaffWorkspace panel={panel} onNavigate={setPanel} email={firebaseUser?.email} onTeacherView={enterStaffPreview} onSignOut={onLock} Icon={Icon}>
         <NoticeBanner notice={notice} onClose={() => setNotice("")} />
@@ -3773,41 +3815,132 @@ function StaffConsole({ onLock, firebaseUser }) {
 
 const CONTROL_ROOM_PASSCODE = "2560";
 const CONTROL_ROOM_SESSION_KEY = "wildly-controlroom-unlocked";
-// Taronga staff admins all get the same console access. "Education Staff" is
-// one of the roles isWildlyStaff() accepts in the Firestore rules.
-const STAFF_ADMIN_ROLE = "Education Staff";
+// Staff access is managed through Tracka's manageStaffAdmins Cloud Function,
+// which re-checks that the caller is staff and is the only writer of
+// `staffAdmins`. The root admin is listed but can never be removed.
+function StaffAccessCard({ currentEmail }) {
+  const [admins, setAdmins] = useState([]);
+  const [rootAdmins, setRootAdmins] = useState(ROOT_ADMIN_EMAILS);
+  const [listState, setListState] = useState("loading"); // loading | ready | error
+  const [email, setEmail] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [message, setMessage] = useState(null); // { ok, text }
+  const [invite, setInvite] = useState(null); // { email, link, text, created }
+  const [copied, setCopied] = useState(false);
+  const [confirmEmail, setConfirmEmail] = useState(null);
+  const [removing, setRemoving] = useState(null);
 
-async function createStaffAdmin({ email, password, role }) {
-  // Create the account on a SECONDARY Firebase app so the current admin's
-  // session is not replaced. The new user is briefly signed in on that
-  // secondary app, which is exactly what lets us write their own teacher doc
-  // (the teachers/{email} write rule requires request.auth.token.email == email).
-  const secondary = initializeApp(auth.app.options, `sc-admin-${Date.now()}`);
-  try {
-    const secAuth = getAuth(secondary);
-    const secDb = getFirestore(secondary);
-    const cleanEmail = email.trim().toLowerCase();
-    await createUserWithEmailAndPassword(secAuth, cleanEmail, password);
-    await setDoc(
-      doc(secDb, "teachers", cleanEmail),
-      { email: cleanEmail, role, products: arrayUnion("wildly"), createdAt: serverTimestamp(), updatedAt: serverTimestamp() },
-      { merge: true },
-    );
-    await signOut(secAuth);
-  } finally {
-    await deleteApp(secondary);
+  async function load() {
+    try {
+      const data = await callStaffAdminFn({ action: "list" });
+      setAdmins(data.admins || []);
+      if (data.rootAdmins?.length) setRootAdmins(data.rootAdmins);
+      setListState("ready");
+    } catch (error) {
+      console.error("Unable to list staff", error);
+      setListState("error");
+    }
   }
+  useEffect(() => { load(); }, []);
+
+  async function handleAdd(event) {
+    event.preventDefault();
+    const clean = email.trim().toLowerCase();
+    setMessage(null); setInvite(null); setCopied(false);
+    if (!/^\S+@\S+\.\S+$/.test(clean)) { setMessage({ ok: false, text: "Enter a valid email address." }); return; }
+    if (rootAdmins.includes(clean) || admins.some((a) => a.email === clean)) { setMessage({ ok: false, text: `${clean} already has staff access.` }); return; }
+    setBusy(true);
+    try {
+      const data = await callStaffAdminFn({ action: "invite", email: clean, sendEmail: false });
+      setEmail("");
+      setInvite({ email: clean, link: data.link, text: data.emailText, created: data.created });
+      setMessage({ ok: true, text: data.created
+        ? `${clean} now has staff access. Send them the set-password email below so they can sign in.`
+        : `${clean} now has staff access and can sign in with their existing password.` });
+      load();
+    } catch (error) {
+      setMessage({ ok: false, text: error.message || "Could not add that staff member." });
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handleRemove(target) {
+    setRemoving(target); setMessage(null);
+    try {
+      await callStaffAdminFn({ action: "remove", email: target });
+      setConfirmEmail(null);
+      setMessage({ ok: true, text: `${target} no longer has staff access.` });
+      load();
+    } catch (error) {
+      setMessage({ ok: false, text: error.message || "Could not remove that staff member." });
+    } finally {
+      setRemoving(null);
+    }
+  }
+
+  async function copyInvite() {
+    try { await navigator.clipboard.writeText(invite.text || invite.link); setCopied(true); }
+    catch { setCopied(false); }
+  }
+
+  const self = (currentEmail || "").toLowerCase();
+  const rows = [
+    ...rootAdmins.map((e) => ({ email: e, root: true })),
+    ...admins.filter((a) => !rootAdmins.includes(a.email)),
+  ];
+
+  return (
+    <section className="sc-controlroom-card">
+      <h3>Staff access</h3>
+      <p>Only these accounts can open the staff console and publish changes. Everyone else is turned away, even with a valid sign-in.</p>
+      <form className="sc-controlroom-form sc-staff-add" onSubmit={handleAdd}>
+        <label>Email<input type="email" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="off" placeholder="name@zoo.nsw.gov.au" /></label>
+        <button type="submit" disabled={busy}>{busy ? "Adding…" : "Add staff member"}</button>
+      </form>
+      {message && <p className={message.ok ? "sc-controlroom-success" : "auth-error"} role="status">{message.text}</p>}
+      {invite?.created && invite.link && (
+        <div className="sc-staff-invite">
+          <p>Department and zoo mail servers often drop automated emails, so send this from your own email account. The link works once and expires.</p>
+          <div className="sc-staff-invite-actions">
+            <button type="button" onClick={copyInvite}>{copied ? "Copied" : "Copy invite email"}</button>
+            <a href={`mailto:${invite.email}?subject=${encodeURIComponent("Your Wildly staff access")}&body=${encodeURIComponent(invite.text || invite.link)}`}>Open in email</a>
+          </div>
+        </div>
+      )}
+      {listState === "error" ? (
+        <p className="auth-error">Couldn't load the staff list. <button type="button" className="sc-manage-cancel" onClick={load}>Try again</button></p>
+      ) : (
+        <ul className="sc-manage-list">
+          {listState === "loading" && <li className="sc-manage-empty">Loading staff…</li>}
+          {listState === "ready" && rows.map((a) => (
+            <li key={a.email} className="sc-manage-row">
+              <div className="sc-manage-who">
+                <span className="sc-user-initial">{a.email.charAt(0).toUpperCase()}</span>
+                <div><strong>{a.email}</strong><small>{a.root ? "Root administrator · can't be removed" : `Staff${a.invitedBy ? ` · added by ${a.invitedBy}` : ""}`}</small></div>
+              </div>
+              {a.root ? null : a.email === self ? (
+                <span className="sc-manage-self">You</span>
+              ) : confirmEmail === a.email ? (
+                <span className="sc-manage-confirm">
+                  <button type="button" className="sc-manage-delete" disabled={removing === a.email} onClick={() => handleRemove(a.email)}>{removing === a.email ? "Removing…" : "Confirm remove"}</button>
+                  <button type="button" className="sc-manage-cancel" onClick={() => setConfirmEmail(null)}>Cancel</button>
+                </span>
+              ) : (
+                <button type="button" className="sc-manage-remove" onClick={() => setConfirmEmail(a.email)}>Remove</button>
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
+  );
 }
 
 function ControlRoomPanel({ currentEmail, users = [] }) {
   const [unlocked, setUnlocked] = useState(() => window.sessionStorage.getItem(CONTROL_ROOM_SESSION_KEY) === "yes");
   const [passcode, setPasscode] = useState("");
   const [passError, setPassError] = useState("");
-
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [state, setState] = useState("idle"); // idle | saving | saved | error
-  const [message, setMessage] = useState("");
 
   const [userSearch, setUserSearch] = useState("");
   const [confirmId, setConfirmId] = useState(null);
@@ -3846,41 +3979,6 @@ function ControlRoomPanel({ currentEmail, users = [] }) {
     setPassError("Incorrect passcode.");
   }
 
-  async function handleAddAdmin(event) {
-    event.preventDefault();
-    setMessage("");
-    const cleanEmail = email.trim();
-    if (!cleanEmail || !/^\S+@\S+\.\S+$/.test(cleanEmail)) {
-      setState("error");
-      setMessage("Enter a valid email address.");
-      return;
-    }
-    if (password.length < 6) {
-      setState("error");
-      setMessage("Password must be at least 6 characters (Firebase requirement).");
-      return;
-    }
-    setState("saving");
-    try {
-      await createStaffAdmin({ email: cleanEmail, password, role: STAFF_ADMIN_ROLE });
-      setState("saved");
-      setMessage(`${cleanEmail} added as Taronga staff.`);
-      setEmail("");
-      setPassword("");
-    } catch (error) {
-      setState("error");
-      setMessage(
-        error.code === "auth/email-already-in-use"
-          ? "That email already has an account. Ask them to sign in, or use a different email."
-          : error.code === "auth/invalid-email"
-            ? "That email address is not valid."
-            : error.code === "auth/weak-password"
-              ? "Password is too weak. Use at least 6 characters."
-              : "Could not create the staff account. Check your connection and try again.",
-      );
-    }
-  }
-
   if (!unlocked) {
     return (
       <div className="sc-panel sc-controlroom">
@@ -3898,21 +3996,11 @@ function ControlRoomPanel({ currentEmail, users = [] }) {
     <div className="sc-panel sc-controlroom">
       <div className="sc-panel-header"><div><h2>Control Room</h2><p>Manage privileged access to Wildly.</p></div><button type="button" className="sc-controlroom-lock" onClick={() => { window.sessionStorage.removeItem(CONTROL_ROOM_SESSION_KEY); setUnlocked(false); setPasscode(""); }}>Lock</button></div>
 
-      <section className="sc-controlroom-card">
-        <h3>Add staff admin</h3>
-        <p>Creates a Taronga staff account with email + password and grants staff access. They can then sign in to this console.</p>
-        <form className="sc-controlroom-form" onSubmit={handleAddAdmin}>
-          <label>Email<input type="email" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="off" placeholder="name@example.com" /></label>
-          <label>Password<input type="text" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="off" placeholder="At least 6 characters" /></label>
-          <button type="submit" disabled={state === "saving"}>{state === "saving" ? "Creating…" : "Add staff admin"}</button>
-        </form>
-        {message && <p className={state === "error" ? "auth-error" : "sc-controlroom-success"}>{message}</p>}
-        <p className="sc-controlroom-note">You are signed in as {currentEmail}. Adding an admin does not sign you out.</p>
-      </section>
+      <StaffAccessCard currentEmail={currentEmail} />
 
       <section className="sc-controlroom-card">
         <h3>Manage users</h3>
-        <p>Remove a teacher or staff account from the roster. This deletes their Taronga Education profile and revokes console access — it does not delete their Firebase sign-in.</p>
+        <p>Remove a teacher account from the roster. This deletes their Taronga Education profile — it does not delete their sign-in or change staff access (use Staff access above for that).</p>
         <div className="sc-manage-search">
           <Icon type="target" className="" />
           <input type="search" value={userSearch} onChange={(e) => setUserSearch(e.target.value)} placeholder="Search email or school" autoComplete="off" />
