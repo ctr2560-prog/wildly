@@ -350,8 +350,6 @@ function buildLessonActivityBlocks(item) {
 const ROOT_ADMIN_EMAILS = ["thebiologybloke@gmail.com"];
 const STAFF_ADMIN_FN = "https://australia-southeast1-tarongatracka.cloudfunctions.net/manageStaffAdmins";
 
-// Legacy display labels only — these roles no longer grant access.
-const staffRoles = ["Education Staff", "Curriculum Leader", "School Leader"];
 
 // Rules let a signed-in user read only their OWN staffAdmins entry; a denied
 // read means "not staff", same as a missing document.
@@ -3504,6 +3502,7 @@ function StaffConsole({ onLock, firebaseUser }) {
   const { items: liveSessions, status: liveSessionsStatus } = useLiveSessions();
   const { items: liveResponses, status: liveResponsesStatus } = useLiveResponses();
   const { users, status: usersStatus } = useUsers();
+  const { emails: staffEmails, status: staffStatus } = useStaffEmails();
   const [config, setConfig] = useState(defaultDashboardConfig);
   // Hold the branded loader until the first snapshots land, so panels don't
   // open on empty lists that then fill in. Capped so it can never hang.
@@ -3853,20 +3852,21 @@ function StaffConsole({ onLock, firebaseUser }) {
     <StaffWorkspace panel={panel} onNavigate={setPanel} email={firebaseUser?.email} onTeacherView={enterStaffPreview} onSignOut={onLock} Icon={Icon}>
         <NoticeBanner notice={notice} onClose={() => setNotice("")} />
         {panel === "overview" && <OverviewPanel contentItems={contentItems} tvVideos={tarongaTvVideos} plItems={professionalLearningItems} upcomingEvents={upcomingEvents} users={users} contentStatus={contentStatus} tvStatus={tarongaTvStatus} plStatus={professionalLearningStatus} usersStatus={usersStatus} onNavigate={setPanel} />}
-        {panel === "users" && <UsersPanel users={users} usersStatus={usersStatus} />}
+        {panel === "users" && <UsersPanel users={users} usersStatus={usersStatus} staffEmails={staffEmails} staffStatus={staffStatus} />}
         {panel === "analytics" && <AnalyticsPanel contentItems={contentItems} tvVideos={tarongaTvVideos} plItems={professionalLearningItems} users={users} />}
         {panel === "content" && <ContentPanel contentItems={contentItems} status={contentStatus} saveState={contentSaveState} seedContentItems={seedContentItems} addContentItem={addContentItem} deleteContentItem={deleteContentItem} />}
         {panel === "taronga-tv" && <TarongaTvPanel items={tarongaTvVideos} contentItems={contentItems} status={tarongaTvStatus} saveState={tarongaTvSaveState} saveVideo={saveTarongaTvVideo} deleteVideo={deleteTarongaTvVideo} />}
         {panel === "professional-learning" && <ProfessionalLearningPanel items={professionalLearningItems} status={professionalLearningStatus} saveState={professionalLearningSaveState} saveItem={saveProfessionalLearningItem} deleteItem={deleteProfessionalLearningItem} />}
         {panel === "upcoming-events" && <UpcomingEventsPanel events={upcomingEvents} saveEvent={saveUpcomingEvent} deleteEvent={deleteUpcomingEvent} />}
         {panel === "banner" && <BannerManager banners={config.banners || []} saveBanners={saveBanners} />}
-        {panel === "control-room" && <ControlRoomPanel currentEmail={firebaseUser?.email} users={users} />}
+        {panel === "control-room" && <ControlRoomPanel currentEmail={firebaseUser?.email} users={users} staffEmails={staffEmails} />}
     </StaffWorkspace>
   );
 }
 
-const CONTROL_ROOM_PASSCODE = "2560";
-const CONTROL_ROOM_SESSION_KEY = "wildly-controlroom-unlocked";
+// No passcode on the Control Room: anything in the client bundle is public, so it
+// protected nothing. The real gates are the staff check on sign-in and the server
+// (Firestore rules + manageStaffAdmins), which re-check staff on every write.
 // Staff access is managed through Tracka's manageStaffAdmins Cloud Function,
 // which re-checks that the caller is staff and is the only writer of
 // `staffAdmins`. The root admin is listed but can never be removed.
@@ -3989,10 +3989,7 @@ function StaffAccessCard({ currentEmail }) {
   );
 }
 
-function ControlRoomPanel({ currentEmail, users = [] }) {
-  const [unlocked, setUnlocked] = useState(() => window.sessionStorage.getItem(CONTROL_ROOM_SESSION_KEY) === "yes");
-  const [passcode, setPasscode] = useState("");
-  const [passError, setPassError] = useState("");
+function ControlRoomPanel({ currentEmail, users = [], staffEmails = new Set(ROOT_ADMIN_EMAILS) }) {
 
   const [userSearch, setUserSearch] = useState("");
   const [confirmId, setConfirmId] = useState(null);
@@ -4020,33 +4017,9 @@ function ControlRoomPanel({ currentEmail, users = [] }) {
     })
     .slice(0, 50);
 
-  function handleUnlock(event) {
-    event.preventDefault();
-    if (passcode.trim() === CONTROL_ROOM_PASSCODE) {
-      window.sessionStorage.setItem(CONTROL_ROOM_SESSION_KEY, "yes");
-      setUnlocked(true);
-      setPassError("");
-      return;
-    }
-    setPassError("Incorrect passcode.");
-  }
-
-  if (!unlocked) {
-    return (
-      <div className="sc-panel sc-controlroom">
-        <div className="sc-panel-header"><div><h2>Control Room</h2><p>Restricted. Enter the control room passcode to continue.</p></div></div>
-        <form className="sc-controlroom-gate" onSubmit={handleUnlock}>
-          <label>Passcode<input type="password" inputMode="numeric" value={passcode} onChange={(e) => setPasscode(e.target.value)} autoComplete="off" autoFocus /></label>
-          {passError && <p className="auth-error">{passError}</p>}
-          <button type="submit">Unlock Control Room</button>
-        </form>
-      </div>
-    );
-  }
-
   return (
     <div className="sc-panel sc-controlroom">
-      <div className="sc-panel-header"><div><h2>Control Room</h2><p>Manage privileged access to Wildly.</p></div><button type="button" className="sc-controlroom-lock" onClick={() => { window.sessionStorage.removeItem(CONTROL_ROOM_SESSION_KEY); setUnlocked(false); setPasscode(""); }}>Lock</button></div>
+      <div className="sc-panel-header"><div><h2>Control Room</h2><p>Manage privileged access to Wildly.</p></div></div>
 
       <StaffAccessCard currentEmail={currentEmail} />
 
@@ -4066,7 +4039,7 @@ function ControlRoomPanel({ currentEmail, users = [] }) {
               <li key={u.id} className="sc-manage-row">
                 <div className="sc-manage-who">
                   <span className="sc-user-initial">{(u.email || "?").charAt(0).toUpperCase()}</span>
-                  <div><strong>{u.email || "—"}</strong><small>{displayRoleOf(u)}{u.schoolName ? ` · ${u.schoolName}` : ""}</small></div>
+                  <div><strong>{u.email || "—"}</strong><small>{displayRoleOf(u, staffEmails)}{u.schoolName ? ` · ${u.schoolName}` : ""}</small></div>
                 </div>
                 {isSelf ? (
                   <span className="sc-manage-self">You</span>
@@ -4116,8 +4089,33 @@ function OverviewPanel({ contentStatus, tvStatus, plStatus, usersStatus, ...prop
   return <StaffOverview {...props} contentItems={contentStatus === "live" ? props.contentItems : []} tvVideos={tvStatus === "live" ? props.tvVideos : []} plItems={plStatus === "live" ? props.plItems : []} libraryState={libraryState} accountsAvailable={["live", "empty"].includes(usersStatus)} tracka={tracka} Icon={Icon} />;
 }
 
-function displayRoleOf(user) {
-  return staffRoles.includes(user.role) ? user.role : "Teacher";
+// Who is staff comes from the staffAdmins list (via manageStaffAdmins), never from
+// teachers/{email}.role — that field is self-written and confers nothing.
+function useStaffEmails() {
+  const [state, setState] = useState({ emails: new Set(ROOT_ADMIN_EMAILS), status: "loading" });
+  useEffect(() => {
+    let cancelled = false;
+    callStaffAdminFn({ action: "list" })
+      .then((data) => {
+        if (cancelled) return;
+        const emails = new Set([...(data.rootAdmins || ROOT_ADMIN_EMAILS), ...(data.admins || []).map((a) => a.email)]);
+        setState({ emails, status: "ready" });
+      })
+      .catch((error) => {
+        console.error("Unable to load staff list", error);
+        if (!cancelled) setState((current) => ({ ...current, status: "error" }));
+      });
+    return () => { cancelled = true; };
+  }, []);
+  return state;
+}
+
+function isStaffUser(user, staffEmails) {
+  return staffEmails.has((user.email || "").toLowerCase());
+}
+
+function displayRoleOf(user, staffEmails) {
+  return isStaffUser(user, staffEmails) ? "Taronga staff" : "Teacher";
 }
 
 function lastActiveOf(user) {
@@ -4136,22 +4134,23 @@ function formatRelativeDate(ts) {
   return d.toLocaleDateString("en-AU", { day: "numeric", month: "short", year: "numeric" });
 }
 
-function UsersPanel({ users = [], usersStatus = "loading" }) {
+function UsersPanel({ users = [], usersStatus = "loading", staffEmails = new Set(ROOT_ADMIN_EMAILS), staffStatus = "ready" }) {
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState("All roles");
 
   const isPermissionDenied = usersStatus === "permission-denied";
-  const isLoading = usersStatus === "loading";
+  const isLoading = usersStatus === "loading" || staffStatus === "loading";
 
-  const countStaff = users.filter((u) => staffRoles.includes(u.role)).length;
+  const countStaff = users.filter((u) => isStaffUser(u, staffEmails)).length;
   const countTeachers = users.length - countStaff;
   const schoolCount = new Set(users.map((u) => (u.schoolName || "").trim()).filter(Boolean)).size;
-  const roleOptions = ["All roles", "Teacher", ...staffRoles.filter((r) => users.some((u) => u.role === r))];
+  const roleOptions = ["All roles", "Teacher", "Taronga staff"];
 
   const visibleUsers = users.filter((u) => {
-    const haystack = `${displayRoleOf(u)} ${u.schoolName || ""} ${u.email || ""}`.toLowerCase();
+    const role = displayRoleOf(u, staffEmails);
+    const haystack = `${role} ${u.schoolName || ""} ${u.email || ""}`.toLowerCase();
     const matchesSearch = !search || haystack.includes(search.toLowerCase());
-    const matchesRole = roleFilter === "All roles" || displayRoleOf(u) === roleFilter;
+    const matchesRole = roleFilter === "All roles" || role === roleFilter;
     return matchesSearch && matchesRole;
   });
 
@@ -4166,7 +4165,7 @@ function UsersPanel({ users = [], usersStatus = "loading" }) {
       {isPermissionDenied && (
         <article className="placeholder-card" style={{ marginBottom: 24 }}>
           <h3>Staff sign-in required</h3>
-          <p>Reading all user accounts requires a staff role. Sign in with a staff account (Education Staff, Curriculum Leader, or School Leader) to see live user data here.</p>
+          <p>Reading all user accounts requires staff access. Ask a staff administrator to add you in Control room → Staff access.</p>
         </article>
       )}
 
@@ -4174,7 +4173,7 @@ function UsersPanel({ users = [], usersStatus = "loading" }) {
         {[
           ["Total users", isLoading ? "…" : users.length.toLocaleString(), "Taronga Education accounts"],
           ["Teachers", isLoading ? "…" : countTeachers.toLocaleString(), "Standard teacher access"],
-          ["Taronga staff", isLoading ? "…" : countStaff.toLocaleString(), "Console access"],
+          ["Taronga staff", isLoading ? "…" : countStaff.toLocaleString(), staffStatus === "error" ? "Staff list unavailable" : "Console access"],
           ["Schools", isLoading ? "…" : schoolCount.toLocaleString(), "Distinct schools"],
         ].map(([label, value, desc]) => (
           <article key={label} className="sc-stat-card">
@@ -4212,7 +4211,7 @@ function UsersPanel({ users = [], usersStatus = "loading" }) {
             </thead>
             <tbody>
               {visibleUsers.map((u) => {
-                const isStaff = staffRoles.includes(u.role);
+                const isStaff = isStaffUser(u, staffEmails);
                 return (
                   <tr key={u.id}>
                     <td>
@@ -4221,7 +4220,7 @@ function UsersPanel({ users = [], usersStatus = "loading" }) {
                         <span className="sc-user-email">{u.email || "—"}</span>
                       </div>
                     </td>
-                    <td><span className={`sc-role-badge ${isStaff ? "staff" : "teacher"}`}>{displayRoleOf(u)}</span></td>
+                    <td><span className={`sc-role-badge ${isStaff ? "staff" : "teacher"}`}>{isStaff ? "Taronga staff" : "Teacher"}</span></td>
                     <td className="sc-user-school">{u.schoolName || "—"}</td>
                     <td className="sc-user-date">{formatRelativeDate(lastActiveOf(u))}</td>
                   </tr>
@@ -6209,7 +6208,6 @@ export default function AuthenticatedApp() {
   if (path === "/staff" || path === "/staff.html") return <StaffPage />;
   if (path === "staff" || path === "staff.html") return <StaffPage />;
   if (path === "demo-booking") return <PlaceholderExperiencePage eyebrow="Demo Booking" title="Book a Wildly demo" description="This page is ready for your real demo booking workflow. Use it for school enquiries, implementation calls and onboarding sessions." points={["Demo request form or embedded scheduler", "School details and contact intake", "Implementation readiness checklist"]} primaryLabel="Teacher Dashboard" primaryHref={teacherRoute()} secondaryLabel="Support" secondaryHref={appLinks.support} />;
-  if (path === "support") return <PlaceholderExperiencePage eyebrow="Support" title="Wildly support" description="This is the right place for help content, onboarding docs, support contact details and troubleshooting guidance." points={["Teacher help centre or FAQs", "Support email, form or live chat", "Technical setup and Firestore guidance"]} primaryLabel="Teacher Dashboard" primaryHref={teacherRoute()} secondaryLabel="Professional Learning" secondaryHref={appLinks.professionalLearning} />;
   if (path === "excursions") return <PlaceholderExperiencePage eyebrow="Excursions" title="Excursions and zoo links" description="Use this space for visit planning, excursion bookings, pre-visit resources and Tracka-connected field learning." points={["Excursion booking links", "Pre-visit teacher packs", "On-site learning workflows and Tracka links"]} primaryLabel="Teacher Dashboard" primaryHref={teacherRoute("calendar")} secondaryLabel="Home" secondaryHref={routePath()} />;
   if (path === "professional-learning") return <TeacherPage page="professional-learning" />;
   return <AuthScreen mode="login" />;

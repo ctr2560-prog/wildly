@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import "../landing.css";
 import WildlyHome from "./home-page.jsx";
 import TrackaPage from "./tracka-page.jsx";
-import { SchoolsPage, AboutPage, LegalPage } from "./education-pages.jsx";
+import { SchoolsPage, AboutPage, LegalPage, HelpPage } from "./education-pages.jsx";
 import "./public-design.css";
 import { subjectImage } from "./subject-identity.js";
 import LoadingScreen from "./wildly-loader.jsx";
@@ -443,7 +443,7 @@ function SiteFooter() {
         </div>
       </div>
       <div className="public-footer-bottom">
-        <span>© Taronga Conservation Society Australia · <a href={routePath("privacy")}>Privacy</a> · <a href={routePath("terms")}>Terms of use</a></span>
+        <span>© Taronga Conservation Society Australia · <a href={routePath("support")}>Help</a> · <a href={routePath("privacy")}>Privacy</a> · <a href={routePath("terms")}>Terms of use</a></span>
         <a className="staff-login" href={routePath("staff")}>Taronga staff login</a>
       </div>
     </footer>
@@ -841,6 +841,7 @@ export default function PublicApp() {
   }, []);
 
   if (!ready) return <LoadingScreen label="Loading Wildly…" />;
+  if (path === "support") return <><HelpPage SiteHeader={SiteHeader} routePath={routePath} excursionsUrl={appLinks.excursions} /><SiteFooter /></>;
   if (path === "privacy" || path === "terms") return <><LegalPage SiteHeader={SiteHeader} routePath={routePath} section={path} /><SiteFooter /></>;
   if (path === "about") return <AboutMarketingPage />;
   if (path === "subjects" || path.startsWith("subjects/")) return <SubjectsMarketingPage key={path} initialSubject={subjects.find(([label]) => encodeURIComponent(label) === path.split("/")[1])?.[0] || ""} />;

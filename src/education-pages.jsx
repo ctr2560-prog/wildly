@@ -130,7 +130,7 @@ export function LegalPage({ SiteHeader, routePath, section = "privacy" }) {
         <p>Resources you save and classes you set up in Wildly are stored in your own browser. They are not sent to Taronga, and clearing your browser data removes them.</p>
 
         <h3>One account with Taronga Tracka</h3>
-        <p>Your Wildly account is the same account you use for Taronga Tracka. If you use Tracka, Wildly can show your Tracka classes and their observations to you. Nobody else can see them. Information about students in Tracka is covered by Tracka's own privacy information.</p>
+        <p>Your Wildly account is the same account you use for Taronga Tracka. If you use Tracka, Wildly shows your Tracka classes and their observations in your account only. Other teachers don't see them in Wildly. Information about students in Tracka is covered by Tracka's own privacy information.</p>
 
         <h3>How we use it</h3>
         <p>We use your information to run your account, show you relevant resources, keep Wildly secure and improve our education programs. We do not sell your information. We do not send you marketing without your consent.</p>
@@ -153,6 +153,39 @@ export function LegalPage({ SiteHeader, routePath, section = "privacy" }) {
         <p>We may update this page. The date at the top shows when it last changed.</p>
 
         <p><a className="ed-link" href={routePath()}>← Back to Wildly</a></p>
+      </article>
+    </main>
+  </>;
+}
+
+// Teacher help. Every answer here describes how Wildly actually behaves — keep it in
+// step with the app. ⚠️ There is no direct support address yet; until Taronga gives
+// one, people are pointed to taronga.org.au. Swap it in here (and on the privacy page).
+const HELP_TOPICS = [
+  ["Do I need a separate account for Taronga Tracka?", "No. One Taronga Education account works for both Wildly and Taronga Tracka. Use the same email address and password on each site."],
+  ["I've forgotten my password", "On the log-in page, enter your email and choose “Forgot password?”. A reset link is sent from “Taronga Education”. School email can take a few minutes, so check your junk or quarantine folder. The link only works once."],
+  ["Where do my saved resources and classes go?", "They are kept in the browser you saved them in. They won't appear on another computer, and clearing your browser data removes them."],
+  ["I can see my Taronga Tracka classes in Wildly", "That is expected. Because it is one account, Wildly shows the Tracka classes you created, in your account only. Other teachers don't see them in Wildly."],
+  ["Parts of Wildly won't load at school", "School networks sometimes block parts of a site. If pages stay blank or sign-in fails, try another network, or ask your IT team to allow wildlybytaronga.com.au, tarongatracka.firebaseapp.com, *.googleapis.com and www.google.com/recaptcha."],
+  ["Can I use and change the resources?", "Yes. Wildly resources are free for educational use, and you can adapt them for your own students. See the terms of use for the details."],
+];
+
+export function HelpPage({ SiteHeader, routePath, excursionsUrl }) {
+  return <>
+    <SiteHeader />
+    <main className="ed-page ed-legal" id="main-content" tabIndex={-1}>
+      <header className="ed-legal-head">
+        <span className="ed-label">Help</span>
+        <h1>Using Wildly</h1>
+        <p>Answers to the questions teachers ask most.</p>
+      </header>
+      <article className="ed-legal-body">
+        <div className="ed-help-list">
+          {HELP_TOPICS.map(([q, a]) => <details key={q}><summary>{q}</summary><p>{a}</p></details>)}
+        </div>
+        <h2>Still need help?</h2>
+        <p>Contact Taronga's education team through <a href="https://taronga.org.au" target="_blank" rel="noopener noreferrer">taronga.org.au</a>. For excursion bookings, see <a href={excursionsUrl} target="_blank" rel="noopener noreferrer">learning at Taronga</a>.</p>
+        <p><a href={routePath("privacy")}>Privacy policy</a> · <a href={routePath("terms")}>Terms of use</a></p>
       </article>
     </main>
   </>;

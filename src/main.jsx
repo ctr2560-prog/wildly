@@ -13,7 +13,7 @@ function getRoutePath() {
 }
 
 function isAuthenticatedRoute(path) {
-  return ["login", "get-started", "about-you", "staff", "staff.html", "teacher", "teacher.html", "student", "demo-booking", "support", "excursions", "professional-learning"]
+  return ["login", "get-started", "about-you", "staff", "staff.html", "teacher", "teacher.html", "student", "demo-booking", "excursions", "professional-learning"]
     .some((route) => path === route || path.startsWith(`${route}/`));
 }
 

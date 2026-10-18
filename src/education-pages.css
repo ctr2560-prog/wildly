@@ -131,3 +131,7 @@
 .ed-legal-body h2 { margin-top: 28px; scroll-margin-top: 96px; }
 .ed-legal-body h3 { margin-top: 12px; font-size: 19px; }
 .ed-legal-body ul { margin: 0; padding-left: 20px; display: grid; gap: 10px; color: var(--wly-text-secondary); font-size: 16px; line-height: 1.7; }
+.ed-help-list { display: grid; gap: 10px; }
+.ed-help-list details { border: 1px solid var(--wly-border); border-radius: 8px; padding: 0 18px; background: var(--wly-white); }
+.ed-help-list summary { padding: 16px 0; font-weight: 600; font-size: 16px; color: var(--wly-taronga-ink); cursor: pointer; }
+.ed-help-list details p { padding-bottom: 16px; }
