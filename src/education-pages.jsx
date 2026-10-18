@@ -151,6 +151,8 @@ export function LegalPage({ SiteHeader, routePath, section = "privacy" }) {
         <p>We take care to keep resources accurate and suitable for schools, but you are responsible for checking a resource suits your students and setting. Wildly may change, or be unavailable at times.</p>
         <h3>Changes</h3>
         <p>We may update this page. The date at the top shows when it last changed.</p>
+        <h3>Photo credits</h3>
+        <p>Some animal photos in Wildly come from Wikimedia Commons, used under Creative Commons licences: elephant (Carlos Delgado, CC BY-SA 4.0); meerkat, echidna, wombat, platypus and Komodo dragon (Charles J. Sharp, CC BY-SA 4.0); Galápagos tortoise (Charles J. Sharp, CC BY-SA 3.0); snow leopard (H. Zell, CC BY-SA 3.0); Tasmanian devil (Ymblanter, CC BY-SA 4.0); red panda (Mathias Appel, CC0).</p>
 
         <p><a className="ed-link" href={routePath()}>← Back to Wildly</a></p>
       </article>
