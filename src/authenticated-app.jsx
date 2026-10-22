@@ -6088,18 +6088,32 @@ function QuizPresenterPage({ contentId = "", again = false }) {
   const [index, setIndex] = useState(0);
   const [revealed, setRevealed] = useState(false);
   const [timeLeft, setTimeLeft] = useState(QUIZ_SECONDS);
+  const [picks, setPicks] = useState({}); // question index -> the answer most of the class chose
+  const scoreKey = `wildly-quiz-start-${contentId}`;
 
   useEffect(() => {
-    if (stage !== "q" || revealed) return undefined;
-    if (timeLeft <= 0) { setRevealed(true); return undefined; }
+    if (stage !== "q" || revealed || timeLeft <= 0) return undefined;
     const t = setTimeout(() => setTimeLeft((n) => n - 1), 1000);
     return () => clearTimeout(t);
   }, [stage, revealed, timeLeft]);
 
-  function goTo(n) { setIndex(n); setRevealed(false); setTimeLeft(QUIZ_SECONDS); }
-  function startQuiz() { setStage("q"); goTo(0); }
+  function goTo(n) { setIndex(n); setRevealed(picks[n] !== undefined); setTimeLeft(QUIZ_SECONDS); }
+  function startQuiz() { setPicks({}); setStage("q"); setIndex(0); setRevealed(false); setTimeLeft(QUIZ_SECONDS); }
+  function pick(i) {
+    if (revealed) return;
+    setPicks((p) => ({ ...p, [index]: i }));
+    setRevealed(true);
+  }
+  const score = questions.filter((q, i) => picks[i] === q.answerIndex).length;
+  const answered = Object.keys(picks).length;
+  let startScore = null;
+  try { startScore = JSON.parse(localStorage.getItem(scoreKey) || "null"); } catch { startScore = null; }
   function nextQuestion() {
-    if (index + 1 >= questions.length) { setStage("done"); return; }
+    if (index + 1 >= questions.length) {
+      if (!again && answered) { try { localStorage.setItem(scoreKey, JSON.stringify({ score, total: questions.length })); } catch { /* private mode */ } }
+      setStage("done");
+      return;
+    }
     goTo(index + 1);
   }
   function prevQuestion() {
@@ -6160,26 +6174,34 @@ function QuizPresenterPage({ contentId = "", again = false }) {
             <div className={`kq-timer${revealed ? " is-done" : ""}`} style={{ "--p": `${(timeLeft / QUIZ_SECONDS) * 100}%` }}>
               <span>{revealed ? "✓" : timeLeft}</span>
             </div>
-            {revealed && question.fact ? <div className="kq-fact"><strong>Did you know?</strong> {question.fact}</div> : <div className="kq-fact is-empty" />}
+            {revealed ? (
+              <div className={`kq-fact${picks[index] === undefined ? "" : picks[index] === question.answerIndex ? " is-right" : " is-wrong"}`}>
+                {picks[index] === undefined ? null : picks[index] === question.answerIndex
+                  ? <b className="kq-verdict">Most of the class got it!</b>
+                  : <b className="kq-verdict">Not quite. The answer is {letters[question.answerIndex]}.</b>}
+                {question.fact ? <span><strong>Did you know?</strong> {question.fact}</span> : null}
+              </div>
+            ) : <div className="kq-hint">{timeLeft > 0 ? "Students show their answer. Tap the one most of the class chose." : "Time's up! Tap the answer most of the class chose."}</div>}
           </div>
           <div className={`kq-tiles kq-tiles-${question.options.length}`}>
             {question.options.map((opt, i) => {
               const isAnswer = i === question.answerIndex;
               const action = actionsFor(question)[i];
               return (
-                <div className={`kq-tile kq-c${i}${revealed ? (isAnswer ? " is-correct" : " is-dim") : ""}`} key={i}>
+                <button type="button" disabled={revealed} onClick={() => pick(i)} className={`kq-tile kq-c${i}${revealed ? (isAnswer ? " is-correct" : " is-dim") : ""}${picks[index] === i ? " is-picked" : ""}`} key={i}>
                   <QuizShape shape={QUIZ_TILE_SHAPES[i]} />
                   <span className="kq-tile-text">{question.type === "true-false" ? opt : <><b>{letters[i]}</b> {opt}</>}</span>
                   {action ? <span className="kq-tile-action">{QUIZ_POSES[action] ? <QuizPose pose={QUIZ_POSES[action]} /> : null}{action}</span> : null}
                   {revealed && isAnswer ? <span className="kq-tick" aria-label="Correct answer">✓</span> : null}
-                </div>
+                  {revealed && picks[index] === i ? <span className="kq-class-pick">Class answer</span> : null}
+                </button>
               );
             })}
           </div>
           <div className="kq-controls">
             <button type="button" className="kq-btn kq-btn-ghost" onClick={prevQuestion}>Back</button>
             {!revealed
-              ? <button type="button" className="kq-btn" onClick={() => setRevealed(true)}>Show answer</button>
+              ? <button type="button" className="kq-btn kq-btn-ghost" onClick={() => setRevealed(true)}>Skip: just show the answer</button>
               : <button type="button" className="kq-btn" onClick={nextQuestion}>{index + 1 >= questions.length ? "Finish" : "Next question"}</button>}
           </div>
         </div>
@@ -6189,7 +6211,15 @@ function QuizPresenterPage({ contentId = "", again = false }) {
         <div className="kq-intro">
           <span className="kq-eyebrow">All done</span>
           <h1>{again ? "Look how much you've learnt!" : "Great checking in!"}</h1>
-          <p className="kq-sub">{again ? "Think back: which questions did you get right this time that you weren't sure about at the start?" : "We'll come back to these questions at the end of the lesson."}</p>
+          {answered ? (
+            <div className="kq-scores">
+              {again && startScore ? <div className="kq-score is-start"><span>Start of lesson</span><b>{startScore.score}/{startScore.total}</b></div> : null}
+              <div className="kq-score"><span>{again ? "End of lesson" : "The class got"}</span><b>{score}/{questions.length}</b></div>
+            </div>
+          ) : null}
+          <p className="kq-sub">{again
+            ? (startScore && answered ? (score > startScore.score ? `That's ${score - startScore.score} more than at the start. Great learning!` : "Which questions are still tricky? Let's talk about them.") : "Which questions did you get right this time that you weren't sure about at the start?")
+            : "We'll come back to these questions at the end of the lesson."}</p>
           <div className="kq-controls">
             <button type="button" className="kq-btn kq-btn-ghost" onClick={startQuiz}>Play again</button>
             <a className="kq-btn" href={teacherContentRoute(contentId)}>Back to the lesson</a>

@@ -4186,7 +4186,22 @@ h2 {
 .kq-timer.is-done { background: #00893f; }
 .kq-fact { background: rgb(255 255 255 / .1); border-radius: 10px; padding: 16px 20px; font-size: clamp(16px, 1.7vw, 20px); line-height: 1.45; text-align: left; }
 .kq-fact strong { color: #f1bf33; margin-right: 6px; }
-.kq-fact.is-empty { background: none; }
+.kq-fact { display: grid; gap: 4px; }
+.kq-fact.is-right { background: rgb(0 137 63 / .35); }
+.kq-fact.is-wrong { background: rgb(217 98 43 / .35); }
+.kq-verdict { font-size: clamp(20px, 2.2vw, 28px); }
+.kq-hint { font-size: clamp(16px, 1.7vw, 20px); color: rgb(255 255 255 / .8); }
+button.kq-tile { border: 0; font: inherit; text-align: left; cursor: pointer; width: 100%; }
+button.kq-tile:not(:disabled):hover { transform: translateY(-3px); filter: brightness(1.06); }
+button.kq-tile:not(:disabled):active { transform: translateY(2px); box-shadow: inset 0 -3px 0 rgb(0 0 0 / .2); }
+button.kq-tile:disabled { cursor: default; }
+.kq-tile.is-picked.is-dim { opacity: .55; }
+.kq-class-pick { position: absolute; left: 14px; top: 12px; padding: 4px 10px; border-radius: 6px; background: rgb(0 0 0 / .28); font-size: 13px; font-weight: 700; }
+.kq-scores { display: flex; gap: 16px; justify-content: center; margin: 6px 0; }
+.kq-score { display: grid; gap: 4px; min-width: 180px; padding: 18px 24px; border-radius: 10px; background: #fff; color: #023024; box-shadow: inset 0 -6px 0 rgb(0 0 0 / .12); }
+.kq-score.is-start { background: rgb(255 255 255 / .14); color: #fff; box-shadow: none; }
+.kq-score span { font-size: 15px; font-weight: 600; }
+.kq-score b { font-size: 48px; line-height: 1; font-variant-numeric: tabular-nums; }
 
 .kq-tiles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
 .kq-tiles-2 .kq-tile { min-height: clamp(150px, 30vh, 280px); }
