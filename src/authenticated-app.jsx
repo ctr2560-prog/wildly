@@ -6118,17 +6118,18 @@ function latestQuizResult(results = [], classId, contentId, round) {
 
 function QuizPresenterPage({ contentId = "", again = false, initialClassId = "" }) {
   const { user, profile } = useSessionUser();
-  const { workspace, recordQuizResult } = useTeacherWorkspace(user, profile);
+  const { workspace, recordQuizResult, toggleAssignment } = useTeacherWorkspace(user, profile);
   const tracka = useTrackaClasses(user?.email || profile?.email || "");
-  const classOptions = (workspace.assignments || []).filter((a) => a.contentId === contentId).map((a) => {
-    const own = (workspace.classes || []).find((c) => c.id === a.classId);
-    const tc = tracka.classes.find((c) => (c.classCode || c.id) === a.classId);
-    return { id: a.classId, title: own?.title || tc?.className || tc?.classCode || "Class" };
-  });
+  // Every class the teacher has; classes this lesson is already assigned to come first.
+  const assignedTo = new Set((workspace.assignments || []).filter((a) => a.contentId === contentId).map((a) => a.classId));
+  const classOptions = [
+    ...(workspace.classes || []).map((c) => ({ id: c.id, title: c.title })),
+    ...tracka.classes.map((c) => ({ id: c.classCode || c.id, title: c.className || c.classCode || "Tracka class" })),
+  ].sort((a, b) => Number(assignedTo.has(b.id)) - Number(assignedTo.has(a.id)));
   const [classId, setClassId] = useState(initialClassId);
   useEffect(() => {
-    if (!classId && classOptions.length === 1) setClassId(classOptions[0].id);
-  }, [classId, classOptions.length]); // eslint-disable-line react-hooks/exhaustive-deps
+    if (!classId && assignedTo.size === 1) setClassId([...assignedTo][0]);
+  }, [classId, assignedTo.size]); // eslint-disable-line react-hooks/exhaustive-deps
   const { items: contentItems } = useContentItems();
   const contentItem = contentItems.find((item) => item.id === contentId) || null;
   const quiz = normalizeQuiz(contentItem?.materials?.quiz);
@@ -6164,7 +6165,11 @@ function QuizPresenterPage({ contentId = "", again = false, initialClassId = "" 
   function nextQuestion() {
     if (index + 1 >= questions.length) {
       if (!again && answered) { try { localStorage.setItem(scoreKey, JSON.stringify({ score, total: questions.length })); } catch { /* private mode */ } }
-      if (answered && classId) recordQuizResult({ classId, contentId, round: again ? "post" : "pre", score, total: questions.length });
+      if (answered && classId) {
+        // Running a check-in for a class puts the lesson in that class's plan.
+        if (!assignedTo.has(classId)) toggleAssignment(classId, contentId);
+        recordQuizResult({ classId, contentId, round: again ? "post" : "pre", score, total: questions.length });
+      }
       setStage("done");
       return;
     }
@@ -6215,11 +6220,14 @@ function QuizPresenterPage({ contentId = "", again = false, initialClassId = "" 
             </div>
           ) : quiz.instructions ? <p className="kq-howto">{quiz.instructions}</p> : null}
           {classOptions.length ? (
-            <div className="kq-classes" role="radiogroup" aria-label="Class">
+            <label className="kq-classes">
               <span>Which class?</span>
-              {classOptions.map((c) => <button type="button" key={c.id} role="radio" aria-checked={classId === c.id} className={`kq-class${classId === c.id ? " is-on" : ""}`} onClick={() => setClassId(c.id)}>{c.title}</button>)}
-            </div>
-          ) : <p className="kq-note">Assign this lesson to a class in My Classes to save the class's results.</p>}
+              <select className="kq-class-select" value={classId} onChange={(e) => setClassId(e.target.value)}>
+                <option value="">Choose a class to save results</option>
+                {classOptions.map((c) => <option key={c.id} value={c.id}>{c.title}{assignedTo.has(c.id) ? " (assigned)" : ""}</option>)}
+              </select>
+            </label>
+          ) : <p className="kq-note">Add a class in My Classes to save the class's results.</p>}
           <button type="button" className="kq-btn kq-btn-lg" onClick={startQuiz}>Start</button>
         </div>
       )}
@@ -6370,7 +6378,7 @@ export default function AuthenticatedApp() {
     if (section === "content") return <TeacherPage page="content" contentId={third} />;
     if (section === "taronga-tv") return <TeacherPage page="taronga-tv" tvVideoId={third} />;
     if (section === "present") return <TeacherPresenterPage contentId={third} />;
-    if (section === "quiz") return <QuizPresenterPage contentId={third} again={fourth === "again"} initialClassId={decodeURIComponent(fifth)} />;
+    if (section === "quiz") return <QuizPresenterPage key={path} contentId={third} again={fourth === "again"} initialClassId={decodeURIComponent(fifth)} />;
     if (section === "professional-learning") return <TeacherPage page="professional-learning" />;
     return <TeacherPage page={section || "dashboard"} />;
   }

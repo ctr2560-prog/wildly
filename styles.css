@@ -4238,6 +4238,7 @@ button.kq-tile:disabled { cursor: default; }
 
 .kq-classes { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 8px; margin-top: 6px; }
 .kq-classes > span { font-size: 16px; font-weight: 600; margin-right: 4px; }
+.kq-class-select { min-height: 46px; min-width: 260px; padding: 0 14px; border-radius: 8px; border: 2px solid rgb(255 255 255 / .35); background: #fff; color: #023024; font: 600 16px/1 var(--wly-font-sans, "Montserrat", sans-serif); cursor: pointer; }
 .kq-class { min-height: 42px; padding: 0 16px; border-radius: 8px; border: 2px solid rgb(255 255 255 / .35); background: transparent; color: #fff; font: 600 15px/1 var(--wly-font-sans, "Montserrat", sans-serif); cursor: pointer; }
 .kq-class:hover { border-color: #fff; }
 .kq-class.is-on { background: #fff; color: #023024; border-color: #fff; }
