@@ -960,12 +960,21 @@ function useTeacherWorkspace(user, profile) {
     });
   }
 
+  // Check-in quiz results, saved with the teacher's classes: one entry per run.
+  function recordQuizResult(result) {
+    setWorkspace((current) => ({
+      ...current,
+      quizResults: [...(current.quizResults || []), { id: `qr-${Date.now().toString(36)}`, at: Date.now(), ...result }],
+    }));
+  }
+
   return {
     workspace,
     toggleSavedItem,
     createClass,
     deleteClass,
     toggleAssignment,
+    recordQuizResult,
   };
 }
 
@@ -2446,9 +2455,6 @@ function TeacherDashboard({ config, contentItems = defaultContentItems.map(resol
           const quizzed = assigned.filter((x) => x.item.materials?.quiz?.questions?.length);
           const quizCount = quizzed.length;
           const totalMinutes = assigned.reduce((sum, x) => sum + (Number(x.item.durationMinutes) || 0), 0);
-          const quizQuestions = quizzed.reduce((all, x) => all.concat(x.item.materials.quiz.questions), []);
-          const tfCount = quizQuestions.filter((q) => q.type === "true-false").length;
-          const mcCount = quizQuestions.length - tfCount;
           const roster = isTracka ? trackaStudents.students : [];
           const quizQTotal = roster.reduce((sum, s) => sum + (s.quizTotal || 0), 0);
           const quizCorrectTotal = roster.reduce((sum, s) => sum + (s.quizCorrect || 0), 0);
@@ -2530,29 +2536,55 @@ function TeacherDashboard({ config, contentItems = defaultContentItems.map(resol
                 <span className="mc-soon">Coming soon</span>
               </div>
 
-              {quizCount ? (
-                <>
-                  <div className="mc-section-head mc-quiz-head"><div><h2>Check-in quizzes</h2><p>Teacher-led quizzes in this class's lessons. Run them from each lesson — the class answers together, so there are no per-student scores to record.</p></div></div>
-                  <div className="mc-stat-row">
-                    <div className="mc-stat"><strong>{quizCount}</strong><span>{quizCount === 1 ? "quiz" : "quizzes"}</span></div>
-                    <div className="mc-stat"><strong>{quizQuestions.length}</strong><span>questions</span></div>
-                    <div className="mc-stat"><strong>{tfCount}</strong><span>true / false</span></div>
-                    <div className="mc-stat"><strong>{mcCount}</strong><span>multiple choice</span></div>
-                  </div>
-                  <div className="mc-detail-list">
-                    {quizzed.map(({ item }) => (
-                      <article className="mc-quiz-row" key={item.id}>
-                        <div className="mc-quiz-row-body">
-                          <span className="mc-detail-item-type">{item.subject}{item.stage ? ` · ${item.stage}` : ""}</span>
-                          <h3>{item.title}</h3>
-                          <span className="mc-quiz-count">{item.materials.quiz.questions.length} question{item.materials.quiz.questions.length !== 1 ? "s" : ""}</span>
-                        </div>
-                        <a className="primary-action" href={teacherRoute(`quiz/${item.id}`)}>▶ Play quiz</a>
-                      </article>
-                    ))}
-                  </div>
-                </>
-              ) : null}
+              {quizCount ? (() => {
+                const results = workspace.quizResults || [];
+                const rows = quizzed.map(({ item }) => ({
+                  item,
+                  pre: latestQuizResult(results, assignId, item.id, "pre"),
+                  post: latestQuizResult(results, assignId, item.id, "post"),
+                }));
+                const pct = (r) => (r && r.total ? Math.round((r.score / r.total) * 100) : null);
+                const avg = (list) => (list.length ? Math.round(list.reduce((sum, v) => sum + v, 0) / list.length) : null);
+                const prePcts = rows.map((r) => pct(r.pre)).filter((v) => v != null);
+                const postPcts = rows.map((r) => pct(r.post)).filter((v) => v != null);
+                const both = rows.filter((r) => r.pre && r.post);
+                const avgGain = avg(both.map((r) => pct(r.post) - pct(r.pre)));
+                const classPath = encodeURIComponent(assignId);
+                return (
+                  <>
+                    <div className="mc-section-head mc-quiz-head"><div><h2>Check-in results</h2><p>Run the check-in at the start (pre) and end (post) of each lesson and pick this class. The class's answers are saved here.</p></div></div>
+                    <div className="mc-stat-row">
+                      <div className="mc-stat"><strong>{both.length}/{rows.length}</strong><span>lessons with pre &amp; post</span></div>
+                      <div className="mc-stat"><strong>{avg(prePcts) != null ? `${avg(prePcts)}%` : "—"}</strong><span>avg pre</span></div>
+                      <div className="mc-stat"><strong>{avg(postPcts) != null ? `${avg(postPcts)}%` : "—"}</strong><span>avg post</span></div>
+                      <div className="mc-stat"><strong>{avgGain != null ? `${avgGain > 0 ? "+" : ""}${avgGain}%` : "—"}</strong><span>avg change</span></div>
+                    </div>
+                    <div className="mc-detail-list">
+                      {rows.map(({ item, pre, post }) => {
+                        const change = pre && post ? post.score - pre.score : null;
+                        return (
+                          <article className="mc-quiz-row mc-quiz-result" key={item.id}>
+                            <div className="mc-quiz-row-body">
+                              <span className="mc-detail-item-type">{item.subject}{item.stage ? ` · ${item.stage}` : ""}</span>
+                              <h3>{item.title}</h3>
+                              <span className="mc-quiz-count">{item.materials.quiz.questions.length} question{item.materials.quiz.questions.length !== 1 ? "s" : ""}</span>
+                            </div>
+                            <div className="mc-prepost">
+                              <div><span>Pre</span><b>{pre ? `${pre.score}/${pre.total}` : "—"}</b></div>
+                              <div><span>Post</span><b>{post ? `${post.score}/${post.total}` : "—"}</b></div>
+                              <div className={`mc-change${change == null ? "" : change > 0 ? " is-up" : change < 0 ? " is-down" : " is-same"}`}><span>Change</span><b>{change == null ? "—" : change > 0 ? `+${change}` : change}</b></div>
+                            </div>
+                            <div className="mc-quiz-actions">
+                              <a className={pre ? "secondary-action" : "primary-action"} href={teacherRoute(`quiz/${item.id}/pre/${classPath}`)}>▶ Pre</a>
+                              <a className={pre && !post ? "primary-action" : "secondary-action"} href={teacherRoute(`quiz/${item.id}/again/${classPath}`)}>▶ Post</a>
+                            </div>
+                          </article>
+                        );
+                      })}
+                    </div>
+                  </>
+                );
+              })() : null}
 
               {isTracka ? (
                 <>
@@ -6079,7 +6111,24 @@ function QuizPose({ pose }) {
   );
 }
 
-function QuizPresenterPage({ contentId = "", again = false }) {
+// Latest pre/post result for a lesson in a class.
+function latestQuizResult(results = [], classId, contentId, round) {
+  return results.filter((r) => r.classId === classId && r.contentId === contentId && r.round === round).sort((a, b) => b.at - a.at)[0] || null;
+}
+
+function QuizPresenterPage({ contentId = "", again = false, initialClassId = "" }) {
+  const { user, profile } = useSessionUser();
+  const { workspace, recordQuizResult } = useTeacherWorkspace(user, profile);
+  const tracka = useTrackaClasses(user?.email || profile?.email || "");
+  const classOptions = (workspace.assignments || []).filter((a) => a.contentId === contentId).map((a) => {
+    const own = (workspace.classes || []).find((c) => c.id === a.classId);
+    const tc = tracka.classes.find((c) => (c.classCode || c.id) === a.classId);
+    return { id: a.classId, title: own?.title || tc?.className || tc?.classCode || "Class" };
+  });
+  const [classId, setClassId] = useState(initialClassId);
+  useEffect(() => {
+    if (!classId && classOptions.length === 1) setClassId(classOptions[0].id);
+  }, [classId, classOptions.length]); // eslint-disable-line react-hooks/exhaustive-deps
   const { items: contentItems } = useContentItems();
   const contentItem = contentItems.find((item) => item.id === contentId) || null;
   const quiz = normalizeQuiz(contentItem?.materials?.quiz);
@@ -6108,9 +6157,14 @@ function QuizPresenterPage({ contentId = "", again = false }) {
   const answered = Object.keys(picks).length;
   let startScore = null;
   try { startScore = JSON.parse(localStorage.getItem(scoreKey) || "null"); } catch { startScore = null; }
+  // The class's own "pre" result wins over this browser's last start score.
+  const classPre = classId ? latestQuizResult(workspace.quizResults, classId, contentId, "pre") : null;
+  const baseline = again ? (classPre || startScore) : null;
+  const diff = baseline && answered ? score - baseline.score : null;
   function nextQuestion() {
     if (index + 1 >= questions.length) {
       if (!again && answered) { try { localStorage.setItem(scoreKey, JSON.stringify({ score, total: questions.length })); } catch { /* private mode */ } }
+      if (answered && classId) recordQuizResult({ classId, contentId, round: again ? "post" : "pre", score, total: questions.length });
       setStage("done");
       return;
     }
@@ -6160,6 +6214,12 @@ function QuizPresenterPage({ contentId = "", again = false }) {
               ))}
             </div>
           ) : quiz.instructions ? <p className="kq-howto">{quiz.instructions}</p> : null}
+          {classOptions.length ? (
+            <div className="kq-classes" role="radiogroup" aria-label="Class">
+              <span>Which class?</span>
+              {classOptions.map((c) => <button type="button" key={c.id} role="radio" aria-checked={classId === c.id} className={`kq-class${classId === c.id ? " is-on" : ""}`} onClick={() => setClassId(c.id)}>{c.title}</button>)}
+            </div>
+          ) : <p className="kq-note">Assign this lesson to a class in My Classes to save the class's results.</p>}
           <button type="button" className="kq-btn kq-btn-lg" onClick={startQuiz}>Start</button>
         </div>
       )}
@@ -6210,16 +6270,20 @@ function QuizPresenterPage({ contentId = "", again = false }) {
       {stage === "done" && (
         <div className="kq-intro">
           <span className="kq-eyebrow">All done</span>
-          <h1>{again ? "Look how much you've learnt!" : "Great checking in!"}</h1>
+          <h1>{!again ? "Great checking in!" : diff == null ? "Great work!" : diff > 0 ? `You improved by ${diff}!` : diff === 0 ? "Great work!" : "Let's revise"}</h1>
           {answered ? (
             <div className="kq-scores">
-              {again && startScore ? <div className="kq-score is-start"><span>Start of lesson</span><b>{startScore.score}/{startScore.total}</b></div> : null}
+              {baseline ? <div className="kq-score is-start"><span>Start of lesson</span><b>{baseline.score}/{baseline.total}</b></div> : null}
               <div className="kq-score"><span>{again ? "End of lesson" : "The class got"}</span><b>{score}/{questions.length}</b></div>
             </div>
           ) : null}
-          <p className="kq-sub">{again
-            ? (startScore && answered ? (score > startScore.score ? `That's ${score - startScore.score} more than at the start. Great learning!` : "Which questions are still tricky? Let's talk about them.") : "Which questions did you get right this time that you weren't sure about at the start?")
-            : "We'll come back to these questions at the end of the lesson."}</p>
+          <p className="kq-sub">{!again
+            ? "We'll come back to these questions at the end of the lesson."
+            : diff == null ? "Which questions did you get right this time that you weren't sure about at the start?"
+            : diff > 0 ? `${diff} more question${diff !== 1 ? "s" : ""} right than at the start of the lesson.`
+            : diff === 0 ? "Same score as the start of the lesson. Let's keep building on it."
+            : "Fewer right than at the start. Let's go back over the tricky questions together."}</p>
+          {answered && classId ? <p className="kq-note">Saved to {classOptions.find((c) => c.id === classId)?.title || "the class"} in My Classes.</p> : null}
           <div className="kq-controls">
             <button type="button" className="kq-btn kq-btn-ghost" onClick={startQuiz}>Play again</button>
             <a className="kq-btn" href={teacherContentRoute(contentId)}>Back to the lesson</a>
@@ -6300,13 +6364,13 @@ export default function AuthenticatedApp() {
   if (path === "/student" || path === "student" || path.startsWith("student/")) return <StudentRedirectPage />;
   if (path === "/teacher" || path === "/teacher.html" || path === "teacher" || path === "teacher.html") return <TeacherPage />;
   if (path.startsWith("teacher/")) {
-    const [, section = "dashboard", third = "", fourth = ""] = path.split("/");
+    const [, section = "dashboard", third = "", fourth = "", fifth = ""] = path.split("/");
     if (section === "preview") return <TeacherPage preview />;
     if (section === "subjects") return <TeacherPage page="subjects" subject={third} />;
     if (section === "content") return <TeacherPage page="content" contentId={third} />;
     if (section === "taronga-tv") return <TeacherPage page="taronga-tv" tvVideoId={third} />;
     if (section === "present") return <TeacherPresenterPage contentId={third} />;
-    if (section === "quiz") return <QuizPresenterPage contentId={third} again={fourth === "again"} />;
+    if (section === "quiz") return <QuizPresenterPage contentId={third} again={fourth === "again"} initialClassId={decodeURIComponent(fifth)} />;
     if (section === "professional-learning") return <TeacherPage page="professional-learning" />;
     return <TeacherPage page={section || "dashboard"} />;
   }
