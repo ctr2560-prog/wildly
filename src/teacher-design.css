@@ -319,7 +319,7 @@
 .teacher-studio .ld .cd-section > h2 { margin: 0 0 14px; font-size: 20px; color: var(--wly-taronga-ink); letter-spacing: -.03em; }
 .ld-about .cd-about { font-size: 15px; line-height: 1.7; color: var(--wly-taronga-ink); max-width: 75ch; }
 
-.ld-steps { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; }
+.ld-steps { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
 .ld-step { display: flex; flex-direction: column; gap: 8px; padding: 24px; background: #fff; border: 1px solid var(--wly-border); border-radius: 6px; transition: border-color .15s ease; }
 .ld-step:hover { border-color: var(--wly-border-brand); }
 .ld-step-top { display: flex; align-items: center; gap: 12px; margin-bottom: 4px; }
@@ -346,6 +346,7 @@
   .ld-plan { flex: 1 1 100%; }
   .ld-save { margin-left: 0; }
   .ld-intent { grid-template-columns: 1fr; }
+  .ld-steps { grid-template-columns: 1fr; }
   .ld-intent > div + div { border-left: 0; border-top: 1px solid var(--wly-border); }
   .ld-outcomes { padding: 4px 4px 0; }
 }
