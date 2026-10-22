@@ -2883,61 +2883,110 @@ function TeacherDashboard({ config, contentItems = defaultContentItems.map(resol
             if (quizCount) steps.push({ icon: "speech", title: "Check-in quiz", desc: `${quizCount} question${quizCount !== 1 ? "s" : ""} — run it together as a quick class check-in.`, action: <a className="primary-action" href={teacherRoute(`quiz/${item.id}`)}>▶ Play quiz</a> });
             if (m.activityBlocks?.length) steps.push({ icon: "monitor", title: "Present interactive steps", desc: "Run the slide-by-slide activity flow at the front of class.", action: <a className="primary-action" href={teacherRoute(`present/${item.id}`)}>Present</a> });
           }
-          const extraDownloads = contentDownloads.filter((d) => d.url && d.url !== m.studentWorksheetUrl && d.url !== m.canvaEmbedUrl);
+          const planUrl = isUnit ? m.unitPlanUrl : m.lessonPlanUrl;
+          const fileKind = (d) => (/\.docx?(\?|$)|\bword\b/i.test(`${d.url} ${d.label}`) ? "Word" : /\.pdf(\?|$)|\bpdf\b/i.test(`${d.url} ${d.label}`) ? "PDF" : "Link");
+          const seenFiles = new Set();
+          const files = contentDownloads.filter((d) => d.url && d.url !== m.canvaEmbedUrl && !seenFiles.has(d.url) && seenFiles.add(d.url));
+          const fileLabel = (label = "") => label.replace(/\s*\((PDF|Word)\)\s*$/i, "");
+          const criteria = Array.isArray(item.successCriteria) ? item.successCriteria : String(item.successCriteria || "").split("\n").map((c) => c.trim()).filter(Boolean);
           return (
-            <section className="cd-page" style={{ "--accent": accent }}>
+            <section className="cd-page ld" style={{ "--accent": accent }}>
               <a className="mc-back" href={teacherRoute(isUnit ? "paths" : "resources")}>← {isUnit ? "All units" : "Library"}</a>
-              <div className="cd-hero">
-                <div className="cd-hero-media"><img src={item.image} alt="" /></div>
-                <div className="cd-hero-body">
-                  <span className="cd-type">{isUnit ? "Unit" : "Lesson"} · {item.subject}</span>
+              <header className="ld-hero">
+                <img className="ld-hero-img" src={item.image} alt="" />
+                <div className="ld-hero-copy">
+                  <span className="ld-kicker">{isUnit ? "Unit" : "Lesson"} · {item.subject}</span>
                   <h1>{item.title}</h1>
-                  <p>{item.summary || item.description}</p>
-                  <div className="cd-meta">
+                  {item.summary || item.description ? <p>{item.summary || item.description}</p> : null}
+                  <div className="ld-chips">
                     {item.stage ? <span>{item.stage}</span> : null}
                     {item.durationWeeks ? <span>{item.durationWeeks} weeks</span> : null}
                     {item.durationMinutes ? <span>{item.durationMinutes} min</span> : null}
+                    {isUnit && item.lessonIds?.length ? <span>{item.lessonIds.length} lessons</span> : null}
                     {quizCount ? <span>Check-in quiz</span> : null}
                   </div>
-                  <div className="cd-hero-actions">
-                    <button type="button" className={`lib-save${saved ? " is-saved" : ""}`} onClick={() => onToggleSaved(item.id)}><Icon type="bookmark" className="" />{saved ? "Saved" : "Save"}</button>
-                  </div>
                 </div>
+              </header>
+
+              <div className="ld-toolbar">
+                {planUrl ? (
+                  <a className="ld-plan" href={planUrl} target="_blank" rel="noreferrer">
+                    <span className="ld-plan-icon"><Icon type="report" className="" /></span>
+                    <span className="ld-plan-text"><strong>{isUnit ? "Unit plan" : "Lesson plan"}</strong><small>{fileKind({ url: planUrl, label: "" }) === "Word" ? "Word document · ready to edit" : "Open the plan"}</small></span>
+                  </a>
+                ) : null}
+                {!isUnit && m.canvaEmbedUrl ? <a className="ld-tool" href={m.canvaEmbedUrl} target="_blank" rel="noreferrer"><Icon type="play" className="" />Presentation</a> : null}
+                {!isUnit && m.studentWorksheetUrl ? <a className="ld-tool" href={m.studentWorksheetUrl} target="_blank" rel="noreferrer"><Icon type="book" className="" />Worksheet</a> : null}
+                <button type="button" className={`ld-tool ld-save${saved ? " is-saved" : ""}`} onClick={() => onToggleSaved(item.id)}><Icon type="bookmark" className="" />{saved ? "Saved" : "Save"}</button>
               </div>
 
-              {item.learningIntention || (item.successCriteria && item.successCriteria.length) ? (
-                <div className="cd-intent">
-                  {item.learningIntention ? <div><span className="cd-intent-label">Learning intention</span><p>{item.learningIntention}</p></div> : null}
-                  {item.successCriteria ? <div><span className="cd-intent-label">Success criteria</span><p>{Array.isArray(item.successCriteria) ? item.successCriteria.join("\n") : item.successCriteria}</p></div> : null}
-                </div>
-              ) : null}
+              <div className="ld-body">
+                <div className="ld-main">
+                  {item.learningIntention || criteria.length ? (
+                    <div className="ld-intent">
+                      {item.learningIntention ? <div><span className="ld-label">Learning intention</span><p>{item.learningIntention}</p></div> : null}
+                      {criteria.length ? (
+                        <div>
+                          <span className="ld-label">Success criteria</span>
+                          <ul className="ld-criteria">{criteria.map((c) => <li key={c}><span className="ld-tick" aria-hidden="true">✓</span>{c}</li>)}</ul>
+                        </div>
+                      ) : null}
+                    </div>
+                  ) : null}
 
-              {steps.length ? (
-                <div className="cd-section">
-                  <h2>{isUnit ? "Lessons in this unit" : "Run this lesson"}</h2>
-                  <div className="cd-steps">
-                    {steps.map((step, index) => (
-                      <div className="cd-step" key={index}>
-                        <span className="cd-step-num">{index + 1}</span>
-                        <span className="cd-step-icon"><Icon type={step.icon} className="" /></span>
-                        <div className="cd-step-body"><h3>{step.title}</h3><p>{step.desc}</p></div>
-                        <div className="cd-step-action">{step.action}</div>
+                  {steps.length ? (
+                    <div className="cd-section">
+                      <h2>{isUnit ? "Lessons in this unit" : "Run this lesson"}</h2>
+                      <ol className="ld-steps">
+                        {steps.map((step, index) => (
+                          <li className="ld-step" key={index}>
+                            <span className="ld-step-num">{index + 1}</span>
+                            <div className="ld-step-card">
+                              <span className="ld-step-icon"><Icon type={step.icon} className="" /></span>
+                              <div className="ld-step-body"><h3>{step.title}</h3><p>{step.desc}</p></div>
+                              <div className="ld-step-action">{step.action}</div>
+                            </div>
+                          </li>
+                        ))}
+                      </ol>
+                    </div>
+                  ) : (
+                    <div className="lib-empty"><Icon type="book" className="" /><h3>No materials added yet</h3><p>Presentation, worksheet and quiz will appear here once they're added in the staff console.</p></div>
+                  )}
+
+                  {item.description && item.description !== item.summary ? <div className="cd-section"><h2>About this {isUnit ? "unit" : "lesson"}</h2><p className="cd-about">{item.description}</p></div> : null}
+                </div>
+
+                {files.length || item.outcomeCodes?.length ? (
+                  <aside className="ld-side">
+                    {files.length ? (
+                      <div className="ld-card">
+                        <h2>Teacher files</h2>
+                        <ul className="ld-files">
+                          {files.map((d) => {
+                            const kind = fileKind(d);
+                            return (
+                              <li key={d.url}>
+                                <a href={d.url} target="_blank" rel="noreferrer">
+                                  <span className={`ld-badge is-${kind.toLowerCase()}`}>{kind}</span>
+                                  <span className="ld-file-name">{fileLabel(d.label)}</span>
+                                  <Icon type="arrowRight" className="" />
+                                </a>
+                              </li>
+                            );
+                          })}
+                        </ul>
                       </div>
-                    ))}
-                  </div>
-                </div>
-              ) : (
-                <div className="lib-empty"><Icon type="book" className="" /><h3>No materials added yet</h3><p>Presentation, worksheet and quiz will appear here once they're added in the staff console.</p></div>
-              )}
-
-              {item.description ? <div className="cd-section"><h2>About</h2><p className="cd-about">{item.description}</p></div> : null}
-              {item.outcomeCodes?.length ? <div className="cd-section"><h2>Syllabus outcomes</h2><ul className="cd-outcomes">{item.outcomeCodes.map((o) => <li key={o}>{o}</li>)}</ul></div> : null}
-              {extraDownloads.length ? (
-                <div className="cd-section">
-                  <h2>Teacher files</h2>
-                  <div className="cd-files">{extraDownloads.map((d) => <a key={`${d.label}-${d.url}`} className="cd-file" href={d.url} target="_blank" rel="noreferrer"><Icon type="report" className="" />{d.label}</a>)}</div>
-                </div>
-              ) : null}
+                    ) : null}
+                    {item.outcomeCodes?.length ? (
+                      <div className="ld-card">
+                        <h2>Syllabus outcomes</h2>
+                        <ul className="cd-outcomes">{item.outcomeCodes.map((o) => <li key={o}>{o}</li>)}</ul>
+                      </div>
+                    ) : null}
+                  </aside>
+                ) : null}
+              </div>
             </section>
           );
         })()}
