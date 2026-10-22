@@ -441,6 +441,7 @@ function openLessonPlanHtml(plan) {
 // answers physically (heads/tails, corners, hands up). Response modes carry the
 // default on-screen instruction, which staff can override per quiz.
 const QUIZ_RESPONSE_MODES = [
+  { id: "heads-shoulders", label: "Heads or Shoulders (A / B)", instructions: "A → hands on your HEAD.  B → hands on your SHOULDERS!" },
   { id: "heads-tails", label: "Heads or Tails (true / false)", instructions: "TRUE → hands on your HEAD.  FALSE → hands on your TAIL (hands on hips)!" },
   { id: "stand-sit", label: "Stand or Sit (true / false)", instructions: "Stand up for TRUE.  Stay seated for FALSE." },
   { id: "four-corners", label: "Four Corners (multiple choice)", instructions: "Each answer is a corner of the room — move to the corner you think is correct." },
@@ -2878,10 +2879,11 @@ function TeacherDashboard({ config, contentItems = defaultContentItems.map(resol
               });
             });
           } else {
+            const quizAction = (again) => <a className="primary-action" href={teacherRoute(`quiz/${item.id}${again ? "/again" : ""}`)}>▶ {again ? "Check-in again" : "Start check-in"}</a>;
+            if (quizCount) steps.push({ icon: "speech", title: "Check-in quiz", desc: `Start with ${quizCount} quick question${quizCount !== 1 ? "s" : ""} to see what the class already knows.`, action: quizAction(false) });
             if (m.canvaEmbedUrl) steps.push({ icon: "play", title: "Present the lesson", desc: "Open the slide deck and run it with the whole class.", action: <a className="primary-action" href={m.canvaEmbedUrl} target="_blank" rel="noreferrer">Open presentation</a> });
             if (m.studentWorksheetUrl) steps.push({ icon: "book", title: "Student worksheet", desc: "Hand out or download the worksheet for students.", action: <a className="primary-action" href={m.studentWorksheetUrl} target="_blank" rel="noreferrer">Open worksheet</a> });
-            if (quizCount) steps.push({ icon: "speech", title: "Check-in quiz", desc: `${quizCount} question${quizCount !== 1 ? "s" : ""} — run it together as a quick class check-in.`, action: <a className="primary-action" href={teacherRoute(`quiz/${item.id}`)}>▶ Play quiz</a> });
-            if (m.activityBlocks?.length) steps.push({ icon: "monitor", title: "Present interactive steps", desc: "Run the slide-by-slide activity flow at the front of class.", action: <a className="primary-action" href={teacherRoute(`present/${item.id}`)}>Present</a> });
+            if (quizCount) steps.push({ icon: "speech", title: "Check-in again", desc: "Run the same questions at the end to see what the class has learnt.", action: quizAction(true) });
           }
           const planUrl = isUnit ? m.unitPlanUrl : m.lessonPlanUrl;
           const fileKind = (d) => (/\.docx?(\?|$)|\bword\b/i.test(`${d.url} ${d.label}`) ? "Word" : /\.pdf(\?|$)|\bpdf\b/i.test(`${d.url} ${d.label}`) ? "PDF" : "Link");
@@ -6037,7 +6039,47 @@ function StudentRedirectPage() {
   );
 }
 
-function QuizPresenterPage({ contentId = "" }) {
+// Class check-in quiz player: a Taronga take on Kahoot, projected at the front of the room.
+// Students answer with their bodies, so each answer tile shows the action for that letter.
+const QUIZ_SECONDS = 20;
+const QUIZ_TILE_SHAPES = ["triangle", "diamond", "circle", "square"];
+const QUIZ_ACTIONS = {
+  "heads-shoulders": ["Hands on head", "Hands on shoulders"],
+  "heads-tails": ["Hands on head", "Hands on hips"],
+  "stand-sit": ["Stand up", "Stay seated"],
+  "hands-up": ["Hold up 1", "Hold up 2", "Hold up 3", "Hold up 4"],
+  "four-corners": ["Corner 1", "Corner 2", "Corner 3", "Corner 4"],
+};
+const QUIZ_POSES = { "Hands on head": "head", "Hands on shoulders": "shoulders", "Hands on hips": "hips" };
+
+function QuizShape({ shape }) {
+  const paths = {
+    triangle: <path d="M12 3 22 20H2Z" />,
+    diamond: <path d="M12 2 22 12 12 22 2 12Z" />,
+    circle: <circle cx="12" cy="12" r="10" />,
+    square: <rect x="3" y="3" width="18" height="18" rx="2" />,
+  };
+  return <svg className="kq-shape" viewBox="0 0 24 24" aria-hidden="true">{paths[shape]}</svg>;
+}
+
+// A simple stick figure doing the action, so younger students can read it at a glance.
+function QuizPose({ pose }) {
+  const arms = {
+    head: <><path d="M17 26 11 17 18 9" /><path d="M31 26 37 17 30 9" /></>,
+    shoulders: <><path d="M17 26 12 30 18 22" /><path d="M31 26 36 30 30 22" /></>,
+    hips: <><path d="M17 24 10 32 17 38" /><path d="M31 24 38 32 31 38" /></>,
+  };
+  return (
+    <svg className="kq-pose" viewBox="0 0 48 60" aria-hidden="true">
+      <circle cx="24" cy="11" r="7" />
+      <path d="M24 18v22M24 40l-7 16M24 40l7 16" />
+      <path d="M17 24h14" />
+      {arms[pose]}
+    </svg>
+  );
+}
+
+function QuizPresenterPage({ contentId = "", again = false }) {
   const { items: contentItems } = useContentItems();
   const contentItem = contentItems.find((item) => item.id === contentId) || null;
   const quiz = normalizeQuiz(contentItem?.materials?.quiz);
@@ -6045,17 +6087,24 @@ function QuizPresenterPage({ contentId = "" }) {
   const [stage, setStage] = useState("intro"); // "intro" | "q" | "done"
   const [index, setIndex] = useState(0);
   const [revealed, setRevealed] = useState(false);
+  const [timeLeft, setTimeLeft] = useState(QUIZ_SECONDS);
 
-  function startQuiz() { setStage("q"); setIndex(0); setRevealed(false); }
+  useEffect(() => {
+    if (stage !== "q" || revealed) return undefined;
+    if (timeLeft <= 0) { setRevealed(true); return undefined; }
+    const t = setTimeout(() => setTimeLeft((n) => n - 1), 1000);
+    return () => clearTimeout(t);
+  }, [stage, revealed, timeLeft]);
+
+  function goTo(n) { setIndex(n); setRevealed(false); setTimeLeft(QUIZ_SECONDS); }
+  function startQuiz() { setStage("q"); goTo(0); }
   function nextQuestion() {
     if (index + 1 >= questions.length) { setStage("done"); return; }
-    setIndex((n) => n + 1);
-    setRevealed(false);
+    goTo(index + 1);
   }
   function prevQuestion() {
     if (index === 0) { setStage("intro"); return; }
-    setIndex((n) => n - 1);
-    setRevealed(false);
+    goTo(index - 1);
   }
 
   if (!contentItem) {
@@ -6066,61 +6115,84 @@ function QuizPresenterPage({ contentId = "" }) {
   }
 
   const question = questions[index];
-  const optionLetters = ["A", "B", "C", "D"];
+  const letters = ["A", "B", "C", "D"];
+  const actionsFor = (q) => q.options.map((opt, i) => {
+    if (quiz.responseMode === "heads-tails" || quiz.responseMode === "stand-sit") {
+      const list = QUIZ_ACTIONS[quiz.responseMode];
+      return q.type === "true-false" ? list[opt === "True" ? 0 : 1] : list[i] || "";
+    }
+    return (QUIZ_ACTIONS[quiz.responseMode] || [])[i] || "";
+  });
+  const demoActions = QUIZ_ACTIONS[quiz.responseMode] || [];
 
   return (
-    <div className="quiz-stage">
-      <a className="quiz-exit" href={teacherContentRoute(contentId)} aria-label="Exit quiz">✕ Exit</a>
+    <div className="kq">
+      <a className="kq-exit" href={teacherContentRoute(contentId)}>Exit</a>
 
       {stage === "intro" && (
-        <div className="quiz-card quiz-intro">
-          <span className="quiz-eyebrow">Class check-in quiz</span>
+        <div className="kq-intro">
+          <img className="kq-logo" src={assets.wildlyLogo} alt="Wildly by Taronga" />
+          <span className="kq-eyebrow">{again ? "Check-in again" : "Check-in quiz"}</span>
           <h1>{contentItem.title}</h1>
-          <div className="quiz-howto">
-            <span className="quiz-howto-label">How to answer</span>
-            <p>{quiz.instructions || "Answer together as a class."}</p>
-          </div>
-          <p className="quiz-count">{questions.length} question{questions.length !== 1 ? "s" : ""}</p>
-          <button type="button" className="quiz-btn quiz-btn-lg" onClick={startQuiz}>Start quiz →</button>
+          <p className="kq-sub">{again ? "Same questions as the start of the lesson. Let's see what you've learnt!" : `${questions.length} quick question${questions.length !== 1 ? "s" : ""}. No devices, just your body!`}</p>
+          {demoActions.length && QUIZ_POSES[demoActions[0]] ? (
+            <div className="kq-demo">
+              {demoActions.slice(0, 2).map((action, i) => (
+                <div className={`kq-demo-tile kq-c${i}`} key={action}>
+                  <span className="kq-demo-letter">{quiz.responseMode === "heads-shoulders" ? letters[i] : i === 0 ? "True" : "False"}</span>
+                  <QuizPose pose={QUIZ_POSES[action]} />
+                  <span>{action}</span>
+                </div>
+              ))}
+            </div>
+          ) : quiz.instructions ? <p className="kq-howto">{quiz.instructions}</p> : null}
+          <button type="button" className="kq-btn kq-btn-lg" onClick={startQuiz}>Start</button>
         </div>
       )}
 
       {stage === "q" && (
-        <div className="quiz-card quiz-question">
-          <div className="quiz-progress">Question {index + 1} of {questions.length}</div>
-          <h1 className="quiz-prompt">{question.prompt || "…"}</h1>
-          <div className={`quiz-options quiz-options-${question.options.length}`}>
-            {question.options.map((opt, optIndex) => {
-              const isAnswer = optIndex === question.answerIndex;
-              const cls = `quiz-option${revealed && isAnswer ? " is-correct" : ""}${revealed && !isAnswer ? " is-dim" : ""}`;
+        <div className="kq-question">
+          <div className="kq-top">
+            <span className="kq-count">{index + 1} / {questions.length}</span>
+            <h1 className="kq-prompt">{question.prompt || "…"}</h1>
+          </div>
+          <div className="kq-mid">
+            <div className={`kq-timer${revealed ? " is-done" : ""}`} style={{ "--p": `${(timeLeft / QUIZ_SECONDS) * 100}%` }}>
+              <span>{revealed ? "✓" : timeLeft}</span>
+            </div>
+            {revealed && question.fact ? <div className="kq-fact"><strong>Did you know?</strong> {question.fact}</div> : <div className="kq-fact is-empty" />}
+          </div>
+          <div className={`kq-tiles kq-tiles-${question.options.length}`}>
+            {question.options.map((opt, i) => {
+              const isAnswer = i === question.answerIndex;
+              const action = actionsFor(question)[i];
               return (
-                <div className={cls} key={optIndex}>
-                  <span className="quiz-option-letter">{question.type === "true-false" ? (opt === "True" ? "✓" : "✗") : optionLetters[optIndex]}</span>
-                  <span className="quiz-option-text">{opt}</span>
-                  {revealed && isAnswer ? <span className="quiz-option-tick">Correct</span> : null}
+                <div className={`kq-tile kq-c${i}${revealed ? (isAnswer ? " is-correct" : " is-dim") : ""}`} key={i}>
+                  <QuizShape shape={QUIZ_TILE_SHAPES[i]} />
+                  <span className="kq-tile-text">{question.type === "true-false" ? opt : <><b>{letters[i]}</b> {opt}</>}</span>
+                  {action ? <span className="kq-tile-action">{QUIZ_POSES[action] ? <QuizPose pose={QUIZ_POSES[action]} /> : null}{action}</span> : null}
+                  {revealed && isAnswer ? <span className="kq-tick" aria-label="Correct answer">✓</span> : null}
                 </div>
               );
             })}
           </div>
-          {revealed && question.fact ? <div className="quiz-fact"><strong>Did you know?</strong> {question.fact}</div> : null}
-          <div className="quiz-controls">
-            <button type="button" className="quiz-btn quiz-btn-ghost" onClick={prevQuestion}>← Back</button>
+          <div className="kq-controls">
+            <button type="button" className="kq-btn kq-btn-ghost" onClick={prevQuestion}>Back</button>
             {!revealed
-              ? <button type="button" className="quiz-btn" onClick={() => setRevealed(true)}>Reveal answer</button>
-              : <button type="button" className="quiz-btn" onClick={nextQuestion}>{index + 1 >= questions.length ? "Finish" : "Next →"}</button>}
+              ? <button type="button" className="kq-btn" onClick={() => setRevealed(true)}>Show answer</button>
+              : <button type="button" className="kq-btn" onClick={nextQuestion}>{index + 1 >= questions.length ? "Finish" : "Next question"}</button>}
           </div>
-          <div className="quiz-howto quiz-howto-mini"><p>{quiz.instructions}</p></div>
         </div>
       )}
 
       {stage === "done" && (
-        <div className="quiz-card quiz-intro">
-          <span className="quiz-eyebrow">All done</span>
-          <h1>Great checking in! 🐨</h1>
-          <p className="quiz-count">You worked through {questions.length} question{questions.length !== 1 ? "s" : ""} together.</p>
-          <div className="quiz-controls">
-            <button type="button" className="quiz-btn quiz-btn-ghost" onClick={startQuiz}>Run it again</button>
-            <a className="quiz-btn" href={teacherContentRoute(contentId)}>Back to resource</a>
+        <div className="kq-intro">
+          <span className="kq-eyebrow">All done</span>
+          <h1>{again ? "Look how much you've learnt!" : "Great checking in!"}</h1>
+          <p className="kq-sub">{again ? "Think back: which questions did you get right this time that you weren't sure about at the start?" : "We'll come back to these questions at the end of the lesson."}</p>
+          <div className="kq-controls">
+            <button type="button" className="kq-btn kq-btn-ghost" onClick={startQuiz}>Play again</button>
+            <a className="kq-btn" href={teacherContentRoute(contentId)}>Back to the lesson</a>
           </div>
         </div>
       )}
@@ -6198,13 +6270,13 @@ export default function AuthenticatedApp() {
   if (path === "/student" || path === "student" || path.startsWith("student/")) return <StudentRedirectPage />;
   if (path === "/teacher" || path === "/teacher.html" || path === "teacher" || path === "teacher.html") return <TeacherPage />;
   if (path.startsWith("teacher/")) {
-    const [, section = "dashboard", third = ""] = path.split("/");
+    const [, section = "dashboard", third = "", fourth = ""] = path.split("/");
     if (section === "preview") return <TeacherPage preview />;
     if (section === "subjects") return <TeacherPage page="subjects" subject={third} />;
     if (section === "content") return <TeacherPage page="content" contentId={third} />;
     if (section === "taronga-tv") return <TeacherPage page="taronga-tv" tvVideoId={third} />;
     if (section === "present") return <TeacherPresenterPage contentId={third} />;
-    if (section === "quiz") return <QuizPresenterPage contentId={third} />;
+    if (section === "quiz") return <QuizPresenterPage contentId={third} again={fourth === "again"} />;
     if (section === "professional-learning") return <TeacherPage page="professional-learning" />;
     return <TeacherPage page={section || "dashboard"} />;
   }
