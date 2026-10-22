@@ -298,36 +298,41 @@
 .ld-save.is-saved { background: var(--wly-editorial-eucalyptus); border-color: var(--wly-taronga-core); }
 .ld-save.is-saved svg { fill: currentColor; }
 
-.ld-body { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 32px; margin-top: 32px; align-items: start; }
-.ld-main > :first-child { margin-top: 0; }
+.ld-outcomes { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; padding: 0 8px; }
+.ld-outcomes .ld-label { margin: 0; }
+.ld-outcomes ul { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; }
+.ld-outcomes li { font-size: 12px; font-weight: 700; color: var(--wly-taronga-core); background: var(--wly-editorial-eucalyptus); border: 1px solid rgb(2 84 63 / .15); padding: 6px 10px; border-radius: 8px; letter-spacing: .02em; }
+
+.ld-body { display: grid; gap: 0; margin-top: 32px; }
 .ld-intent { display: grid; grid-template-columns: 1fr 1fr; gap: 0; background: var(--wly-editorial-eucalyptus); border-radius: 14px; overflow: hidden; }
-.ld-intent > div { padding: 22px 24px; }
+.ld-intent > div { padding: 24px 28px; }
 .ld-intent > div + div { border-left: 1px solid rgb(2 84 63 / .12); }
 .ld-label { display: block; margin-bottom: 10px; font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--wly-taronga-core); }
-.ld-intent p { margin: 0; font-size: 16px; line-height: 1.55; color: var(--wly-taronga-ink); font-weight: 500; }
+.ld-intent p { margin: 0; font-size: 17px; line-height: 1.55; color: var(--wly-taronga-ink); font-weight: 500; }
 .ld-criteria { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
-.ld-criteria li { display: grid; grid-template-columns: 22px 1fr; gap: 10px; font-size: 14px; line-height: 1.45; color: var(--wly-taronga-ink); }
+.ld-criteria li { display: grid; grid-template-columns: 22px 1fr; gap: 10px; font-size: 15px; line-height: 1.45; color: var(--wly-taronga-ink); }
 .ld-tick { display: grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; background: var(--wly-taronga-core); color: #fff; font-size: 12px; font-weight: 700; }
 
-.teacher-studio .ld .cd-section { margin-top: 32px; }
-.teacher-studio .ld .cd-section > h2, .ld-card > h2 { margin: 0 0 14px; font-size: 18px; color: var(--wly-taronga-ink); letter-spacing: -.02em; }
-.ld-steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; position: relative; }
-.ld-steps::before { content: ""; position: absolute; left: 17px; top: 24px; bottom: 24px; width: 2px; background: repeating-linear-gradient(to bottom, var(--wly-border) 0 6px, transparent 6px 10px); }
-.ld-step { display: grid; grid-template-columns: 36px 1fr; gap: 14px; align-items: center; position: relative; }
-.ld-step-num { display: grid; place-items: center; width: 36px; height: 36px; border-radius: 50%; background: #fff; border: 2px solid var(--accent); color: var(--accent); font-weight: 700; font-size: 14px; font-variant-numeric: tabular-nums; z-index: 1; }
-.ld-step-card { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 16px; padding: 16px 18px; background: #fff; border: 1px solid var(--wly-border); border-radius: 12px; transition: border-color .15s ease, box-shadow .15s ease, transform .15s ease; }
-.ld-step:hover .ld-step-card { border-color: color-mix(in srgb, var(--accent) 50%, var(--wly-border)); box-shadow: 0 14px 30px -24px rgb(2 48 36 / .5); transform: translateX(2px); }
-.ld-step:hover .ld-step-num { background: var(--accent); color: #fff; }
-.ld-step-icon { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 11px; background: color-mix(in srgb, var(--accent) 12%, #fff); color: var(--accent); }
-.ld-step-body h3 { margin: 0 0 3px; font-size: 15px; color: var(--wly-taronga-ink); }
-.ld-step-body p { margin: 0; font-size: 13px; line-height: 1.5; color: var(--wly-text-secondary); }
-.ld-step-action .primary-action { white-space: nowrap; }
+.teacher-studio .ld .cd-section { margin-top: 36px; }
+.teacher-studio .ld .cd-section > h2 { margin: 0 0 16px; font-size: 22px; color: var(--wly-taronga-ink); letter-spacing: -.03em; }
+.ld-about .cd-about { font-size: 16px; line-height: 1.7; color: var(--wly-taronga-ink); max-width: 75ch; }
 
-.ld-side { display: grid; gap: 16px; position: sticky; top: 24px; }
-.ld-card { background: #fff; border: 1px solid var(--wly-border); border-radius: 14px; padding: 20px; }
-.ld-files { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
-.ld-files a { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 12px; padding: 10px; margin: 0 -10px; border-radius: 10px; color: var(--wly-taronga-ink); text-decoration: none; font-size: 14px; font-weight: 600; }
-.ld-files a:hover { background: var(--wly-editorial-eucalyptus); }
+.ld-steps { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 18px; }
+.ld-step { position: relative; display: flex; flex-direction: column; gap: 10px; padding: 26px 26px 24px; background: #fff; border: 1px solid var(--wly-border); border-radius: 16px; overflow: hidden; transition: border-color .15s ease, box-shadow .2s ease, transform .2s ease; }
+.ld-step::before { content: ""; position: absolute; inset: 0 0 auto; height: 5px; background: var(--accent); }
+.ld-step:hover { border-color: color-mix(in srgb, var(--accent) 45%, var(--wly-border)); box-shadow: 0 22px 44px -30px rgb(2 48 36 / .55); transform: translateY(-3px); }
+.ld-step-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
+.ld-step-icon { display: grid; place-items: center; width: 60px; height: 60px; border-radius: 16px; background: color-mix(in srgb, var(--accent) 12%, #fff); color: var(--accent); }
+.ld-step-icon svg { width: 28px; height: 28px; }
+.ld-step-num { font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); background: color-mix(in srgb, var(--accent) 10%, #fff); padding: 5px 10px; border-radius: 99px; font-variant-numeric: tabular-nums; }
+.teacher-studio .ld-step h3 { margin: 0; font-size: 21px; line-height: 1.2; color: var(--wly-taronga-ink); }
+.ld-step > p { margin: 0; font-size: 15px; line-height: 1.55; color: var(--wly-text-secondary); flex: 1; }
+.ld-step-action { margin-top: 10px; }
+.teacher-studio .ld-step-action .primary-action { display: flex; justify-content: center; align-items: center; width: 100%; min-height: 50px; font-size: 14px; border-radius: 10px; white-space: nowrap; }
+
+.ld-files { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 12px; }
+.ld-files a { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 12px; padding: 14px 16px; border: 1px solid var(--wly-border); border-radius: 12px; background: #fff; color: var(--wly-taronga-ink); text-decoration: none; font-size: 14px; font-weight: 600; transition: border-color .15s ease, background .15s ease; }
+.ld-files a:hover { background: var(--wly-editorial-eucalyptus); border-color: var(--wly-taronga-core); }
 .ld-files a svg { width: 16px; height: 16px; color: var(--wly-text-secondary); transition: transform .15s ease; }
 .ld-files a:hover svg { transform: translateX(3px); color: var(--wly-taronga-core); }
 .ld-badge { display: grid; place-items: center; min-width: 46px; height: 26px; padding: 0 6px; border-radius: 6px; font-size: 10px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; background: var(--wly-editorial-eucalyptus); color: var(--wly-taronga-core); }
@@ -335,10 +340,6 @@
 .ld-badge.is-pdf { background: #fdecea; color: #b42318; }
 .ld-file-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
-@media (max-width: 900px) {
-  .ld-body { grid-template-columns: 1fr; }
-  .ld-side { position: static; }
-}
 @media (max-width: 640px) {
   .ld-hero { min-height: 260px; }
   .ld-hero-copy { padding: 24px 20px 56px; }
@@ -348,7 +349,5 @@
   .ld-save { margin-left: 0; }
   .ld-intent { grid-template-columns: 1fr; }
   .ld-intent > div + div { border-left: 0; border-top: 1px solid rgb(2 84 63 / .12); }
-  .ld-step-card { grid-template-columns: 1fr; }
-  .ld-step-icon { display: none; }
-  .ld-step-action .primary-action { display: block; text-align: center; }
+  .ld-outcomes { padding: 4px 4px 0; }
 }
