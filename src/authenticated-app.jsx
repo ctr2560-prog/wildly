@@ -441,7 +441,7 @@ function openLessonPlanHtml(plan) {
 // answers physically (heads/tails, corners, hands up). Response modes carry the
 // default on-screen instruction, which staff can override per quiz.
 const QUIZ_RESPONSE_MODES = [
-  { id: "heads-shoulders", label: "Heads or Shoulders (A / B)", instructions: "A → hands on your HEAD.  B → hands on your SHOULDERS!" },
+  { id: "heads-shoulders", label: "Heads or Shoulders (two answers)", instructions: "First answer → hands on your HEAD.  Second answer → hands on your SHOULDERS!" },
   { id: "heads-tails", label: "Heads or Tails (true / false)", instructions: "TRUE → hands on your HEAD.  FALSE → hands on your TAIL (hands on hips)!" },
   { id: "stand-sit", label: "Stand or Sit (true / false)", instructions: "Stand up for TRUE.  Stay seated for FALSE." },
   { id: "four-corners", label: "Four Corners (multiple choice)", instructions: "Each answer is a corner of the room — move to the corner you think is correct." },
@@ -6188,7 +6188,6 @@ function QuizPresenterPage({ contentId = "", again = false, initialClassId = "" 
   }
 
   const question = questions[index];
-  const letters = ["A", "B", "C", "D"];
   const actionsFor = (q) => q.options.map((opt, i) => {
     if (quiz.responseMode === "heads-tails" || quiz.responseMode === "stand-sit") {
       const list = QUIZ_ACTIONS[quiz.responseMode];
@@ -6212,7 +6211,7 @@ function QuizPresenterPage({ contentId = "", again = false, initialClassId = "" 
             <div className="kq-demo">
               {demoActions.slice(0, 2).map((action, i) => (
                 <div className={`kq-demo-tile kq-c${i}`} key={action}>
-                  <span className="kq-demo-letter">{quiz.responseMode === "heads-shoulders" ? letters[i] : i === 0 ? "True" : "False"}</span>
+                  {quiz.responseMode === "heads-shoulders" ? <QuizShape shape={QUIZ_TILE_SHAPES[i]} /> : <span className="kq-demo-letter">{i === 0 ? "True" : "False"}</span>}
                   <QuizPose pose={QUIZ_POSES[action]} />
                   <span>{action}</span>
                 </div>
@@ -6246,7 +6245,7 @@ function QuizPresenterPage({ contentId = "", again = false, initialClassId = "" 
               <div className={`kq-fact${picks[index] === undefined ? "" : picks[index] === question.answerIndex ? " is-right" : " is-wrong"}`}>
                 {picks[index] === undefined ? null : picks[index] === question.answerIndex
                   ? <b className="kq-verdict">Most of the class got it!</b>
-                  : <b className="kq-verdict">Not quite. The answer is {letters[question.answerIndex]}.</b>}
+                  : <b className="kq-verdict">Not quite. The answer is "{question.options[question.answerIndex]}".</b>}
                 {question.fact ? <span><strong>Did you know?</strong> {question.fact}</span> : null}
               </div>
             ) : <div className="kq-hint">{timeLeft > 0 ? "Students show their answer. Tap the one most of the class chose." : "Time's up! Tap the answer most of the class chose."}</div>}
@@ -6258,7 +6257,7 @@ function QuizPresenterPage({ contentId = "", again = false, initialClassId = "" 
               return (
                 <button type="button" disabled={revealed} onClick={() => pick(i)} className={`kq-tile kq-c${i}${revealed ? (isAnswer ? " is-correct" : " is-dim") : ""}${picks[index] === i ? " is-picked" : ""}`} key={i}>
                   <QuizShape shape={QUIZ_TILE_SHAPES[i]} />
-                  <span className="kq-tile-text">{question.type === "true-false" ? opt : <><b>{letters[i]}</b> {opt}</>}</span>
+                  <span className="kq-tile-text">{opt}</span>
                   {action ? <span className="kq-tile-action">{QUIZ_POSES[action] ? <QuizPose pose={QUIZ_POSES[action]} /> : null}{action}</span> : null}
                   {revealed && isAnswer ? <span className="kq-tick" aria-label="Correct answer">✓</span> : null}
                   {revealed && picks[index] === i ? <span className="kq-class-pick">Class answer</span> : null}
