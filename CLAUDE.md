@@ -72,14 +72,61 @@ The short version:
 
 ## Auth model
 
-Two independent Firebase-Auth-gated areas:
-- **Teacher/consumer auth** (`AuthScreen`, `#login` / `#get-started`) — real `signInWithEmailAndPassword` / `createUserWithEmailAndPassword`, described above. `demo@zoo` is a client-only bypass (sets a `localStorage` flag, never touches Firebase Auth) for quick local demoing — synthetic profile via `buildDemoProfile()`.
-- **Staff console** (`StaffPage` → `StaffPasswordScreen` → `StaffFirebaseLoginScreen` → `StaffConsole`) — two layers: a hardcoded local password (`staffPassword = "admin"`, `authenticated-app.jsx` line ~345) that's session-only and **not real security**, plus a real Firebase-authenticated user whose `teachers/{email}.role` is one of `"Education Staff"`, `"Curriculum Leader"`, `"School Leader"` (enforced by `isWildlyStaff()` in Tracka's `firestore.rules`, the actual security boundary). Since regular signup no longer collects `role`, staff role assignment for real is currently a manual Firestore edit — there's no in-app "make someone staff" flow.
+There are two Firebase-Auth-gated areas.
+
+**Teacher auth** (`AuthScreen`, `#login` / `#get-started`):
+- Real `signInWithEmailAndPassword` / `createUserWithEmailAndPassword`, as described above.
+- `demo@zoo` is a client-only bypass for quick demos. It never touches Firebase Auth.
+
+**Staff console:**
+- Staff are the root admin (`ROOT_ADMIN_EMAILS`, thebiologybloke@gmail.com) or anyone with a doc at `staffAdmins/{email}`. This is the same rule as `isWildlyStaff()` in Tracka's `firestore.rules`, which is the real security boundary.
+- Staff are managed in the console's Users / Control Room panels.
+- The old `teachers.role` field grants nothing (since 2026-10-03).
+- The Control Room passcode and local "admin" password were removed.
+
+**App Check** (reCAPTCHA Enterprise, `src/firebase.js`) is **enforced** on Firestore and Storage:
+- Local dev and Wildly Studio need a registered debug token.
+- Studio posts as a staff member with a per-Mac debug token (see `~/wildly-studio/CLAUDE.md`).
+
+---
+
+## Teacher lesson pages, check-in quiz and class results (2026-10-23)
+
+Lessons usually come from **Wildly Studio** (`~/wildly-studio`), which posts `contentItems` with slides, a sheet PDF, a lesson plan .docx and a check-in quiz.
+
+### Lesson / unit page (`page === "content"`, classes `ld-*` in `src/teacher-design.css`)
+Top to bottom:
+1. Photo banner.
+2. Toolbar: the **Lesson plan** (or Unit plan) button first, then the syllabus outcomes, then Save.
+3. Learning intention and success-criteria ticks.
+4. About this lesson.
+5. "Run this lesson", as 2×2 step cards: Check-in quiz → Present the lesson → Student worksheet → Check-in again.
+6. Teacher files.
+
+Keep it flat and plain, to match the rest of the teacher site. Cameron rejected anything that "looks like AI": pills, shadows, gradients and uppercase labels.
+
+### Check-in quiz player (`QuizPresenterPage`, classes `kq-*` in `styles.css`)
+- Routes:
+  - `#teacher/quiz/<id>`: pre check-in.
+  - `#teacher/quiz/<id>/again`: post check-in.
+  - `…/pre/<classId>` or `…/again/<classId>`: the same, with the class already picked.
+- A Taronga take on Kahoot: big coloured tiles with a shape and the body move, and a 20 s timer.
+- Response mode `heads-shoulders`: first answer = hands on head, second = hands on shoulders. **No A/B letters.**
+- The teacher taps the answer most of the class shows, and the screen shows right/wrong plus the "Did you know?" fact.
+- The start screen has a "Which class?" dropdown listing all the teacher's classes (Wildly and Tracka). Finishing saves `{ classId, contentId, round: "pre"|"post", score, total }` with `recordQuizResult` and assigns the lesson to that class if needed.
+- The end of the post round shows "You improved by X!", "Great work!" (same score) or "Let's revise" (lower), with the start and end scores side by side.
+
+### My Classes → class page
+"Check-in results" shows pre / post / change for each quizzed lesson, the class averages, and ▶ Pre / ▶ Post buttons.
+
+**Where results live:** quiz results, classes and assignments are stored in the teacher's **browser workspace** (`localStorage`, `wildly-teacher-workspace:<email>`), not Firestore. So pre and post results only meet up when they're run on the same browser. Moving them to Firestore would need a rule change in the Tracka repo, which Cameron hasn't approved.
+
+### Local preview with sample data
+To preview without real data, temporarily wrap `useContentItems`'s return with a `/*LOCAL-DEMO*/ … /*LOCAL-DEMO-END*/` block that injects a quiz when `import.meta.env.DEV` is set. **Remove it before committing.** Pushes to `main` go live.
 
 ---
 
 ## Known rough edges (pre-existing, not yet fixed)
 
 - `displayName` falls back to the hardcoded placeholder `"Mr. Thompson"` when `profile.name` isn't set (`authenticated-app.jsx` line ~1427) — cosmetic, not a bug, just a leftover placeholder from earlier development.
-- Staff console's local `"admin"` password is not real security (see Auth model above) — real enforcement is the Firestore rule.
 - `authenticated-app.jsx` is one very large file — a future refactor into smaller feature modules would help, not urgent.
