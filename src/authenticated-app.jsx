@@ -2996,6 +2996,27 @@ function TeacherDashboard({ config, contentItems = defaultContentItems.map(resol
                   <div className="lib-empty"><Icon type="book" className="" /><h3>No materials added yet</h3><p>Presentation, worksheet and quiz will appear here once they're added in the staff console.</p></div>
                 )}
 
+                {m.trackaLink?.activity ? (
+                  <section className="tk-card" aria-labelledby="tk-title">
+                    <div className="tk-copy">
+                      <img className="tk-logo" src={assetPath("assets/tracka/tracka-logo.png")} alt="Taronga Tracka" />
+                      <span className="tk-eyebrow">{isUnit ? "Across this unit" : "Take this lesson further"}</span>
+                      <h2 id="tk-title">Track it in Taronga Tracka</h2>
+                      <p className="tk-activity">{m.trackaLink.activity}</p>
+                      <ul className="tk-points">
+                        <li><Icon type="pin" className="" />Track animals at Taronga</li>
+                        <li><Icon type="book" className="" />Record real observations</li>
+                        <li><Icon type="target" className="" />Earn badges together</li>
+                      </ul>
+                      <a className="tk-btn" href={m.trackaLink.url || appLinks.tracka} target="_blank" rel="noreferrer">Let's track! <Icon type="arrowRight" className="" /></a>
+                    </div>
+                    <div className="tk-art" aria-hidden="true">
+                      <img className="tk-photo" src={assetPath("assets/tracka/mode-zoo.jpg")} alt="" />
+                      <div className="tk-phone"><img src={assetPath("assets/tracka/app-home.jpg")} alt="" /></div>
+                    </div>
+                  </section>
+                ) : null}
+
                 {files.length ? (
                   <div className="cd-section">
                     <h2>Teacher files</h2>

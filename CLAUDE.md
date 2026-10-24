@@ -105,6 +105,12 @@ Top to bottom:
 
 Keep it flat and plain, to match the rest of the teacher site. Cameron rejected anything that "looks like AI": pills, shadows, gradients and uppercase labels.
 
+### Taronga Tracka card (`tk-*` in `src/teacher-design.css`)
+- Shown on a lesson or unit page when `materials.trackaLink.activity` is set. Wildly Studio writes it from its "Taronga Tracka" option or the review form.
+- Uses Tracka's own look: deep forest green, the white Tracka logo (`assets/tracka/tracka-logo.png`), an orange pill "Let's track!" button to `trackaLink.url` (tarongatracka.com.au), and a tilted phone showing `assets/tracka/app-home.jpg` next to `mode-zoo.jpg`.
+- It's deliberately bolder than the Wildly panels, so it reads as the partner app. Keep a single Tracka logo; the photo already carries one.
+- Tracka has no deep links to individual missions.
+
 ### Check-in quiz player (`QuizPresenterPage`, classes `kq-*` in `styles.css`)
 - Routes:
   - `#teacher/quiz/<id>`: pre check-in.
