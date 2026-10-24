@@ -380,3 +380,12 @@
   .tk-card { grid-template-columns: 1fr; padding: 28px 24px; }
   .tk-art { display: none; }
 }
+
+/* "Taronga Tracka lesson / program" badge (lessons that have a Tracka activity) */
+.tk-badge { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px 4px 5px; border-radius: 999px; background: #12301f; color: #f4ead2; font-size: 12px; font-weight: 700; line-height: 1.2; white-space: nowrap; }
+.tk-badge img { width: 20px; height: 20px; object-fit: contain; }
+.tk-badge.on-dark { justify-self: start; background: #d9733a; color: #fff; }
+.lib-card-media .tk-badge.on-card { position: absolute; left: 12px; bottom: 12px; box-shadow: 0 4px 12px rgb(0 0 0 / .25); }
+.teacher-desk .tk-card { margin: 32px 0 0; }
+.teacher-desk .tk-card .tk-activity, .teacher-desk .tk-card h2 { color: #fff; }
+.teacher-desk .tk-card .tk-activity { color: rgb(255 255 255 / .9); max-width: 52ch; }

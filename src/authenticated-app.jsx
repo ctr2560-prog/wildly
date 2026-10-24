@@ -10,6 +10,7 @@ import "./teacher-design.css";
 import TeacherHome from "./teacher-home.jsx";
 // Shared staff controls keep editor labels and focus behaviour consistent.
 import LoadingScreen from "./wildly-loader.jsx";
+import TrackaFeature, { TrackaBadge } from "./tracka-feature.jsx";
 import StaffWorkspace, { StaffOverview, StaffDialog, StaffField } from "./staff-workspace.jsx";
 import "./staff-design.css";
 import { subjectImage } from "./subject-identity.js";
@@ -1712,6 +1713,7 @@ function TeacherDashboard({ config, contentItems = defaultContentItems.map(resol
         <a className="lib-card-media" href={teacherContentRoute(item.id)}>
           <img src={item.image} alt="" loading="lazy" />
           <span className="lib-card-type">{item.type === "Learning Path" ? "Unit" : item.type}</span>
+          <TrackaBadge item={item} className="on-card" />
         </a>
         <div className="lib-card-body">
           <div className="lib-card-subject"><span className="lib-card-dot" />{item.subject}</div>
@@ -2930,6 +2932,7 @@ function TeacherDashboard({ config, contentItems = defaultContentItems.map(resol
                 <img className="ld-hero-img" src={item.image} alt="" />
                 <div className="ld-hero-copy">
                   <span className="ld-kicker">{isUnit ? "Unit" : "Lesson"} · {item.subject}</span>
+                  <TrackaBadge item={item} className="on-dark" />
                   <h1>{item.title}</h1>
                   {item.summary || item.description ? <p>{item.summary || item.description}</p> : null}
                   <div className="ld-chips">
@@ -2996,26 +2999,13 @@ function TeacherDashboard({ config, contentItems = defaultContentItems.map(resol
                   <div className="lib-empty"><Icon type="book" className="" /><h3>No materials added yet</h3><p>Presentation, worksheet and quiz will appear here once they're added in the staff console.</p></div>
                 )}
 
-                {m.trackaLink?.activity ? (
-                  <section className="tk-card" aria-labelledby="tk-title">
-                    <div className="tk-copy">
-                      <img className="tk-logo" src={assetPath("assets/tracka/tracka-logo.png")} alt="Taronga Tracka" />
-                      <span className="tk-eyebrow">{isUnit ? "Across this unit" : "Take this lesson further"}</span>
-                      <h2 id="tk-title">Track it in Taronga Tracka</h2>
-                      <p className="tk-activity">{m.trackaLink.activity}</p>
-                      <ul className="tk-points">
-                        <li><Icon type="pin" className="" />Track animals at Taronga</li>
-                        <li><Icon type="book" className="" />Record real observations</li>
-                        <li><Icon type="target" className="" />Earn badges together</li>
-                      </ul>
-                      <a className="tk-btn" href={m.trackaLink.url || appLinks.tracka} target="_blank" rel="noreferrer">Let's track! <Icon type="arrowRight" className="" /></a>
-                    </div>
-                    <div className="tk-art" aria-hidden="true">
-                      <img className="tk-photo" src={assetPath("assets/tracka/mode-zoo.jpg")} alt="" />
-                      <div className="tk-phone"><img src={assetPath("assets/tracka/app-home.jpg")} alt="" /></div>
-                    </div>
-                  </section>
-                ) : null}
+                <TrackaFeature
+                  Icon={Icon}
+                  eyebrow={m.trackaLink?.activity ? `Taronga Tracka ${isUnit ? "program" : "lesson"}` : "Taking your class to Taronga?"}
+                  title={m.trackaLink?.activity ? "Track it in Taronga Tracka" : "Bring this to life with Taronga Tracka"}
+                  text={m.trackaLink?.activity || `On an excursion to Taronga Zoo Sydney, your class can use Taronga Tracka to track the animals from this ${isUnit ? "unit" : "lesson"}, record what they observe and earn badges together.`}
+                  url={m.trackaLink?.url}
+                />
 
                 {files.length ? (
                   <div className="cd-section">

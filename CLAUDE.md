@@ -105,11 +105,17 @@ Top to bottom:
 
 Keep it flat and plain, to match the rest of the teacher site. Cameron rejected anything that "looks like AI": pills, shadows, gradients and uppercase labels.
 
-### Taronga Tracka card (`tk-*` in `src/teacher-design.css`)
-- Shown on a lesson or unit page when `materials.trackaLink.activity` is set. Wildly Studio writes it from its "Taronga Tracka" option or the review form.
-- Uses Tracka's own look: deep forest green, the white Tracka logo (`assets/tracka/tracka-logo.png`), an orange pill "Let's track!" button to `trackaLink.url` (tarongatracka.com.au), and a tilted phone showing `assets/tracka/app-home.jpg` next to `mode-zoo.jpg`.
-- It's deliberately bolder than the Wildly panels, so it reads as the partner app. Keep a single Tracka logo; the photo already carries one.
-- Tracka has no deep links to individual missions.
+### Taronga Tracka promotion (`src/tracka-feature.jsx`, styles `tk-*` in `src/teacher-design.css`)
+- `TrackaFeature`, the "Let's track!" card in Tracka's own look, is a **permanent marketing block**:
+  - It sits under every lesson and unit page.
+  - On the teacher dashboard it replaces the old small "Taking your class to Taronga?" box.
+- **Lesson / unit page copy:**
+  - With `materials.trackaLink.activity` set (Wildly Studio's "Taronga Tracka" option or review field), it shows that activity, titled "Track it in Taronga Tracka".
+  - Without it, it shows a general "Bring this to life with Taronga Tracka" pitch.
+- **Badge:** `TrackaBadge` shows **"Taronga Tracka lesson"** (or **"program"** for a Learning Path) only on items with a Tracka activity. It appears on the library card image and, in orange, in the lesson page banner.
+- **Style:** deep forest green, the white Tracka logo (`assets/tracka/tracka-logo.png`), an orange pill button to tarongatracka.com.au, and a tilted phone showing `app-home.jpg` next to `mode-zoo.jpg`. Keep a single Tracka logo; the photo already carries one.
+- **Links:** Tracka has no deep links to individual missions.
+- **Dashboard text colour:** `teacher-home.css` sets `.teacher-desk p` to grey, so the card's text colour is re-set for `.teacher-desk`.
 
 ### Check-in quiz player (`QuizPresenterPage`, classes `kq-*` in `styles.css`)
 - Routes:

@@ -1,5 +1,6 @@
 import React from "react";
 import "./teacher-home.css";
+import TrackaFeature from "./tracka-feature.jsx";
 
 function ResourceRow({ item, href, Icon }) {
   return (
@@ -93,12 +94,15 @@ export default function TeacherHome({ profile, preview, query, onQueryChange, re
                   <a className="desk-event" key={event.id || `${event.title}-${event.date}`} href={route("calendar")}><span>{formatDate(event.date)}</span><strong>{event.title}</strong></a>
                 )) : <><p>No events scheduled.</p><a href={route("professional-learning")}>View professional learning<Icon type="arrowRight" /></a></>}
               </section>
-              <a className="desk-tracka" href={`${import.meta.env.BASE_URL}#tracka`}>
-                <img src={`${import.meta.env.BASE_URL}assets/taronga-outdoor-learning.jpg`} alt="Students at Taronga Zoo" width="600" height="400" loading="lazy" />
-                <div><h2>Taking your class to Taronga?</h2><p>Explore animal observation activities in Taronga Tracka.</p><span>View Taronga Tracka<Icon type="arrowRight" /></span></div>
-              </a>
             </aside>
           </div>
+          <TrackaFeature
+            Icon={Icon}
+            id="desk-tracka-title"
+            eyebrow="Taronga Tracka"
+            title="Take your class to Taronga with Tracka"
+            text="Taronga Tracka is the field-study app for school visits to Taronga Zoo Sydney. Students track animals, record what they observe and earn badges, and you follow every class's progress in the teacher portal."
+          />
           <section className="desk-more" aria-label="More from Taronga">
             <a href={route("taronga-tv")}><img src={assets.gorilla} alt="" width="320" height="240" loading="lazy" /><div><h2>Taronga TV</h2><p>Wildlife videos and discussion prompts for your class.</p><span>Browse videos<Icon type="arrowRight" /></span></div></a>
             <a href={route("professional-learning")}><img src={assets.teacherPl} alt="" width="320" height="240" loading="lazy" /><div><h2>Professional learning</h2><p>Sessions and resources for your teaching practice.</p><span>View sessions<Icon type="arrowRight" /></span></div></a>
