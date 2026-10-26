@@ -389,3 +389,8 @@
 .teacher-desk .tk-card { margin: 32px 0 0; }
 .teacher-desk .tk-card .tk-activity, .teacher-desk .tk-card h2 { color: #fff; }
 .teacher-desk .tk-card .tk-activity { color: rgb(255 255 255 / .9); max-width: 52ch; }
+/* Second toolbar button (assessment task on learning paths): outlined so the unit plan stays first */
+.ld-plan.ld-plan-alt { background: #fff; color: var(--wly-taronga-core); border: 1px solid var(--wly-border-brand); }
+.ld-plan.ld-plan-alt:hover { background: var(--wly-editorial-eucalyptus); }
+.ld-plan.ld-plan-alt .ld-plan-icon { color: var(--wly-taronga-core); }
+.ld-plan.ld-plan-alt .ld-plan-text small { color: var(--wly-text-secondary); }

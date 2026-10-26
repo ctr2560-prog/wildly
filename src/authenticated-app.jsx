@@ -2958,6 +2958,8 @@ function TeacherDashboard({ config, contentItems = defaultContentItems.map(resol
             if (quizCount) steps.push({ icon: "speech", title: "Check-in again", desc: "Run the same questions at the end to see what the class has learnt.", action: quizAction(true) });
           }
           const planUrl = isUnit ? m.unitPlanUrl : m.lessonPlanUrl;
+          // Learning paths from Wildly Studio carry the assessment task as a download ("Assessment task (Word)").
+          const assessmentUrl = isUnit ? (m.assessmentTaskUrl || (m.downloadLinks || []).find((d) => /assessment/i.test(d.label || ""))?.url || "") : "";
           const fileKind = (d) => (/\.docx?(\?|$)|\bword\b/i.test(`${d.url} ${d.label}`) ? "Word" : /\.pdf(\?|$)|\bpdf\b/i.test(`${d.url} ${d.label}`) ? "PDF" : "Link");
           const seenFiles = new Set();
           const files = contentDownloads.filter((d) => d.url && d.url !== m.canvaEmbedUrl && !seenFiles.has(d.url) && seenFiles.add(d.url));
@@ -2988,6 +2990,12 @@ function TeacherDashboard({ config, contentItems = defaultContentItems.map(resol
                   <a className="ld-plan" href={planUrl} target="_blank" rel="noreferrer">
                     <span className="ld-plan-icon"><Icon type="report" className="" /></span>
                     <span className="ld-plan-text"><strong>{isUnit ? "Unit plan" : "Lesson plan"}</strong><small>{fileKind({ url: planUrl, label: "" }) === "Word" ? "Word document · ready to edit" : "Open the plan"}</small></span>
+                  </a>
+                ) : null}
+                {assessmentUrl ? (
+                  <a className="ld-plan ld-plan-alt" href={assessmentUrl} target="_blank" rel="noreferrer">
+                    <span className="ld-plan-icon"><Icon type="target" className="" /></span>
+                    <span className="ld-plan-text"><strong>Assessment task</strong><small>{fileKind({ url: assessmentUrl, label: "" }) === "Word" ? "Word document · ready to edit" : "Open the task"}</small></span>
                   </a>
                 ) : null}
                 {item.outcomeCodes?.length ? (
