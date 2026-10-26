@@ -295,9 +295,12 @@
 .ld-plan-text small { font-size: 12px; color: rgb(255 255 255 / .78); }
 .ld-tool { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 16px; border-radius: 6px; border: 1px solid var(--wly-border); background: #fff; color: var(--wly-taronga-core); font: 600 13px/1 var(--wly-font-sans); text-decoration: none; cursor: pointer; transition: border-color .15s ease, background .15s ease; }
 .ld-tool:hover { border-color: var(--wly-taronga-core); background: var(--wly-editorial-eucalyptus); }
-.ld-save { margin-left: auto; }
-.ld-save.is-saved { background: var(--wly-editorial-eucalyptus); border-color: var(--wly-taronga-core); }
+/* Save sits on the banner photo, top right, so the toolbar never wraps */
+.ld-save { position: absolute; top: 16px; right: 16px; z-index: 1; display: inline-flex; align-items: center; gap: 8px; min-height: 40px; padding: 0 14px; border: 0; border-radius: 6px; background: rgb(255 255 255 / .92); color: var(--wly-taronga-core); font: 600 13px/1 var(--wly-font-sans); cursor: pointer; }
+.ld-save:hover { background: #fff; }
+.ld-save svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.8; }
 .ld-save.is-saved svg { fill: currentColor; }
+.ld-save:focus-visible { outline: 3px solid #fff; outline-offset: 2px; }
 
 .ld-outcomes { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 .ld-outcomes .ld-label { margin: 0; }
@@ -344,7 +347,6 @@
   .ld-hero-copy { padding: 24px 20px; }
   .ld-hero::after { background: linear-gradient(0deg, rgb(2 48 36 / .94) 10%, rgb(2 48 36 / .55) 70%, rgb(2 48 36 / .3)); }
   .ld-plan { flex: 1 1 100%; }
-  .ld-save { margin-left: 0; }
   .ld-intent { grid-template-columns: 1fr; }
   .ld-steps { grid-template-columns: 1fr; }
   .ld-intent > div + div { border-left: 0; border-top: 1px solid var(--wly-border); }
@@ -394,3 +396,6 @@
 .ld-plan.ld-plan-alt:hover { background: var(--wly-editorial-eucalyptus); }
 .ld-plan.ld-plan-alt .ld-plan-icon { color: var(--wly-taronga-core); }
 .ld-plan.ld-plan-alt .ld-plan-text small { color: var(--wly-text-secondary); }
+
+/* Units have no intent box, so "About" is first: don't stack its margin on the body's */
+.teacher-studio .ld .ld-body > .cd-section:first-child { margin-top: 0; }

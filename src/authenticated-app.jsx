@@ -2970,6 +2970,7 @@ function TeacherDashboard({ config, contentItems = defaultContentItems.map(resol
               <a className="mc-back" href={teacherRoute(isUnit ? "paths" : "resources")}>← {isUnit ? "All units" : "Library"}</a>
               <header className="ld-hero">
                 <img className="ld-hero-img" src={item.image} alt="" />
+                <button type="button" className={`ld-save${saved ? " is-saved" : ""}`} onClick={() => onToggleSaved(item.id)} aria-pressed={saved}><Icon type="bookmark" className="" />{saved ? "Saved" : "Save"}</button>
                 <div className="ld-hero-copy">
                   <span className="ld-kicker">{isUnit ? "Unit" : "Lesson"} · {item.subject}</span>
                   <TrackaBadge item={item} className="on-dark" />
@@ -3004,7 +3005,6 @@ function TeacherDashboard({ config, contentItems = defaultContentItems.map(resol
                     <ul>{item.outcomeCodes.map((o) => <li key={o}>{o}</li>)}</ul>
                   </div>
                 ) : null}
-                <button type="button" className={`ld-tool ld-save${saved ? " is-saved" : ""}`} onClick={() => onToggleSaved(item.id)}><Icon type="bookmark" className="" />{saved ? "Saved" : "Save"}</button>
               </div>
 
               <div className="ld-body">
