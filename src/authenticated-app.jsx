@@ -1544,6 +1544,7 @@ function TeacherDashboard({ config, contentItems = defaultContentItems.map(resol
   }, [navigationOpen]);
   const [activeSubject, setActiveSubject] = useState(subjectFromSlug(subject));
   const [stageFilter, setStageFilter] = useState("");
+  const [typeFilter, setTypeFilter] = useState("");
   const [activeTvCategory, setActiveTvCategory] = useState("All");
   const [query, setQuery] = useState("");
   const [notice, setNotice] = useState("");
@@ -1670,22 +1671,28 @@ function TeacherDashboard({ config, contentItems = defaultContentItems.map(resol
   const tarongaTvDownloads = tarongaTvDetail?.downloadLinks || [];
   const allResourceItems = [...lessons, ...resources];
   const assignableItems = [...learningPaths, ...allResourceItems];
-  const librarySubjectCount = new Set(allResourceItems.map((item) => item.subject).filter(Boolean)).size;
+  // The library holds learning paths, lessons and resources; the Type filter picks one kind.
+  const libraryItems = [...learningPaths, ...allResourceItems];
+  const LIBRARY_TYPES = [["Learning Path", "Learning paths"], ["Lesson", "Lessons"], ["Resource", "Resources"]];
+  const librarySubjectCount = new Set(libraryItems.map((item) => item.subject).filter(Boolean)).size;
   const libraryQuizCount = allResourceItems.filter((item) => item.materials?.quiz?.questions?.length).length;
   const libraryQuery = query.trim().toLowerCase();
-  const filteredLibrary = allResourceItems.filter((item) => {
+  const filteredLibrary = libraryItems.filter((item) => {
+    if (typeFilter && item.type !== typeFilter) return false;
     if (activeSubject && item.subject !== activeSubject) return false;
     if (stageFilter && item.stage !== stageFilter) return false;
     if (!libraryQuery) return true;
     return `${item.title} ${item.summary || ""} ${item.description || ""} ${item.subject || ""} ${item.stage || ""} ${item.type || ""}`.toLowerCase().includes(libraryQuery);
   });
   const LIBRARY_STAGE_ORDER = ["Early Stage 1", "Stage 1", "Stage 2", "Stage 3", "Stage 4", "Stage 5", "Stage 6"];
-  const libraryStages = [...new Set(allResourceItems.map((item) => item.stage).filter(Boolean))].sort((a, b) => {
+  const libraryStages = [...new Set(libraryItems.map((item) => item.stage).filter(Boolean))].sort((a, b) => {
     const ia = LIBRARY_STAGE_ORDER.indexOf(a);
     const ib = LIBRARY_STAGE_ORDER.indexOf(b);
     return (ia === -1 ? 99 : ia) - (ib === -1 ? 99 : ib);
   });
-  const libraryFiltersActive = Boolean(activeSubject || stageFilter || libraryQuery);
+  const libraryFiltersActive = Boolean(typeFilter || activeSubject || stageFilter || libraryQuery);
+  const filteredPaths = filteredLibrary.filter((item) => item.type === "Learning Path");
+  const filteredLessons = filteredLibrary.filter((item) => item.type !== "Learning Path");
 
   // Curated data for the dedicated subject pages (kept distinct from the Library).
   const STAGE_ORDER = ["Early Stage 1", "Stage 1", "Stage 2", "Stage 3", "Stage 4", "Stage 5", "Stage 6"];
@@ -1712,7 +1719,7 @@ function TeacherDashboard({ config, contentItems = defaultContentItems.map(resol
       <Reveal as="article" className="lib-card" key={item.id || item.title} delay={Math.min(index, 8) * 45} style={{ "--accent": subjectAccent(item.subject) }}>
         <a className="lib-card-media" href={teacherContentRoute(item.id)}>
           <img src={item.image} alt="" loading="lazy" />
-          <span className="lib-card-type">{item.type === "Learning Path" ? "Unit" : item.type}</span>
+          <span className="lib-card-type">{item.type === "Learning Path" ? "Learning path" : item.type}</span>
           <TrackaBadge item={item} className="on-card" />
         </a>
         <div className="lib-card-body">
@@ -2385,9 +2392,10 @@ function TeacherDashboard({ config, contentItems = defaultContentItems.map(resol
               <div className="lib-hero-inner">
                 <span className="lib-hero-eyebrow">Teacher Library</span>
                 <h1>Your teaching library</h1>
-                <p>Find lessons and resources by subject and stage. Preview, save or assign them to your class.</p>
+                <p>Find learning paths, lessons and resources by subject and stage. Preview, save or assign them to your class.</p>
                 <div className="lib-hero-stats">
-                  <div><strong>{allResourceItems.length}</strong><span>{allResourceItems.length === 1 ? "resource" : "resources"}</span></div>
+                  {learningPaths.length ? <div><strong>{learningPaths.length}</strong><span>{learningPaths.length === 1 ? "learning path" : "learning paths"}</span></div> : null}
+                  <div><strong>{allResourceItems.length}</strong><span>{allResourceItems.length === 1 ? "lesson or resource" : "lessons and resources"}</span></div>
                   <div><strong>{librarySubjectCount}</strong><span>{librarySubjectCount === 1 ? "subject" : "subjects"}</span></div>
                   {libraryQuizCount ? <div><strong>{libraryQuizCount}</strong><span>check-in {libraryQuizCount === 1 ? "quiz" : "quizzes"}</span></div> : null}
                 </div>
@@ -2403,6 +2411,13 @@ function TeacherDashboard({ config, contentItems = defaultContentItems.map(resol
                 <input value={query} onChange={(event) => setQuery(event.target.value)} type="search" name="library-search" aria-label="Search the library" placeholder="Search the library…" autoComplete="off" />
               </label>
               <div className="lib-filters">
+                <label className="lib-select">
+                  <span>Type</span>
+                  <select value={typeFilter} onChange={(event) => setTypeFilter(event.target.value)}>
+                    <option value="">All types</option>
+                    {LIBRARY_TYPES.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+                  </select>
+                </label>
                 <label className="lib-select">
                   <span>Subject</span>
                   <select value={activeSubject || ""} onChange={(event) => setActiveSubject(event.target.value || null)}>
@@ -2420,21 +2435,44 @@ function TeacherDashboard({ config, contentItems = defaultContentItems.map(resol
               </div>
             </div>
 
-            {allResourceItems.length ? (
+            {libraryItems.length ? (
               filteredLibrary.length ? (
-                <div className="subj-section">
-                  <div className="subj-section-head">
-                    <h2>{libraryFiltersActive ? "Results" : "All resources"}</h2>
-                    <span className="subj-section-count" role="status">{filteredLibrary.length}{activeSubject ? ` in ${activeSubject}` : ""}{stageFilter ? ` · ${stageFilter}` : ""}{libraryQuery ? ` matching “${query.trim()}”` : ""}</span>
+                libraryFiltersActive ? (
+                  <div className="subj-section">
+                    <div className="subj-section-head">
+                      <h2>{typeFilter ? LIBRARY_TYPES.find(([v]) => v === typeFilter)[1] : "Results"}</h2>
+                      <span className="subj-section-count" role="status">{filteredLibrary.length}{activeSubject ? ` in ${activeSubject}` : ""}{stageFilter ? ` · ${stageFilter}` : ""}{libraryQuery ? ` matching “${query.trim()}”` : ""}</span>
+                    </div>
+                    <div className="lib-grid">{filteredLibrary.map((item, index) => renderLibCard(item, index))}</div>
                   </div>
-                  <div className="lib-grid">{filteredLibrary.map((item, index) => renderLibCard(item, index))}</div>
-                </div>
+                ) : (
+                  <>
+                    {filteredPaths.length ? (
+                      <div className="subj-section">
+                        <div className="subj-section-head">
+                          <h2>Learning paths</h2>
+                          <span className="subj-section-count">{filteredPaths.length}</span>
+                        </div>
+                        <div className="lib-grid">{filteredPaths.map((item, index) => renderLibCard(item, index))}</div>
+                      </div>
+                    ) : null}
+                    {filteredLessons.length ? (
+                      <div className="subj-section">
+                        <div className="subj-section-head">
+                          <h2>Lessons and resources</h2>
+                          <span className="subj-section-count">{filteredLessons.length}</span>
+                        </div>
+                        <div className="lib-grid">{filteredLessons.map((item, index) => renderLibCard(item, index))}</div>
+                      </div>
+                    ) : null}
+                  </>
+                )
               ) : (
                 <div className="lib-empty">
                   <Icon type="book" className="" />
                   <h3>Nothing matches your filters</h3>
                   <p>Try a different subject or stage, or clear the search.</p>
-                  <button type="button" className="secondary-action" onClick={() => { setActiveSubject(null); setStageFilter(""); setQuery(""); }}>Clear filters</button>
+                  <button type="button" className="secondary-action" onClick={() => { setTypeFilter(""); setActiveSubject(null); setStageFilter(""); setQuery(""); }}>Clear filters</button>
                 </div>
               )
             ) : (
