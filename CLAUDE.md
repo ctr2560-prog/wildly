@@ -96,14 +96,25 @@ Lessons usually come from **Wildly Studio** (`~/wildly-studio`), which posts `co
 
 ### Lesson / unit page (`page === "content"`, classes `ld-*` in `src/teacher-design.css`)
 Top to bottom:
-1. Photo banner.
-2. Toolbar: the **Lesson plan** (or Unit plan) button first, then the syllabus outcomes, then Save.
-3. Learning intention and success-criteria ticks.
-4. About this lesson.
+1. Photo banner. **Save** sits on the photo, top right (`.ld-save`), so the toolbar never wraps.
+2. Toolbar:
+   - The **Lesson plan** or **Unit plan** button (solid green).
+   - On learning paths only, an outlined **Assessment task** button. It uses `m.assessmentTaskUrl`, or else the download whose label contains "assessment".
+   - The syllabus outcomes.
+3. Learning intention and success-criteria ticks. Units have none, so "About" comes first there and its top margin is zeroed.
+4. About this lesson / unit.
 5. "Run this lesson", as 2×2 step cards: Check-in quiz → Present the lesson → Student worksheet → Check-in again.
-6. Teacher files.
+6. The Taronga Tracka card (see below).
+7. Teacher files.
 
-Keep it flat and plain, to match the rest of the teacher site. Cameron rejected anything that "looks like AI": pills, shadows, gradients and uppercase labels.
+Keep it flat and plain, to match the rest of the teacher site. Cameron rejected anything that "looks like AI": pills, shadows, gradients and uppercase labels. The Tracka card is the one deliberate exception.
+
+### Library (`page === "resources"`)
+- The library holds **learning paths, lessons and resources** (`libraryItems`).
+- A **Type** filter (All types / Learning paths / Lessons / Resources) sits next to Subject and Stage.
+- With no filters on, it shows a "Learning paths" section, then "Lessons and resources". With filters on, it shows one results grid.
+- Cards say "Learning path", not "Unit".
+- The separate Learning Paths page (`#teacher/paths`) still exists, in the older style.
 
 ### Taronga Tracka promotion (`src/tracka-feature.jsx`, styles `tk-*` in `src/teacher-design.css`)
 - `TrackaFeature`, the "Let's track!" card in Tracka's own look, is a **permanent marketing block**:
